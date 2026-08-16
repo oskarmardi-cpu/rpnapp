@@ -1,39 +1,29 @@
-<!--=========================================================
-RPN MANAGEMENT SYSTEM
-05_Sidebar.html
-Enterprise Edition v6.0 — Responsive Navigation
-==========================================================-->
+<!-- RPN ENTERPRISE SIDEBAR v7 -->
 <aside id="sidebar" class="sidebar">
-  <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Toggle sidebar" onclick="Sidebar.toggle()"><i class="ri-menu-fold-line"></i></button>
-  <div class="sidebar-user">
-    <img id="sidebarUserPhoto" class="sidebar-avatar" src="" alt="User">
-    <div class="sidebar-user-info"><div id="sidebarUserName" class="sidebar-user-name"></div><div id="sidebarUserRole" class="sidebar-user-role"></div></div>
-  </div>
-  <nav id="sidebarMenu">
+  <div class="sidebar-topbar"><div class="sidebar-brand"><span class="sidebar-brand-mark">RPN</span><span class="sidebar-brand-copy"><strong>RPN</strong><small>Management System</small></span></div><button id="sidebarToggle" class="sidebar-toggle" type="button" onclick="Sidebar.toggle()"><i class="ri-menu-fold-line"></i></button></div>
+  <div class="sidebar-user"><div class="sidebar-avatar-wrap"><img id="sidebarUserPhoto" class="sidebar-avatar" src="" alt=""><span class="sidebar-online"></span></div><div class="sidebar-user-info"><strong id="sidebarUserName">Administrator</strong><span id="sidebarUserRole">ADMIN</span></div><button class="sidebar-user-more" onclick="Profile.open()"><i class="ri-more-2-fill"></i></button></div>
+  <nav id="sidebarMenu" class="sidebar-nav" aria-label="Main navigation">
+    <div class="nav-section-label">WORKSPACE</div>
     <ul>
-      <li class="menu-item" data-page="dashboard"><a onclick="Router.dashboard()" title="Dashboard"><i class="ri-dashboard-3-line"></i><span>Dashboard</span></a></li>
-      <li class="menu-group"><div class="menu-title"><i class="ri-database-2-line"></i><span>Master</span><i class="ri-arrow-down-s-line menu-chevron"></i></div><ul><li onclick="Router.asset()">Asset</li><li onclick="Router.customer()">Customer</li><li onclick="Router.vendor()">Vendor</li><li onclick="Router.employee()">Employee</li></ul></li>
+      <li class="menu-item active" data-page="dashboard"><a onclick="Router.dashboard()" title="Dashboard"><i class="ri-dashboard-3-line"></i><span>Dashboard</span></a></li>
+    </ul>
+    <div class="nav-section-label">MANAGEMENT</div>
+    <ul>
+      <li class="menu-group"><button class="menu-title" type="button" onclick="this.parentElement.classList.toggle('open')"><i class="ri-database-2-line"></i><span>Master Data</span><i class="ri-arrow-down-s-line menu-chevron"></i></button><ul><li onclick="Router.asset()">Asset</li><li onclick="Router.customer()">Customer</li><li onclick="Router.vendor()">Vendor</li><li onclick="Router.employee()">Employee</li></ul></li>
       <li class="menu-item"><a onclick="Router.rental()" title="Rental"><i class="ri-truck-line"></i><span>Rental</span></a></li>
-      <li class="menu-item"><a onclick="Router.workshop()" title="Workshop"><i class="ri-tools-line"></i><span>Workshop</span><span id="badgeWorkshop" class="badge"></span></a></li>
+      <li class="menu-item"><a onclick="Router.workshop()" title="Workshop"><i class="ri-tools-line"></i><span>Workshop</span><span id="badgeWorkshop" class="nav-badge"></span></a></li>
       <li class="menu-item"><a onclick="Router.inventory()" title="Inventory"><i class="ri-box-3-line"></i><span>Inventory</span></a></li>
       <li class="menu-item"><a onclick="Router.used()" title="Used Unit"><i class="ri-recycle-line"></i><span>Used Unit</span></a></li>
+    </ul>
+    <div class="nav-section-label">REPORTING</div>
+    <ul>
       <li class="menu-item"><a onclick="Router.export()" title="Export"><i class="ri-ship-line"></i><span>Export</span></a></li>
       <li class="menu-item"><a onclick="Router.report()" title="Report"><i class="ri-file-chart-line"></i><span>Report</span></a></li>
       <li id="menuAdmin" class="menu-item"><a onclick="Router.admin()" title="Administration"><i class="ri-settings-3-line"></i><span>Administration</span></a></li>
     </ul>
   </nav>
-  <div class="sidebar-footer"><span>RPN Management System</span><small>v6.0</small></div>
+  <div class="sidebar-footer"><span>RPN Management System</span><small>Enterprise v6.0</small></div>
 </aside>
 <script>
-const Sidebar=(()=>{
-  "use strict";
-  function load(){const user=Auth.getUser();if(!user)return;const name=document.getElementById("sidebarUserName"),role=document.getElementById("sidebarUserRole"),photo=document.getElementById("sidebarUserPhoto");if(name)name.textContent=user.FULLNAME||"";if(role)role.textContent=user.ROLE||"";if(photo)photo.src=user.PHOTO||"";permission();}
-  function permission(){const user=Auth.getUser();if(!user)return;const admin=document.getElementById("menuAdmin");if(admin)admin.style.display=user.ROLE==="ADMIN"?"":"none";}
-  function badge(id,value){const el=document.getElementById(id);if(!el)return;el.textContent=value??"";el.style.display=Number(value)>0?"inline-flex":"none";}
-  function toggle(force){const body=document.body,mobile=window.matchMedia("(max-width: 767px)").matches;if(mobile){body.classList.toggle("sidebar-mobile-open",force===undefined?undefined:!!force);}else{body.classList.toggle("sidebar-collapse",force===undefined?undefined:!!force);}}
-  function closeMobile(){document.body.classList.remove("sidebar-mobile-open");}
-  document.addEventListener("click",function(e){if(!window.matchMedia("(max-width: 767px)").matches)return;const sidebar=document.getElementById("app-sidebar"),button=document.getElementById("sidebarToggle");if(document.body.classList.contains("sidebar-mobile-open")&&sidebar&&!sidebar.contains(e.target)&&button&&!button.contains(e.target))closeMobile();});
-  window.addEventListener("resize",function(){if(window.innerWidth>767)closeMobile();});
-  return{load,permission,badge,toggle,closeMobile};
-})();
+const Sidebar=(()=>{"use strict";function load(){const u=Auth.getUser();if(!u)return;const n=document.getElementById("sidebarUserName"),r=document.getElementById("sidebarUserRole"),p=document.getElementById("sidebarUserPhoto");if(n)n.textContent=u.FULLNAME||"Administrator";if(r)r.textContent=u.ROLE||"";if(p){p.src=u.PHOTO||"";p.onerror=()=>{p.removeAttribute("src");p.classList.add("avatar-fallback");};}permission();}function permission(){const u=Auth.getUser(),a=document.getElementById("menuAdmin");if(u&&a)a.style.display=u.ROLE==="ADMIN"?"":"none";}function badge(id,value){const e=document.getElementById(id);if(!e)return;e.textContent=value??"";e.style.display=Number(value)>0?"inline-flex":"none";}function toggle(force){const b=document.body,m=window.matchMedia("(max-width:767px)").matches;if(m)b.classList.toggle("sidebar-mobile-open",force===undefined?undefined:!!force);else b.classList.toggle("sidebar-collapse",force===undefined?undefined:!!force);}function closeMobile(){document.body.classList.remove("sidebar-mobile-open");}document.addEventListener("click",e=>{if(window.innerWidth>767)return;const s=document.getElementById("app-sidebar"),t=document.getElementById("sidebarToggle");if(document.body.classList.contains("sidebar-mobile-open")&&s&&!s.contains(e.target)&&t&&!t.contains(e.target))closeMobile();});window.addEventListener("resize",()=>{if(window.innerWidth>767)closeMobile();});return{load,permission,badge,toggle,closeMobile};})();
 </script>
