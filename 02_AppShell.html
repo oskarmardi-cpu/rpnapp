@@ -9,13 +9,9 @@ Enterprise Edition v5.0
   <!-- LOGIN VIEW -->
   <section
     id="login-container"
-    class="app-page"
-    style="display:block;">
+    class="app-page">
 
-    <?!= HtmlService
-      .createTemplateFromFile("10_Login")
-      .evaluate()
-      .getContent(); ?>
+    <?!= login ?>
 
   </section>
 
@@ -27,12 +23,9 @@ Enterprise Edition v5.0
 
     <header
       id="app-header"
-      style="display:block;">
+      style="display:none;">
 
-      <?!= HtmlService
-        .createTemplateFromFile("04_Header")
-        .evaluate()
-        .getContent(); ?>
+      <?!= header ?>
 
     </header>
 
@@ -41,12 +34,9 @@ Enterprise Edition v5.0
 
       <aside
         id="app-sidebar"
-        style="display:block;">
+        style="display:none;">
 
-        <?!= HtmlService
-          .createTemplateFromFile("05_Sidebar")
-          .evaluate()
-          .getContent(); ?>
+        <?!= sidebar ?>
 
       </aside>
 
@@ -60,10 +50,7 @@ Enterprise Edition v5.0
             class="app-page"
             style="display:none;">
 
-            <?!= HtmlService
-              .createTemplateFromFile("20_Dashboard")
-              .evaluate()
-              .getContent(); ?>
+            <?!= dashboard ?>
 
           </section>
 
@@ -76,12 +63,9 @@ Enterprise Edition v5.0
 
     <footer
       id="app-footer"
-      style="display:block;">
+      style="display:none;">
 
-      <?!= HtmlService
-        .createTemplateFromFile("06_Footer")
-        .evaluate()
-        .getContent(); ?>
+      <?!= footer ?>
 
     </footer>
 
@@ -89,19 +73,8 @@ Enterprise Edition v5.0
 
 
   <!-- GLOBAL COMPONENTS -->
-  <?!= HtmlService
-    .createTemplateFromFile("07_Loader")
-    .evaluate()
-    .getContent(); ?>
-
-  <?!= HtmlService
-    .createTemplateFromFile("08_Toast")
-    .evaluate()
-    .getContent(); ?>
-
-  <?!= HtmlService
-    .createTemplateFromFile("09_Modal")
-    .evaluate()
-    .getContent(); ?>
+  <?!= loader ?>
+  <?!= toast ?>
+  <?!= modal ?>
 
 </div>
