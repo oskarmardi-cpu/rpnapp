@@ -1,7 +1,8 @@
 <!--=========================================================
 RPN MANAGEMENT SYSTEM
 02_AppShell.html
-Enterprise Edition v5.0
+Enterprise Edition v5.1
+Persistent Dashboard Shell
 ==========================================================-->
 
 <div id="rpn-app">
@@ -23,13 +24,15 @@ Enterprise Edition v5.0
       </aside>
 
       <main id="app-main">
-        <div id="page-container">
 
-          <section id="view-dashboard" class="app-page" style="display:none;">
-            <?!= dashboard ?>
-          </section>
+        <!-- Dashboard is persistent and MUST NOT be removed by dynamic pages. -->
+        <section id="view-dashboard" class="app-page" style="display:none;">
+          <?!= dashboard ?>
+        </section>
 
-        </div>
+        <!-- All secondary pages are rendered here. -->
+        <div id="page-container"></div>
+
       </main>
 
     </div>
@@ -49,6 +52,7 @@ Enterprise Edition v5.0
 <!-- CLIENT CONTROLLERS: MUST LOAD AFTER DOM -->
 <?!= api ?>
 <?!= auth ?>
+<?!= router ?>
 <?!= dashboardJS ?>
 <?!= formJS ?>
 <?!= historyJS ?>
