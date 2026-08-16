@@ -1,291 +1,30 @@
-<!--=========================================================
-RPN MANAGEMENT SYSTEM
-04_Header.html
-Enterprise Edition v5.0
-==========================================================-->
-
+<!-- RPN ENTERPRISE HEADER v7 -->
 <header class="rpn-header">
-
-  <!--=========================================
-    LEFT
-  ==========================================-->
-
   <div class="header-left">
-
-    <button
-      id="btnSidebar"
-      class="icon-button"
-      onclick="Sidebar.toggle()">
-
-      <i class="ri-menu-fold-line"></i>
-
-    </button>
-
-
-    <div class="header-logo">
-
-      <img
-        src="<?= CONFIG.APP.LOGO ?>"
-        class="logo">
-
-      <div>
-
-        <div class="logo-title">
-
-          <?= CONFIG.APP.NAME ?>
-
-        </div>
-
-        <div class="logo-version">
-
-          Enterprise <?= CONFIG.VERSION.SYSTEM ?>
-
-        </div>
-
-      </div>
-
+    <button id="btnSidebar" class="header-icon-btn" type="button" onclick="Sidebar.toggle()" aria-label="Toggle navigation"><i class="ri-menu-line"></i></button>
+    <div class="brand-lockup">
+      <div class="brand-mark">RPN</div>
+      <div class="brand-copy"><strong><?= CONFIG.APP.NAME ?></strong><span>Enterprise <?= CONFIG.VERSION.SYSTEM ?></span></div>
     </div>
-
   </div>
-
-
-  <!--=========================================
-    CENTER
-  ==========================================-->
-
   <div class="header-center">
-
-    <div class="search-box">
-
-      <i class="ri-search-line"></i>
-
-      <input
-        id="globalSearch"
-        type="text"
-        placeholder="Search Unit / SN / FN / WO / Customer..."
-        autocomplete="off">
-
-    </div>
-
+    <div class="global-search"><i class="ri-search-2-line"></i><input id="globalSearch" type="search" placeholder="Search unit, SN, FN, WO or customer..." autocomplete="off"><kbd>⌘ K</kbd></div>
   </div>
-
-
-  <!--=========================================
-    RIGHT
-  ==========================================-->
-
   <div class="header-right">
-
-
-    <!-- Branch -->
-
-    <select
-      id="branchSelector"
-      onchange="App.changeBranch()">
-
-    </select>
-
-
-    <!-- Fullscreen -->
-
-    <button
-      class="icon-button"
-      onclick="App.fullscreen()">
-
-      <i class="ri-fullscreen-line"></i>
-
+    <select id="branchSelector" class="header-select" onchange="App.changeBranch()"></select>
+    <button class="header-icon-btn" onclick="App.fullscreen()" title="Fullscreen"><i class="ri-fullscreen-line"></i></button>
+    <button class="header-icon-btn" onclick="Theme.toggle()" title="Theme"><i class="ri-contrast-2-line"></i></button>
+    <button class="header-icon-btn notification-button" onclick="Notification.open()" title="Notifications"><i class="ri-notification-3-line"></i><span id="notificationBadge" class="header-badge">0</span></button>
+    <button class="header-profile" onclick="Profile.open()" type="button">
+      <span class="avatar-wrap"><img id="userPhoto" class="avatar" src="" alt="User"><span class="online-dot"></span></span>
+      <span class="profile-copy"><strong id="userName"></strong><small id="userRole"></small></span><i class="ri-arrow-down-s-line"></i>
     </button>
-
-
-    <!-- Theme -->
-
-    <button
-      class="icon-button"
-      onclick="Theme.toggle()">
-
-      <i class="ri-contrast-2-line"></i>
-
-    </button>
-
-
-    <!-- Notification -->
-
-    <button
-      class="icon-button notification-button"
-      onclick="Notification.open()">
-
-      <i class="ri-notification-3-line"></i>
-
-      <span
-        id="notificationBadge"
-        class="badge">
-
-        0
-
-      </span>
-
-    </button>
-
-
-    <!-- User -->
-
-    <div
-      class="header-user"
-      onclick="Profile.open()">
-
-      <img
-        id="userPhoto"
-        class="avatar"
-        src="">
-
-      <div>
-
-        <div id="userName"></div>
-
-        <div id="userRole"></div>
-
-      </div>
-
-      <i class="ri-arrow-down-s-line"></i>
-
-    </div>
-
   </div>
-
 </header>
-
-
 <script>
-
-const Header = (() => {
-
-  "use strict";
-
-
-  /*=======================================================
-    LOAD HEADER USER
-  =======================================================*/
-
-  function load(){
-
-    /*
-     * Auth adalah sumber user yang benar.
-     * Tidak menggunakan Session.
-     */
-
-    if(
-      typeof Auth === "undefined" ||
-      typeof Auth.getUser !== "function"
-    ){
-
-      return;
-
-    }
-
-
-    const user =
-      Auth.getUser();
-
-
-    if(!user){
-
-      return;
-
-    }
-
-
-    const userName =
-      document.getElementById(
-        "userName"
-      );
-
-
-    const userRole =
-      document.getElementById(
-        "userRole"
-      );
-
-
-    const userPhoto =
-      document.getElementById(
-        "userPhoto"
-      );
-
-
-    if(userName){
-
-      userName.textContent =
-        user.FULLNAME || "";
-
-    }
-
-
-    if(userRole){
-
-      userRole.textContent =
-        user.ROLE || "";
-
-    }
-
-
-    if(userPhoto){
-
-      userPhoto.src =
-        user.PHOTO || "";
-
-    }
-
-  }
-
-
-  /*=======================================================
-    NOTIFICATION
-  =======================================================*/
-
-  function notification(count){
-
-    const badge =
-      document.getElementById(
-        "notificationBadge"
-      );
-
-
-    if(!badge){
-
-      return;
-
-    }
-
-
-    const total =
-      Number(count) || 0;
-
-
-    badge.textContent =
-      total;
-
-
-    badge.style.display =
-      total > 0
-        ? "flex"
-        : "none";
-
-  }
-
-
-  /*=======================================================
-    PUBLIC API
-  =======================================================*/
-
-  return {
-
-    load,
-
-    notification
-
-  };
-
-
-})();
-
+const Header=(()=>{
+"use strict";
+function load(){if(typeof Auth==="undefined"||typeof Auth.getUser!=="function")return;const u=Auth.getUser();if(!u)return;const n=document.getElementById("userName"),r=document.getElementById("userRole"),p=document.getElementById("userPhoto");if(n)n.textContent=u.FULLNAME||"User";if(r)r.textContent=u.ROLE||"";if(p){p.src=u.PHOTO||"";p.onerror=()=>{p.removeAttribute("src");p.classList.add("avatar-fallback");};}}
+function notification(count){const b=document.getElementById("notificationBadge");if(!b)return;const n=Number(count)||0;b.textContent=n>99?"99+":n;b.style.display=n?"flex":"none";}
+return{load,notification};})();
 </script>
