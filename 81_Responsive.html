@@ -1,231 +1,34 @@
 <style>
-
-/* =========================================================
-   RPN MANAGEMENT SYSTEM
-   81_Responsive.html
-   FINAL LAYOUT CONTROL
-========================================================= */
-
-:root {
-    --sidebar-fixed-width: 240px;
-}
-
-html,
-body {
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    overflow-x: hidden;
-}
-
-#rpn-app {
-    width: 100%;
-    min-height: 100vh;
-}
-
-/* =========================================================
-   APPLICATION SIDEBAR
-========================================================= */
-
-#rpn-app #app-sidebar {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    bottom: 0 !important;
-    width: var(--sidebar-fixed-width) !important;
-    min-width: var(--sidebar-fixed-width) !important;
-    max-width: var(--sidebar-fixed-width) !important;
-    height: 100vh !important;
-    z-index: 1000 !important;
-    display: block !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-sizing: border-box !important;
-}
-
-#rpn-app #app-sidebar #sidebar {
-    position: relative !important;
-    top: auto !important;
-    left: auto !important;
-    right: auto !important;
-    bottom: auto !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    height: 100% !important;
-    margin: 0 !important;
-    transform: none !important;
-    box-sizing: border-box !important;
-}
-
-/* =========================================================
-   APPLICATION MAIN
-========================================================= */
-
-#rpn-app #app-main {
-    display: block !important;
-    width: calc(100% - var(--sidebar-fixed-width)) !important;
-    max-width: calc(100% - var(--sidebar-fixed-width)) !important;
-    min-width: 0 !important;
-    margin-left: var(--sidebar-fixed-width) !important;
-    margin-right: 0 !important;
-    padding: 0 !important;
-    position: relative !important;
-    box-sizing: border-box !important;
-}
-
-#rpn-app #page-container {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-sizing: border-box !important;
-}
-
-#rpn-app #page-container .page {
-    width: 100% !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    box-sizing: border-box !important;
-}
-
-#rpn-app #page-container .rpn-dashboard,
-#rpn-app #page-container .dashboard,
-#rpn-app #page-container .dashboard-page {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    box-sizing: border-box !important;
-}
-
-#rpn-app .dashboard-kpis,
-#rpn-app .dashboard-kpi,
-#rpn-app .dashboard-charts,
-#rpn-app .dashboard-chart {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-}
-
-#rpn-app .dashboard-table-wrap,
-#rpn-app .table-dashboard {
-    max-width: 100% !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    -webkit-overflow-scrolling: touch;
-}
-
-/* =========================================================
-   LOGIN STATE
-   LOGIN VIEW IS INSIDE THE APPLICATION LAYOUT.
-   Therefore CSS MUST override the fixed desktop shell.
-========================================================= */
-
-#rpn-app #login-view-container:not([style*="display: none"])
-~ * {
-    box-sizing: border-box;
-}
-
-#rpn-app:has(#login-view-container:not([style*="display: none"])) #app-sidebar {
-    display: none !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-}
-
-#rpn-app:has(#login-view-container:not([style*="display: none"])) #app-header,
-#rpn-app:has(#login-view-container:not([style*="display: none"])) #app-footer {
-    display: none !important;
-}
-
-#rpn-app:has(#login-view-container:not([style*="display: none"])) #app-main {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    padding: 0 !important;
-    position: relative !important;
-}
-
-#rpn-app:has(#login-view-container:not([style*="display: none"])) #page-container {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-#rpn-app:has(#login-view-container:not([style*="display: none"])) #login-view-container {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-/* =========================================================
-   DESKTOP
-========================================================= */
-
-@media (min-width: 1200px) {
-    #rpn-app #app-main {
-        overflow-x: hidden !important;
-    }
-}
-
-/* =========================================================
-   ZOOM / NARROW DESKTOP
-========================================================= */
-
-@media (min-width: 769px) and (max-width: 1199px) {
-    #rpn-app #app-main {
-        overflow-x: auto !important;
-    }
-
-    #rpn-app #page-container {
-        min-width: 1100px !important;
-    }
-
-    #rpn-app:has(#login-view-container:not([style*="display: none"])) #page-container {
-        min-width: 0 !important;
-    }
-}
-
-/* =========================================================
-   MOBILE
-========================================================= */
-
-@media (max-width: 768px) {
-    #rpn-app #app-sidebar {
-        display: none !important;
-    }
-
-    #rpn-app #app-main {
-        width: 100% !important;
-        max-width: 100% !important;
-        margin-left: 0 !important;
-        overflow-x: auto !important;
-    }
-
-    #rpn-app #page-container {
-        min-width: 0 !important;
-    }
-}
-
-/* =========================================================
-   BOTTOM NAV
-========================================================= */
-
-@media (min-width: 1200px) {
-    #rpn-app .bottom-navbar {
-        display: none !important;
-    }
-}
-
+/* RPN ENTERPRISE LAYOUT v6 */
+:root{--rpn-sidebar:260px;--rpn-header:72px;--rpn-bg:#f4f7fb;--rpn-blue:#2563eb;}
+html,body{width:100%;min-height:100%;margin:0;padding:0;overflow-x:hidden;background:var(--rpn-bg);}
+#rpn-app{width:100%;min-height:100vh;}
+#rpn-app #application-container{min-height:100vh;}
+#rpn-app #app-sidebar{position:fixed!important;left:0!important;top:0!important;bottom:0!important;width:var(--rpn-sidebar)!important;height:100vh!important;z-index:1000!important;margin:0!important;padding:0!important;display:block!important;overflow:hidden!important;box-sizing:border-box!important;}
+#rpn-app #app-sidebar #sidebar{position:relative!important;width:100%!important;height:100%!important;min-height:100vh!important;margin:0!important;box-sizing:border-box!important;}
+#rpn-app #app-main{position:relative!important;display:block!important;width:calc(100% - var(--rpn-sidebar))!important;max-width:none!important;min-width:0!important;margin-left:var(--rpn-sidebar)!important;margin-right:0!important;padding:0!important;box-sizing:border-box!important;min-height:calc(100vh - var(--rpn-header))!important;background:var(--rpn-bg)!important;}
+#rpn-app #page-container{width:100%!important;max-width:none!important;min-width:0!important;margin:0!important;padding:0!important;box-sizing:border-box!important;}
+#rpn-app #page-container .page,#rpn-app #page-container .rpn-dashboard,#rpn-app #page-container .dashboard,#rpn-app #page-container .dashboard-page{width:100%!important;max-width:none!important;min-width:0!important;margin:0!important;box-sizing:border-box!important;}
+#rpn-app .rpn-dashboard{min-height:calc(100vh - var(--rpn-header));}
+#rpn-app #app-header{position:sticky!important;top:0!important;z-index:900!important;margin-left:var(--rpn-sidebar)!important;width:calc(100% - var(--rpn-sidebar))!important;}
+#rpn-app #app-footer{margin-left:var(--rpn-sidebar)!important;width:calc(100% - var(--rpn-sidebar))!important;}
+#rpn-app #app-sidebar .sidebar-user,#rpn-app #app-sidebar nav{width:100%;box-sizing:border-box;}
+#rpn-app #app-sidebar a,#rpn-app #app-sidebar li{box-sizing:border-box;}
+#rpn-app #app-sidebar .menu-item>a,#rpn-app #app-sidebar .menu-group>.menu-title{transition:transform .18s ease,background .18s ease,box-shadow .18s ease,color .18s ease;}
+#rpn-app #app-sidebar .menu-item>a:hover,#rpn-app #app-sidebar .menu-group>.menu-title:hover{transform:translateX(3px);}
+#rpn-app #app-sidebar .menu-item.active>a{background:linear-gradient(90deg,rgba(37,99,235,.14),rgba(37,99,235,.04));color:var(--rpn-blue);box-shadow:inset 3px 0 0 var(--rpn-blue);}
+#rpn-app #app-main{animation:rpnContentIn .35s ease both;}
+@keyframes rpnContentIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+#rpn-app .dashboard-card{transition:transform .25s ease,box-shadow .25s ease;}
+#rpn-app .dashboard-card:hover{transform:translateY(-3px);box-shadow:0 14px 32px rgba(15,23,42,.10);}
+#rpn-app .dashboard-kpi-value{font-variant-numeric:tabular-nums;}
+#rpn-app .dashboard-refresh{transition:transform .2s ease,box-shadow .2s ease;}
+#rpn-app .dashboard-refresh:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(255,90,0,.22);}
+/* Login: no shell offsets */
+#rpn-app #application-container[style*="display: none"]~*{margin-left:0!important;width:100%!important;}
+#rpn-app:has(#login-container:not([style*="display: none"])) #app-sidebar,#rpn-app:has(#login-container:not([style*="display: none"])) #app-header,#rpn-app:has(#login-container:not([style*="display: none"])) #app-footer{display:none!important;}
+#rpn-app:has(#login-container:not([style*="display: none"])) #app-main{width:100%!important;margin-left:0!important;}
+@media(max-width:1100px){:root{--rpn-sidebar:230px;}}
+@media(max-width:768px){:root{--rpn-sidebar:0px;}#rpn-app #app-sidebar{display:none!important;}#rpn-app #app-main,#rpn-app #app-header,#rpn-app #app-footer{width:100%!important;margin-left:0!important;}#rpn-app #app-main{overflow-x:auto!important;}}
+@media(prefers-reduced-motion:reduce){#rpn-app *{animation:none!important;transition:none!important;}}
 </style>
