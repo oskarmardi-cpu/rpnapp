@@ -6,153 +6,102 @@ Enterprise Edition v5.0
 
 <div id="rpn-app">
 
-
-  <!--=======================================================
-    HEADER
-    INITIAL STATE: HIDDEN
-    App akan menampilkan setelah login berhasil.
-  ========================================================-->
-
-  <header
-    id="app-header"
-    style="display:none;">
+  <!-- LOGIN VIEW -->
+  <section
+    id="login-container"
+    class="app-page"
+    style="display:block;">
 
     <?!= HtmlService
-      .createTemplateFromFile("04_Header")
+      .createTemplateFromFile("10_Login")
       .evaluate()
       .getContent(); ?>
 
-  </header>
+  </section>
 
 
+  <!-- APPLICATION SHELL -->
+  <div
+    id="application-container"
+    style="display:none;">
 
-  <!--=======================================================
-    APPLICATION LAYOUT
-  ========================================================-->
-
-  <div class="app-layout">
-
-
-    <!--=====================================================
-      SIDEBAR
-      INITIAL STATE: HIDDEN
-    ======================================================-->
-
-    <aside
-      id="app-sidebar"
-      style="display:none;">
+    <header
+      id="app-header"
+      style="display:block;">
 
       <?!= HtmlService
-        .createTemplateFromFile("05_Sidebar")
+        .createTemplateFromFile("04_Header")
         .evaluate()
         .getContent(); ?>
 
-    </aside>
+    </header>
 
 
+    <div class="app-layout">
 
-    <!--=====================================================
-      MAIN
-    ======================================================-->
+      <aside
+        id="app-sidebar"
+        style="display:block;">
 
-    <main id="app-main">
+        <?!= HtmlService
+          .createTemplateFromFile("05_Sidebar")
+          .evaluate()
+          .getContent(); ?>
 
-
-      <div id="page-container">
-
-
-        <!--=================================================
-          LOGIN VIEW
-        ==================================================-->
-
-        <section
-          id="login-view-container"
-          class="app-page">
-
-          <?!= HtmlService
-            .createTemplateFromFile("10_Login")
-            .evaluate()
-            .getContent(); ?>
-
-        </section>
+      </aside>
 
 
+      <main id="app-main">
 
-        <!--=================================================
-          DASHBOARD VIEW
-        ==================================================-->
+        <div id="page-container">
 
-        <section
-          id="dashboard-view-container"
-          class="app-page"
-          style="display:none;">
+          <section
+            id="view-dashboard"
+            class="app-page"
+            style="display:none;">
 
-          <?!= HtmlService
-            .createTemplateFromFile("20_Dashboard")
-            .evaluate()
-            .getContent(); ?>
+            <?!= HtmlService
+              .createTemplateFromFile("20_Dashboard")
+              .evaluate()
+              .getContent(); ?>
 
-        </section>
+          </section>
+
+        </div>
+
+      </main>
+
+    </div>
 
 
-      </div>
+    <footer
+      id="app-footer"
+      style="display:block;">
 
+      <?!= HtmlService
+        .createTemplateFromFile("06_Footer")
+        .evaluate()
+        .getContent(); ?>
 
-    </main>
-
+    </footer>
 
   </div>
 
 
+  <!-- GLOBAL COMPONENTS -->
+  <?!= HtmlService
+    .createTemplateFromFile("07_Loader")
+    .evaluate()
+    .getContent(); ?>
 
-  <!--=======================================================
-    FOOTER
-    INITIAL STATE: HIDDEN
-  ========================================================-->
+  <?!= HtmlService
+    .createTemplateFromFile("08_Toast")
+    .evaluate()
+    .getContent(); ?>
 
-  <footer
-    id="app-footer"
-    style="display:none;">
-
-    <?!= HtmlService
-      .createTemplateFromFile("06_Footer")
-      .evaluate()
-      .getContent(); ?>
-
-  </footer>
-
+  <?!= HtmlService
+    .createTemplateFromFile("09_Modal")
+    .evaluate()
+    .getContent(); ?>
 
 </div>
-
-
-
-<!--=========================================================
- GLOBAL LOADER
-==========================================================-->
-
-<?!= HtmlService
-  .createTemplateFromFile("07_Loader")
-  .evaluate()
-  .getContent(); ?>
-
-
-
-<!--=========================================================
- GLOBAL TOAST
-==========================================================-->
-
-<?!= HtmlService
-  .createTemplateFromFile("08_Toast")
-  .evaluate()
-  .getContent(); ?>
-
-
-
-<!--=========================================================
- GLOBAL MODAL
-==========================================================-->
-
-<?!= HtmlService
-  .createTemplateFromFile("09_Modal")
-  .evaluate()
-  .getContent(); ?>
