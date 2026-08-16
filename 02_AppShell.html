@@ -6,75 +6,52 @@ Enterprise Edition v5.0
 
 <div id="rpn-app">
 
-  <!-- LOGIN VIEW -->
-  <section
-    id="login-container"
-    class="app-page">
-
+  <section id="login-container" class="app-page">
     <?!= login ?>
-
   </section>
 
+  <div id="application-container" style="display:none;">
 
-  <!-- APPLICATION SHELL -->
-  <div
-    id="application-container"
-    style="display:none;">
-
-    <header
-      id="app-header"
-      style="display:none;">
-
+    <header id="app-header" style="display:none;">
       <?!= header ?>
-
     </header>
-
 
     <div class="app-layout">
 
-      <aside
-        id="app-sidebar"
-        style="display:none;">
-
+      <aside id="app-sidebar" style="display:none;">
         <?!= sidebar ?>
-
       </aside>
 
-
       <main id="app-main">
-
         <div id="page-container">
 
-          <section
-            id="view-dashboard"
-            class="app-page"
-            style="display:none;">
-
+          <section id="view-dashboard" class="app-page" style="display:none;">
             <?!= dashboard ?>
-
           </section>
 
         </div>
-
       </main>
 
     </div>
 
-
-    <footer
-      id="app-footer"
-      style="display:none;">
-
+    <footer id="app-footer" style="display:none;">
       <?!= footer ?>
-
     </footer>
 
   </div>
 
-
-  <!-- GLOBAL COMPONENTS -->
   <?!= loader ?>
   <?!= toast ?>
   <?!= modal ?>
 
 </div>
+
+<!-- CLIENT CONTROLLERS: MUST LOAD AFTER DOM -->
+<?!= api ?>
+<?!= auth ?>
+<?!= dashboardJS ?>
+<?!= formJS ?>
+<?!= historyJS ?>
+<?!= profileJS ?>
+<?!= app ?>
+<?!= helper ?>
