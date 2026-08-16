@@ -1,29 +1,36 @@
 <!--=========================================================
 RPN MANAGEMENT SYSTEM
 10_Router.html
-Enterprise Edition v5.1
-DYNAMIC PAGE NAVIGATION FIX
+Enterprise Edition v5.2
+Persistent Dashboard Navigation
 ==========================================================-->
 <script>
 const Router=(()=>{
 "use strict";
 const pages={LOGIN:"03_Login",DASHBOARD:"13_Dashboard",MASTER:"14_Master",RENTAL:"15_Rental",WORKSHOP:"16_Workshop",INVENTORY:"17_Inventory",USED:"18_Used",EXPORT:"19_Export",REPORT:"20_Report",ADMIN:"21_Admin",PROFILE:"22_Profile",SETTING:"23_Setting"};
 let currentPage="";
-
+function container(){return document.getElementById("page-container")}
+function dashboardView(){return document.getElementById("view-dashboard")}
+function setActive(page){if(window.Sidebar&&typeof Sidebar.setActive==="function")Sidebar.setActive(page)}
+function showDashboard(){
+  const d=dashboardView(), c=container();
+  if(!d)return false;
+  if(c)c.innerHTML="";
+  d.style.display="block";
+  currentPage=pages.DASHBOARD;
+  setActive("dashboard");
+  try{if(window.Dashboard&&typeof Dashboard.loadDashboard==="function")Dashboard.loadDashboard()}catch(e){console.error("Dashboard navigation error",e)}
+  return true;
+}
 function load(page){
-  const container=document.getElementById("page-container");
-  if(!container){Toast.error("Page container tidak ditemukan.");return;}
+  const c=container();
+  if(!c){Toast.error("Page container tidak ditemukan.");return;}
+  const d=dashboardView();
+  if(d)d.style.display="none";
   Loader.show("Loading "+page);
   google.script.run.withSuccessHandler(function(html){
-    container.innerHTML=html;
+    c.innerHTML=html;
     currentPage=page;
-    if(page===pages.DASHBOARD){
-      const dash=document.getElementById("view-dashboard")||container.querySelector(".dashboard-page");
-      if(dash)dash.style.display="block";
-      if(window.Dashboard&&typeof window.Dashboard.load==="function"){
-        window.Dashboard.load().catch(function(err){Toast.error(err.message||String(err));});
-      }
-    }
     if(window.Sidebar&&typeof Sidebar.setActive==="function"){
       const active=page===pages.DASHBOARD?"dashboard":page.toLowerCase().replace(/^13_/i,"");
       Sidebar.setActive(active);
@@ -31,9 +38,8 @@ function load(page){
     Loader.hide();
   }).withFailureHandler(function(err){Loader.hide();Toast.error(err.message||String(err));}).renderPage(page);
 }
-
 function login(){load(pages.LOGIN)}
-function dashboard(){load(pages.DASHBOARD)}
+function dashboard(){if(!showDashboard())load(pages.DASHBOARD)}
 function master(){load(pages.MASTER)}
 function asset(){load(pages.MASTER)}
 function customer(){load(pages.MASTER)}
