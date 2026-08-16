@@ -1,0 +1,1501 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+41_Button.html
+Enterprise v1.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const Button = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    buttons:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    element
+
+){
+
+    state.buttons.set(
+
+        name,
+
+        element
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.buttons.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+ENABLE
+=========================================================*/
+
+function enable(name){
+
+    const button=get(name);
+
+    if(button){
+
+        button.disabled=false;
+
+    }
+
+}
+
+/*=========================================================
+DISABLE
+=========================================================*/
+
+function disable(name){
+
+    const button=get(name);
+
+    if(button){
+
+        button.disabled=true;
+
+    }
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.buttons.delete(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    enable,
+
+    disable,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+41_Button.html
+Enterprise v1.0
+Part 2 - Render Engine
+==========================================================-->
+
+<script>
+
+const ButtonRender = (()=>{
+
+"use strict";
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(config){
+
+    const button =
+
+        document.createElement(
+
+            "button"
+
+        );
+
+    button.type =
+
+        config.type ||
+
+        "button";
+
+    button.id =
+
+        config.id ||
+
+        config.name;
+
+    button.name =
+
+        config.name;
+
+    button.className =
+
+        config.className ||
+
+        "rpn-button";
+
+    button.innerHTML =
+
+        icon(config) +
+
+        text(config);
+
+    if(
+
+        config.disabled
+
+    ){
+
+        button.disabled = true;
+
+    }
+
+    if(
+
+        config.container
+
+    ){
+
+        document
+
+        .getElementById(
+
+            config.container
+
+        )
+
+        .appendChild(
+
+            button
+
+        );
+
+    }
+
+    Button.register(
+
+        config.name,
+
+        button
+
+    );
+
+    return button;
+
+}
+
+/*=========================================================
+ICON
+=========================================================*/
+
+function icon(config){
+
+    if(
+
+        !config.icon
+
+    ){
+
+        return "";
+
+    }
+
+    return `
+
+<i class="${config.icon}"></i>
+
+`;
+
+}
+
+/*=========================================================
+TEXT
+=========================================================*/
+
+function text(config){
+
+    return `
+
+<span>
+
+${config.text || ""}
+
+</span>
+
+`;
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    const button =
+
+        Button.get(name);
+
+    if(
+
+        button &&
+
+        button.parentNode
+
+    ){
+
+        button.parentNode.removeChild(
+
+            button
+
+        );
+
+    }
+
+    Button.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    render,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+41_Button.html
+Enterprise v1.0
+Part 3 - Action Engine
+==========================================================-->
+
+<script>
+
+const ButtonAction = (()=>{
+
+"use strict";
+
+/*=========================================================
+CLICK
+=========================================================*/
+
+function click(name){
+
+    const button =
+
+        Button.get(name);
+
+    if(
+
+        button &&
+
+        !button.disabled
+
+    ){
+
+        button.click();
+
+    }
+
+}
+
+/*=========================================================
+TEXT
+=========================================================*/
+
+function text(
+
+    name,
+
+    value
+
+){
+
+    const button =
+
+        Button.get(name);
+
+    if(
+
+        !button
+
+    ){
+
+        return;
+
+    }
+
+    const span =
+
+        button.querySelector(
+
+            "span"
+
+        );
+
+    if(
+
+        span
+
+    ){
+
+        span.textContent =
+
+            value;
+
+    }
+
+}
+
+/*=========================================================
+ICON
+=========================================================*/
+
+function icon(
+
+    name,
+
+    cssClass
+
+){
+
+    const button =
+
+        Button.get(name);
+
+    if(
+
+        !button
+
+    ){
+
+        return;
+
+    }
+
+    let icon =
+
+        button.querySelector(
+
+            "i"
+
+        );
+
+    if(
+
+        !icon
+
+    ){
+
+        icon =
+
+            document.createElement(
+
+                "i"
+
+            );
+
+        button.prepend(
+
+            icon
+
+        );
+
+    }
+
+    icon.className =
+
+        cssClass;
+
+}
+
+/*=========================================================
+SHOW
+=========================================================*/
+
+function show(name){
+
+    const button =
+
+        Button.get(name);
+
+    if(
+
+        button
+
+    ){
+
+        button.style.display="";
+
+    }
+
+}
+
+/*=========================================================
+HIDE
+=========================================================*/
+
+function hide(name){
+
+    const button =
+
+        Button.get(name);
+
+    if(
+
+        button
+
+    ){
+
+        button.style.display="none";
+
+    }
+
+}
+
+/*=========================================================
+TOGGLE
+=========================================================*/
+
+function toggle(name){
+
+    const button =
+
+        Button.get(name);
+
+    if(
+
+        !button
+
+    ){
+
+        return;
+
+    }
+
+    button.style.display =
+
+        button.style.display==="none"
+
+        ? ""
+
+        : "none";
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    click,
+
+    text,
+
+    icon,
+
+    show,
+
+    hide,
+
+    toggle
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+41_Button.html
+Enterprise v1.0
+Part 4 - Loading Engine
+==========================================================-->
+
+<script>
+
+const ButtonLoading = (()=>{
+
+"use strict";
+
+const cache = new Map();
+
+/*=========================================================
+SHOW
+=========================================================*/
+
+function show(name){
+
+    const button =
+
+        Button.get(name);
+
+    if(
+
+        !button
+
+    ){
+
+        return;
+
+    }
+
+    if(
+
+        !cache.has(name)
+
+    ){
+
+        cache.set(
+
+            name,
+
+            button.innerHTML
+
+        );
+
+    }
+
+    button.disabled = true;
+
+    button.classList.add(
+
+        "loading"
+
+    );
+
+    button.innerHTML = `
+
+<span class="spinner"></span>
+
+<span>
+
+Loading...
+
+</span>
+
+`;
+
+}
+
+/*=========================================================
+HIDE
+=========================================================*/
+
+function hide(name){
+
+    const button =
+
+        Button.get(name);
+
+    if(
+
+        !button
+
+    ){
+
+        return;
+
+    }
+
+    button.disabled = false;
+
+    button.classList.remove(
+
+        "loading"
+
+    );
+
+    if(
+
+        cache.has(name)
+
+    ){
+
+        button.innerHTML =
+
+            cache.get(name);
+
+    }
+
+}
+
+/*=========================================================
+IS LOADING
+=========================================================*/
+
+function isLoading(name){
+
+    const button =
+
+        Button.get(name);
+
+    if(
+
+        !button
+
+    ){
+
+        return false;
+
+    }
+
+    return button.classList.contains(
+
+        "loading"
+
+    );
+
+}
+
+/*=========================================================
+TOGGLE
+=========================================================*/
+
+function toggle(name){
+
+    if(
+
+        isLoading(name)
+
+    ){
+
+        hide(name);
+
+    }
+
+    else{
+
+        show(name);
+
+    }
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(){
+
+    cache.clear();
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    show,
+
+    hide,
+
+    isLoading,
+
+    toggle,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+41_Button.html
+Enterprise v1.0
+Part 5 - Event Engine
+==========================================================-->
+
+<script>
+
+const ButtonEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    name,
+
+    event,
+
+    callback
+
+){
+
+    const button =
+
+        Button.get(name);
+
+    if(
+
+        !button ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    button.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        name + ":" + event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    name,
+
+    event
+
+){
+
+    const button =
+
+        Button.get(name);
+
+    const key =
+
+        name + ":" + event;
+
+    const callback =
+
+        listeners.get(key);
+
+    if(
+
+        button &&
+
+        callback
+
+    ){
+
+        button.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    name,
+
+    event
+
+){
+
+    const button =
+
+        Button.get(name);
+
+    if(
+
+        button
+
+    ){
+
+        button.dispatchEvent(
+
+            new Event(
+
+                event
+
+            )
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                name + ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(":")[1];
+
+            off(
+
+                name,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+41_Button.html
+Enterprise v1.0
+Part 6 - Shortcut Engine
+==========================================================-->
+
+<script>
+
+const ButtonShortcut = (()=>{
+
+"use strict";
+
+const shortcuts = new Map();
+
+let initialized = false;
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    shortcut,
+
+    buttonName
+
+){
+
+    shortcuts.set(
+
+        shortcut.toUpperCase(),
+
+        buttonName
+
+    );
+
+}
+
+/*=========================================================
+UNREGISTER
+=========================================================*/
+
+function unregister(shortcut){
+
+    shortcuts.delete(
+
+        shortcut.toUpperCase()
+
+    );
+
+}
+
+/*=========================================================
+INIT
+=========================================================*/
+
+function init(){
+
+    if(initialized){
+
+        return;
+
+    }
+
+    initialized = true;
+
+    document.addEventListener(
+
+        "keydown",
+
+        handler
+
+    );
+
+}
+
+/*=========================================================
+HANDLER
+=========================================================*/
+
+function handler(event){
+
+    let key="";
+
+    if(event.ctrlKey){
+
+        key+="CTRL+";
+
+    }
+
+    if(event.shiftKey){
+
+        key+="SHIFT+";
+
+    }
+
+    if(event.altKey){
+
+        key+="ALT+";
+
+    }
+
+    key+=event.key
+
+        .toUpperCase();
+
+    const button=
+
+        shortcuts.get(key);
+
+    if(!button){
+
+        return;
+
+    }
+
+    event.preventDefault();
+
+    ButtonAction.click(
+
+        button
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(){
+
+    shortcuts.clear();
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    register,
+
+    unregister,
+
+    init,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+41_Button.html
+Enterprise v1.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const ButtonTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-btn-default",
+
+    primary   : "rpn-btn-primary",
+
+    secondary : "rpn-btn-secondary",
+
+    success   : "rpn-btn-success",
+
+    danger    : "rpn-btn-danger",
+
+    warning   : "rpn-btn-warning",
+
+    info       : "rpn-btn-info",
+
+    light      : "rpn-btn-light",
+
+    dark       : "rpn-btn-dark",
+
+    corporate  : "rpn-btn-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    name,
+
+    theme
+
+){
+
+    if(
+
+        !themes[theme]
+
+    ){
+
+        return;
+
+    }
+
+    const button =
+
+        Button.get(name);
+
+    if(
+
+        !button
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(themes)
+
+    .forEach(function(css){
+
+        button.classList.remove(css);
+
+    });
+
+    button.classList.add(
+
+        themes[theme]
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+SET DEFAULT
+=========================================================*/
+
+function setDefault(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current = theme;
+
+    }
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    Button.state.buttons
+
+    .forEach(function(
+
+        button,
+
+        name
+
+    ){
+
+        set(
+
+            name,
+
+            current
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] = css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    get,
+
+    setDefault,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+41_Button.html
+Enterprise v1.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const ButtonProduction = (()=>{
+
+"use strict";
+
+const VERSION = "1.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config){
+
+    const button =
+
+        ButtonRender.render(
+
+            config
+
+        );
+
+    ButtonTheme.set(
+
+        config.name,
+
+        config.theme ||
+
+        "default"
+
+    );
+
+    ButtonShortcut.init();
+
+    return button;
+
+}
+
+/*=========================================================
+CLICK
+=========================================================*/
+
+function click(name){
+
+    ButtonAction.click(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+LOADING
+=========================================================*/
+
+function loading(name){
+
+    ButtonLoading.show(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+READY
+=========================================================*/
+
+function ready(name){
+
+    ButtonLoading.hide(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+ENABLE
+=========================================================*/
+
+function enable(name){
+
+    Button.enable(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+DISABLE
+=========================================================*/
+
+function disable(name){
+
+    Button.disable(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    ButtonEvent.clear(
+
+        name
+
+    );
+
+    Button.remove(
+
+        name
+
+    );
+
+    ButtonRender.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "Button",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    click,
+
+    loading,
+
+    ready,
+
+    enable,
+
+    disable,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

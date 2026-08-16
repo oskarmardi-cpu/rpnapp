@@ -1,0 +1,1713 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+58_PrintEngine.html
+Enterprise v2.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const PrintEngine = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    printers:new Map(),
+
+    templates:new Map(),
+
+    options:new Map(),
+
+    jobs:new Map(),
+
+    history:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    printer
+
+){
+
+    state.printers.set(
+
+        name,
+
+        printer
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.printers.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+TEMPLATE
+=========================================================*/
+
+function template(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.templates.get(
+
+            name
+
+        ) || "";
+
+    }
+
+    state.templates.set(
+
+        name,
+
+        value || ""
+
+    );
+
+}
+
+/*=========================================================
+OPTIONS
+=========================================================*/
+
+function options(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.options.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.options.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+JOBS
+=========================================================*/
+
+function jobs(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.jobs.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.jobs.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+HISTORY
+=========================================================*/
+
+function history(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.history.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.history.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.printers.delete(name);
+
+    state.templates.delete(name);
+
+    state.options.delete(name);
+
+    state.jobs.delete(name);
+
+    state.history.delete(name);
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    template,
+
+    options,
+
+    jobs,
+
+    history,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+58_PrintEngine.html
+Enterprise v2.0
+Part 2 - Template Engine
+==========================================================-->
+
+<script>
+
+const PrintTemplate = (()=>{
+
+"use strict";
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    name,
+
+    html
+
+){
+
+    PrintEngine.template(
+
+        name,
+
+        html || ""
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return PrintEngine.template(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(
+
+    name,
+
+    data={}
+
+){
+
+    let html =
+
+        get(
+
+            name
+
+        );
+
+    Object.keys(
+
+        data
+
+    ).forEach(function(key){
+
+        const pattern =
+
+            new RegExp(
+
+                "{{\\s*" +
+
+                key +
+
+                "\\s*}}",
+
+                "g"
+
+            );
+
+        html =
+
+            html.replace(
+
+                pattern,
+
+                data[key]
+
+            );
+
+    });
+
+    return html;
+
+}
+
+/*=========================================================
+LOAD
+=========================================================*/
+
+async function load(
+
+    name,
+
+    endpoint
+
+){
+
+    const response =
+
+        await fetch(
+
+            endpoint
+
+        );
+
+    const html =
+
+        await response.text();
+
+    set(
+
+        name,
+
+        html
+
+    );
+
+    return html;
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    set(
+
+        name,
+
+        ""
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    get,
+
+    render,
+
+    load,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+58_PrintEngine.html
+Enterprise v2.0
+Part 3 - Preview Engine
+==========================================================-->
+
+<script>
+
+const PrintPreview = (()=>{
+
+"use strict";
+
+/*=========================================================
+OPEN
+=========================================================*/
+
+function open(
+
+    name,
+
+    data={}
+
+){
+
+    const html =
+
+        PrintTemplate.render(
+
+            name,
+
+            data
+
+        );
+
+    const preview =
+
+        window.open(
+
+            "",
+
+            "_blank"
+
+        );
+
+    preview.document.open();
+
+    preview.document.write(
+
+        html
+
+    );
+
+    preview.document.close();
+
+    return preview;
+
+}
+
+/*=========================================================
+EMBED
+=========================================================*/
+
+function embed(
+
+    container,
+
+    name,
+
+    data={}
+
+){
+
+    const element =
+
+        typeof container ===
+
+        "string"
+
+        ? document.getElementById(
+
+            container
+
+          )
+
+        : container;
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.innerHTML =
+
+        PrintTemplate.render(
+
+            name,
+
+            data
+
+        );
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(
+
+    preview,
+
+    name,
+
+    data={}
+
+){
+
+    if(
+
+        !preview ||
+
+        preview.closed
+
+    ){
+
+        return;
+
+    }
+
+    preview.document.open();
+
+    preview.document.write(
+
+        PrintTemplate.render(
+
+            name,
+
+            data
+
+        )
+
+    );
+
+    preview.document.close();
+
+}
+
+/*=========================================================
+CLOSE
+=========================================================*/
+
+function close(preview){
+
+    if(
+
+        preview &&
+
+        !preview.closed
+
+    ){
+
+        preview.close();
+
+    }
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    open,
+
+    embed,
+
+    refresh,
+
+    close
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+58_PrintEngine.html
+Enterprise v2.0
+Part 4 - Print Engine
+==========================================================-->
+
+<script>
+
+const PrintService = (()=>{
+
+"use strict";
+
+/*=========================================================
+PRINT
+=========================================================*/
+
+function print(
+
+    name,
+
+    data={}
+
+){
+
+    const preview =
+
+        PrintPreview.open(
+
+            name,
+
+            data
+
+        );
+
+    preview.onload =
+
+        function(){
+
+            preview.focus();
+
+            preview.print();
+
+        };
+
+    return preview;
+
+}
+
+/*=========================================================
+PRINT ELEMENT
+=========================================================*/
+
+function element(
+
+    selector
+
+){
+
+    const target =
+
+        typeof selector ===
+
+        "string"
+
+        ? document.querySelector(
+
+            selector
+
+          )
+
+        : selector;
+
+    if(
+
+        !target
+
+    ){
+
+        return;
+
+    }
+
+    const preview =
+
+        window.open(
+
+            "",
+
+            "_blank"
+
+        );
+
+    preview.document.open();
+
+    preview.document.write(
+
+        target.outerHTML
+
+    );
+
+    preview.document.close();
+
+    preview.onload =
+
+        function(){
+
+            preview.print();
+
+        };
+
+}
+
+/*=========================================================
+PRINT HTML
+=========================================================*/
+
+function html(content){
+
+    const preview =
+
+        window.open(
+
+            "",
+
+            "_blank"
+
+        );
+
+    preview.document.open();
+
+    preview.document.write(
+
+        content
+
+    );
+
+    preview.document.close();
+
+    preview.onload =
+
+        function(){
+
+            preview.print();
+
+        };
+
+}
+
+/*=========================================================
+QUEUE
+=========================================================*/
+
+function queue(
+
+    name,
+
+    data
+
+){
+
+    const jobs =
+
+        PrintEngine.jobs(
+
+            name
+
+        );
+
+    jobs.push({
+
+        id :
+
+        Date.now(),
+
+        data,
+
+        status :
+
+        "Pending",
+
+        created :
+
+        new Date()
+
+    });
+
+    PrintEngine.jobs(
+
+        name,
+
+        jobs
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    print,
+
+    element,
+
+    html,
+
+    queue
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+58_PrintEngine.html
+Enterprise v2.0
+Part 5 - PDF Engine
+==========================================================-->
+
+<script>
+
+const PrintPDF = (()=>{
+
+"use strict";
+
+/*=========================================================
+EXPORT
+=========================================================*/
+
+async function exportPDF(
+
+    name,
+
+    data={},
+
+    filename="document.pdf"
+
+){
+
+    const html =
+
+        PrintTemplate.render(
+
+            name,
+
+            data
+
+        );
+
+    return download(
+
+        html,
+
+        filename
+
+    );
+
+}
+
+/*=========================================================
+DOWNLOAD
+=========================================================*/
+
+function download(
+
+    html,
+
+    filename
+
+){
+
+    const blob =
+
+        new Blob(
+
+            [
+
+                html
+
+            ],
+
+            {
+
+                type :
+
+                "application/pdf"
+
+            }
+
+        );
+
+    const url =
+
+        URL.createObjectURL(
+
+            blob
+
+        );
+
+    const link =
+
+        document.createElement(
+
+            "a"
+
+        );
+
+    link.href =
+
+        url;
+
+    link.download =
+
+        filename;
+
+    document.body.appendChild(
+
+        link
+
+    );
+
+    link.click();
+
+    document.body.removeChild(
+
+        link
+
+    );
+
+    URL.revokeObjectURL(
+
+        url
+
+    );
+
+}
+
+/*=========================================================
+PREVIEW
+=========================================================*/
+
+function preview(
+
+    name,
+
+    data={}
+
+){
+
+    const html =
+
+        PrintTemplate.render(
+
+            name,
+
+            data
+
+        );
+
+    const blob =
+
+        new Blob(
+
+            [
+
+                html
+
+            ],
+
+            {
+
+                type :
+
+                "text/html"
+
+            }
+
+        );
+
+    const url =
+
+        URL.createObjectURL(
+
+            blob
+
+        );
+
+    window.open(
+
+        url,
+
+        "_blank"
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    exportPDF,
+
+    preview
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+58_PrintEngine.html
+Enterprise v2.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const PrintEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    printer,
+
+    event,
+
+    callback
+
+){
+
+    const element =
+
+        PrintEngine.get(
+
+            printer
+
+        );
+
+    if(
+
+        !element ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    element.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        printer +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    printer,
+
+    event
+
+){
+
+    const element =
+
+        PrintEngine.get(
+
+            printer
+
+        );
+
+    const key =
+
+        printer +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        element &&
+
+        callback
+
+    ){
+
+        element.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    printer,
+
+    event,
+
+    detail
+
+){
+
+    const element =
+
+        PrintEngine.get(
+
+            printer
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(
+
+    printer
+
+){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                printer +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                printer,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+58_PrintEngine.html
+Enterprise v2.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const PrintTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-print-default",
+
+    light     : "rpn-print-light",
+
+    dark      : "rpn-print-dark",
+
+    primary   : "rpn-print-primary",
+
+    success   : "rpn-print-success",
+
+    warning   : "rpn-print-warning",
+
+    danger    : "rpn-print-danger",
+
+    corporate : "rpn-print-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    printer,
+
+    theme
+
+){
+
+    if(
+
+        !themes[theme]
+
+    ){
+
+        return;
+
+    }
+
+    const element =
+
+        PrintEngine.get(
+
+            printer
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(
+
+        themes
+
+    )
+
+    .forEach(function(css){
+
+        element.classList.remove(
+
+            css
+
+        );
+
+    });
+
+    element.classList.add(
+
+        themes[theme]
+
+    );
+
+}
+
+/*=========================================================
+SET DEFAULT
+=========================================================*/
+
+function setDefault(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current =
+
+            theme;
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    PrintEngine.state.printers
+
+    .forEach(function(
+
+        element,
+
+        name
+
+    ){
+
+        set(
+
+            name,
+
+            current
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] =
+
+        css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    setDefault,
+
+    get,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+58_PrintEngine.html
+Enterprise v2.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const PrintProduction = (()=>{
+
+"use strict";
+
+const VERSION = "2.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config={}){
+
+    PrintEngine.register(
+
+        config.name,
+
+        document.body
+
+    );
+
+    PrintEngine.template(
+
+        config.name,
+
+        config.template || ""
+
+    );
+
+    PrintEngine.options(
+
+        config.name,
+
+        config.options || {}
+
+    );
+
+    PrintTheme.set(
+
+        config.name,
+
+        config.theme ||
+
+        "default"
+
+    );
+
+    PrintEvent.trigger(
+
+        config.name,
+
+        "ready",
+
+        {
+
+            template :
+
+            config.name
+
+        }
+
+    );
+
+    return info();
+
+}
+
+/*=========================================================
+PRINT
+=========================================================*/
+
+function print(
+
+    name,
+
+    data={}
+
+){
+
+    PrintEvent.trigger(
+
+        name,
+
+        "beforePrint",
+
+        data
+
+    );
+
+    const preview =
+
+        PrintService.print(
+
+            name,
+
+            data
+
+        );
+
+    PrintEvent.trigger(
+
+        name,
+
+        "afterPrint",
+
+        data
+
+    );
+
+    return preview;
+
+}
+
+/*=========================================================
+EXPORT PDF
+=========================================================*/
+
+function pdf(
+
+    name,
+
+    data={},
+
+    filename="document.pdf"
+
+){
+
+    return PrintPDF.exportPDF(
+
+        name,
+
+        data,
+
+        filename
+
+    );
+
+}
+
+/*=========================================================
+RESET
+=========================================================*/
+
+function reset(name){
+
+    PrintEngine.template(
+
+        name,
+
+        ""
+
+    );
+
+    PrintEngine.options(
+
+        name,
+
+        {}
+
+    );
+
+    PrintEngine.jobs(
+
+        name,
+
+        []
+
+    );
+
+    PrintEngine.history(
+
+        name,
+
+        []
+
+    );
+
+    PrintEvent.clear(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "PrintEngine",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    print,
+
+    pdf,
+
+    reset,
+
+    info
+
+};
+
+})();
+
+</script>

@@ -1,0 +1,364 @@
+<script>
+/* ==========================================================
+   RPN SYSTEM
+   FORM CONTROLLER
+========================================================== */
+
+const FormController = (() => {
+
+    "use strict";
+
+    let currentModule = "PERBAIKAN";
+
+    /**
+     * Initialize
+     */
+    function init() {
+
+        bindEvent();
+
+    }
+
+    /**
+     * Bind Event
+     */
+    function bindEvent() {
+
+        const tabs = {
+
+            PERBAIKAN: document.getElementById("tabPerbaikan"),
+
+            PENARIKAN: document.getElementById("tabPenarikan"),
+
+            PENGIRIMAN: document.getElementById("tabPengiriman"),
+
+            LOAN: document.getElementById("tabLoanPart")
+
+        };
+
+        Object.keys(tabs).forEach(function(key){
+
+            const button = tabs[key];
+
+            if (!button) return;
+
+            button.addEventListener("click", function(){
+
+                switchModule(key);
+
+            });
+
+        });
+
+        const saveButton = document.getElementById("btnSaveTransaction");
+
+        if (saveButton) {
+
+            saveButton.addEventListener("click", save);
+
+        }
+
+        const resetButton = document.getElementById("btnResetTransaction");
+
+        if (resetButton) {
+
+            resetButton.addEventListener("click", reset);
+
+        }
+
+    }
+
+    /**
+     * Switch Module
+     */
+    function switchModule(moduleName){
+
+        currentModule = moduleName;
+
+        document
+            .querySelectorAll(".tab-button")
+            .forEach(function(item){
+
+                item.classList.remove("active");
+
+            });
+
+        switch(moduleName){
+
+            case "PERBAIKAN":
+
+                document.getElementById("tabPerbaikan").classList.add("active");
+
+                break;
+
+            case "PENARIKAN":
+
+                document.getElementById("tabPenarikan").classList.add("active");
+
+                break;
+
+            case "PENGIRIMAN":
+
+                document.getElementById("tabPengiriman").classList.add("active");
+
+                break;
+
+            case "LOAN":
+
+                document.getElementById("tabLoanPart").classList.add("active");
+
+                break;
+
+        }
+
+        loadForm(moduleName);
+
+    }
+
+    /**
+     * Load Form
+     */
+    function loadForm(moduleName){
+
+        const container = document.getElementById("transactionFormContainer");
+
+        if (!container) return;
+
+        container.innerHTML = "";
+
+        /*
+            Form detail akan dirender
+            sesuai module.
+        */
+
+    }
+
+    /**
+     * Collect Data
+     */
+    function collectData(){
+
+        return {
+
+            module: currentModule
+
+        };
+
+    }
+
+    /**
+     * Save
+     */
+    function save(){
+
+        const payload = collectData();
+
+        showLoader(
+
+            "Simpan",
+
+            "Menyimpan transaksi..."
+
+        );
+
+        API.saveTransaction(
+
+            payload,
+
+            onSaveSuccess,
+
+            onRequestError
+
+        );
+
+    }
+
+    /**
+     * Save Success
+     */
+    function onSaveSuccess(response){
+
+        hideLoader();
+
+        if(!response.success){
+
+            showModal(
+
+                "Gagal",
+
+                response.message
+
+            );
+
+            return;
+
+        }
+
+        showToast(
+
+            "Data berhasil disimpan."
+
+        );
+
+        reset();
+
+    }
+
+    /**
+     * Update
+     */
+    function update(payload){
+
+        showLoader(
+
+            "Update",
+
+            "Memperbarui data..."
+
+        );
+
+        API.updateTransaction(
+
+            payload,
+
+            function(response){
+
+                hideLoader();
+
+                if(!response.success){
+
+                    showModal(
+
+                        "Update Gagal",
+
+                        response.message
+
+                    );
+
+                    return;
+
+                }
+
+                showToast(
+
+                    "Data berhasil diperbarui."
+
+                );
+
+            },
+
+            onRequestError
+
+        );
+
+    }
+
+    /**
+     * Delete
+     */
+    function remove(payload){
+
+        showLoader(
+
+            "Delete",
+
+            "Menghapus data..."
+
+        );
+
+        API.deleteTransaction(
+
+            payload,
+
+            function(response){
+
+                hideLoader();
+
+                if(!response.success){
+
+                    showModal(
+
+                        "Delete Gagal",
+
+                        response.message
+
+                    );
+
+                    return;
+
+                }
+
+                showToast(
+
+                    "Data berhasil dihapus."
+
+                );
+
+            },
+
+            onRequestError
+
+        );
+
+    }
+
+    /**
+     * Reset
+     */
+    function reset(){
+
+        const form = document.querySelector("#transactionFormContainer form");
+
+        if(form){
+
+            form.reset();
+
+        }
+
+    }
+
+    /**
+     * Error
+     */
+    function onRequestError(error){
+
+        hideLoader();
+
+        showModal(
+
+            "System Error",
+
+            error.message || String(error)
+
+        );
+
+    }
+
+    return{
+
+        init,
+
+        save,
+
+        update,
+
+        remove,
+
+        reset,
+
+        switchModule
+
+    };
+
+})();
+
+/* ==========================================================
+   INITIALIZE
+========================================================== */
+
+document.addEventListener("DOMContentLoaded",function(){
+
+    FormController.init();
+
+});
+</script>

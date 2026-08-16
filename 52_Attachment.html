@@ -1,0 +1,1888 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+52_Attachment.html
+Enterprise v1.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const Attachment = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    attachments:new Map(),
+
+    files:new Map(),
+
+    datasource:new Map(),
+
+    permissions:new Map(),
+
+    metadata:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    element
+
+){
+
+    state.attachments.set(
+
+        name,
+
+        element
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.attachments.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+FILES
+=========================================================*/
+
+function files(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.files.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.files.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+DATASOURCE
+=========================================================*/
+
+function datasource(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.datasource.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.datasource.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+PERMISSION
+=========================================================*/
+
+function permission(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.permissions.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.permissions.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+METADATA
+=========================================================*/
+
+function metadata(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.metadata.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.metadata.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.attachments.delete(
+
+        name
+
+    );
+
+    state.files.delete(
+
+        name
+
+    );
+
+    state.datasource.delete(
+
+        name
+
+    );
+
+    state.permissions.delete(
+
+        name
+
+    );
+
+    state.metadata.delete(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    files,
+
+    datasource,
+
+    permission,
+
+    metadata,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+52_Attachment.html
+Enterprise v1.0
+Part 2 - Render Engine
+==========================================================-->
+
+<script>
+
+const AttachmentRender = (()=>{
+
+"use strict";
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(config){
+
+    const attachment =
+
+        document.createElement(
+
+            "div"
+
+        );
+
+    attachment.id =
+
+        config.id ||
+
+        config.name;
+
+    attachment.className =
+
+        config.className ||
+
+        "rpn-attachment";
+
+    attachment.innerHTML = `
+
+<div class="attachment-header"></div>
+
+<div class="attachment-toolbar"></div>
+
+<div class="attachment-dropzone"></div>
+
+<div class="attachment-list"></div>
+
+<div class="attachment-footer"></div>
+
+`;
+
+    if(
+
+        config.container
+
+    ){
+
+        document
+
+        .getElementById(
+
+            config.container
+
+        )
+
+        .appendChild(
+
+            attachment
+
+        );
+
+    }
+
+    Attachment.register(
+
+        config.name,
+
+        attachment
+
+    );
+
+    return attachment;
+
+}
+
+/*=========================================================
+HEADER
+=========================================================*/
+
+function header(name){
+
+    const attachment =
+
+        Attachment.get(name);
+
+    return attachment
+
+        ? attachment.querySelector(
+
+            ".attachment-header"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+TOOLBAR
+=========================================================*/
+
+function toolbar(name){
+
+    const attachment =
+
+        Attachment.get(name);
+
+    return attachment
+
+        ? attachment.querySelector(
+
+            ".attachment-toolbar"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+DROPZONE
+=========================================================*/
+
+function dropzone(name){
+
+    const attachment =
+
+        Attachment.get(name);
+
+    return attachment
+
+        ? attachment.querySelector(
+
+            ".attachment-dropzone"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+LIST
+=========================================================*/
+
+function list(name){
+
+    const attachment =
+
+        Attachment.get(name);
+
+    return attachment
+
+        ? attachment.querySelector(
+
+            ".attachment-list"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+FOOTER
+=========================================================*/
+
+function footer(name){
+
+    const attachment =
+
+        Attachment.get(name);
+
+    return attachment
+
+        ? attachment.querySelector(
+
+            ".attachment-footer"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    const attachment =
+
+        Attachment.get(name);
+
+    if(
+
+        attachment &&
+
+        attachment.parentNode
+
+    ){
+
+        attachment.parentNode.removeChild(
+
+            attachment
+
+        );
+
+    }
+
+    Attachment.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    render,
+
+    header,
+
+    toolbar,
+
+    dropzone,
+
+    list,
+
+    footer,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+52_Attachment.html
+Enterprise v1.0
+Part 3 - Upload Engine
+==========================================================-->
+
+<script>
+
+const AttachmentUpload = (()=>{
+
+"use strict";
+
+/*=========================================================
+UPLOAD
+=========================================================*/
+
+async function upload(
+
+    name,
+
+    file
+
+){
+
+    const source =
+
+        Attachment.datasource(
+
+            name
+
+        );
+
+    if(
+
+        !source.endpoint
+
+    ){
+
+        throw new Error(
+
+            "Upload endpoint not configured."
+
+        );
+
+    }
+
+    const formData =
+
+        new FormData();
+
+    formData.append(
+
+        "file",
+
+        file
+
+    );
+
+    const result =
+
+        await API.upload(
+
+            source.endpoint,
+
+            formData
+
+        );
+
+    add(
+
+        name,
+
+        result.data
+
+    );
+
+    return result;
+
+}
+
+/*=========================================================
+ADD
+=========================================================*/
+
+function add(
+
+    name,
+
+    file
+
+){
+
+    const files =
+
+        Attachment.files(
+
+            name
+
+        );
+
+    files.push(
+
+        file
+
+    );
+
+    Attachment.files(
+
+        name,
+
+        files
+
+    );
+
+    render(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+MULTI UPLOAD
+=========================================================*/
+
+async function multiple(
+
+    name,
+
+    list
+
+){
+
+    for(
+
+        const file of list
+
+    ){
+
+        await upload(
+
+            name,
+
+            file
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(name){
+
+    const container =
+
+        AttachmentRender.list(
+
+            name
+
+        );
+
+    if(
+
+        !container
+
+    ){
+
+        return;
+
+    }
+
+    container.innerHTML =
+
+        "";
+
+    Attachment.files(
+
+        name
+
+    ).forEach(function(file){
+
+        container.insertAdjacentHTML(
+
+            "beforeend",
+
+            `
+
+<div class="attachment-item">
+
+<i class="fa fa-file"></i>
+
+<span>${file.name}</span>
+
+</div>
+
+`
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    Attachment.files(
+
+        name,
+
+        []
+
+    );
+
+    render(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    upload,
+
+    add,
+
+    multiple,
+
+    render,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+52_Attachment.html
+Enterprise v1.0
+Part 4 - Download Engine
+==========================================================-->
+
+<script>
+
+const AttachmentDownload = (()=>{
+
+"use strict";
+
+/*=========================================================
+DOWNLOAD
+=========================================================*/
+
+async function download(
+
+    name,
+
+    id
+
+){
+
+    const file =
+
+        get(
+
+            name,
+
+            id
+
+        );
+
+    if(
+
+        !file ||
+
+        !file.url
+
+    ){
+
+        return;
+
+    }
+
+    const link =
+
+        document.createElement(
+
+            "a"
+
+        );
+
+    link.href =
+
+        file.url;
+
+    link.download =
+
+        file.name ||
+
+        "";
+
+    document.body.appendChild(
+
+        link
+
+    );
+
+    link.click();
+
+    document.body.removeChild(
+
+        link
+
+    );
+
+}
+
+/*=========================================================
+OPEN
+=========================================================*/
+
+function open(
+
+    name,
+
+    id
+
+){
+
+    const file =
+
+        get(
+
+            name,
+
+            id
+
+        );
+
+    if(
+
+        file &&
+
+        file.url
+
+    ){
+
+        window.open(
+
+            file.url,
+
+            "_blank"
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(
+
+    name,
+
+    id
+
+){
+
+    return Attachment.files(
+
+        name
+
+    ).find(function(file){
+
+        return file.id === id;
+
+    });
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(
+
+    name,
+
+    id
+
+){
+
+    const files =
+
+        Attachment.files(
+
+            name
+
+        ).filter(function(file){
+
+            return file.id !== id;
+
+        });
+
+    Attachment.files(
+
+        name,
+
+        files
+
+    );
+
+    AttachmentUpload.render(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+DOWNLOAD ALL
+=========================================================*/
+
+async function downloadAll(name){
+
+    const files =
+
+        Attachment.files(
+
+            name
+
+        );
+
+    for(
+
+        const file of files
+
+    ){
+
+        await download(
+
+            name,
+
+            file.id
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    download,
+
+    open,
+
+    get,
+
+    remove,
+
+    downloadAll
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+52_Attachment.html
+Enterprise v1.0
+Part 5 - Preview Engine
+==========================================================-->
+
+<script>
+
+const AttachmentPreview = (()=>{
+
+"use strict";
+
+/*=========================================================
+PREVIEW
+=========================================================*/
+
+function preview(
+
+    name,
+
+    id
+
+){
+
+    const file =
+
+        AttachmentDownload.get(
+
+            name,
+
+            id
+
+        );
+
+    if(
+
+        !file
+
+    ){
+
+        return;
+
+    }
+
+    const container =
+
+        AttachmentRender.list(
+
+            name
+
+        );
+
+    if(
+
+        !container
+
+    ){
+
+        return;
+
+    }
+
+    container.innerHTML =
+
+        render(file);
+
+}
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(file){
+
+    if(
+
+        isImage(file)
+
+    ){
+
+        return `
+
+<div class="attachment-preview">
+
+<img
+src="${file.url}"
+alt="${file.name}"
+class="attachment-preview-image">
+
+</div>
+
+`;
+
+    }
+
+    if(
+
+        isPdf(file)
+
+    ){
+
+        return `
+
+<div class="attachment-preview">
+
+<iframe
+src="${file.url}"
+class="attachment-preview-pdf">
+
+</iframe>
+
+</div>
+
+`;
+
+    }
+
+    return `
+
+<div class="attachment-preview">
+
+<i class="fa fa-file fa-4x"></i>
+
+<div class="attachment-preview-name">
+
+${file.name}
+
+</div>
+
+</div>
+
+`;
+
+}
+
+/*=========================================================
+TYPE
+=========================================================*/
+
+function isImage(file){
+
+    return /^image\//
+
+        .test(
+
+            file.type || ""
+
+        );
+
+}
+
+function isPdf(file){
+
+    return (
+
+        file.type ===
+
+        "application/pdf"
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    AttachmentUpload.render(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    preview,
+
+    clear,
+
+    isImage,
+
+    isPdf
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+52_Attachment.html
+Enterprise v1.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const AttachmentEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    attachment,
+
+    event,
+
+    callback
+
+){
+
+    const element =
+
+        Attachment.get(
+
+            attachment
+
+        );
+
+    if(
+
+        !element ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    element.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        attachment +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    attachment,
+
+    event
+
+){
+
+    const element =
+
+        Attachment.get(
+
+            attachment
+
+        );
+
+    const key =
+
+        attachment +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        element &&
+
+        callback
+
+    ){
+
+        element.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    attachment,
+
+    event,
+
+    detail
+
+){
+
+    const element =
+
+        Attachment.get(
+
+            attachment
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(
+
+    attachment
+
+){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                attachment +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                attachment,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+52_Attachment.html
+Enterprise v1.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const AttachmentTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-attachment-default",
+
+    light     : "rpn-attachment-light",
+
+    dark      : "rpn-attachment-dark",
+
+    primary   : "rpn-attachment-primary",
+
+    success   : "rpn-attachment-success",
+
+    warning   : "rpn-attachment-warning",
+
+    danger    : "rpn-attachment-danger",
+
+    corporate : "rpn-attachment-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    attachment,
+
+    theme
+
+){
+
+    if(
+
+        !themes[theme]
+
+    ){
+
+        return;
+
+    }
+
+    const element =
+
+        Attachment.get(
+
+            attachment
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(
+
+        themes
+
+    )
+
+    .forEach(function(css){
+
+        element.classList.remove(
+
+            css
+
+        );
+
+    });
+
+    element.classList.add(
+
+        themes[theme]
+
+    );
+
+}
+
+/*=========================================================
+SET DEFAULT
+=========================================================*/
+
+function setDefault(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current = theme;
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    Attachment.state.attachments
+
+    .forEach(function(
+
+        attachment,
+
+        name
+
+    ){
+
+        set(
+
+            name,
+
+            current
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] = css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    setDefault,
+
+    get,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+52_Attachment.html
+Enterprise v1.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const AttachmentProduction = (()=>{
+
+"use strict";
+
+const VERSION = "1.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+async function boot(config){
+
+    const attachment =
+
+        AttachmentRender.render(
+
+            config
+
+        );
+
+    AttachmentTheme.set(
+
+        config.name,
+
+        config.theme ||
+
+        "default"
+
+    );
+
+    Attachment.datasource(
+
+        config.name,
+
+        config.datasource ||
+
+        {}
+
+    );
+
+    Attachment.permission(
+
+        config.name,
+
+        config.permission ||
+
+        {}
+
+    );
+
+    Attachment.metadata(
+
+        config.name,
+
+        config.metadata ||
+
+        {}
+
+    );
+
+    Attachment.files(
+
+        config.name,
+
+        config.files ||
+
+        []
+
+    );
+
+    AttachmentUpload.render(
+
+        config.name
+
+    );
+
+    AttachmentEvent.trigger(
+
+        config.name,
+
+        "ready",
+
+        {
+
+            total :
+
+            Attachment.files(
+
+                config.name
+
+            ).length
+
+        }
+
+    );
+
+    return attachment;
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(name){
+
+    AttachmentUpload.render(
+
+        name
+
+    );
+
+    AttachmentEvent.trigger(
+
+        name,
+
+        "refresh",
+
+        {
+
+            total :
+
+            Attachment.files(
+
+                name
+
+            ).length
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    AttachmentUpload.clear(
+
+        name
+
+    );
+
+    AttachmentEvent.trigger(
+
+        name,
+
+        "clear",
+
+        {}
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    AttachmentEvent.clear(
+
+        name
+
+    );
+
+    AttachmentUpload.clear(
+
+        name
+
+    );
+
+    AttachmentRender.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "Attachment",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    refresh,
+
+    clear,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

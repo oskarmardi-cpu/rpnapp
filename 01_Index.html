@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <base target="_top">
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0">
+
+  <title>RPN Management System</title>
+
+
+  <?!= include("80_Style"); ?>
+
+  <?!= include("81_Responsive"); ?>
+
+
+  <?
+
+    /*
+     * =====================================================
+     * RPN SERVER-SIDE VIEW RENDERER
+     *
+     * Setiap component dievaluasi sendiri terlebih dahulu.
+     * Ini penting agar CONFIG.* / server scriptlet di dalam
+     * component tidak tampil sebagai teks mentah di browser.
+     * =====================================================
+     */
+
+    function renderView(fileName){
+
+      return HtmlService
+        .createTemplateFromFile(fileName)
+        .evaluate()
+        .getContent();
+
+    }
+
+
+    /*
+     * =====================================================
+     * ROOT SHELL
+     * =====================================================
+     */
+
+    var shell =
+      HtmlService
+        .createTemplateFromFile(
+          "02_AppShell"
+        );
+
+
+    /*
+     * =====================================================
+     * STRUCTURE COMPONENTS
+     * =====================================================
+     */
+
+    shell.header =
+      renderView("04_Header");
+
+    shell.sidebar =
+      renderView("05_Sidebar");
+
+    shell.footer =
+      renderView("06_Footer");
+
+
+    /*
+     * =====================================================
+     * PAGE VIEWS
+     * =====================================================
+     */
+
+    shell.login =
+      renderView("10_Login");
+
+    shell.dashboard =
+      renderView("20_Dashboard");
+
+    shell.product =
+      renderView("21_Product");
+
+    shell.form =
+      renderView("22_Form");
+
+    shell.history =
+      renderView("23_History");
+
+    shell.profile =
+      renderView("24_Profile");
+
+
+    /*
+     * =====================================================
+     * GLOBAL COMPONENTS
+     * =====================================================
+     */
+
+    shell.loader =
+      renderView("07_Loader");
+
+    shell.toast =
+      renderView("08_Toast");
+
+    shell.modal =
+      renderView("09_Modal");
+
+
+    /*
+     * =====================================================
+     * CLIENT JAVASCRIPT
+     *
+     * ORDER:
+     * API
+     * AUTH
+     * MODULE JS
+     * APP CONTROLLER
+     * HELPER
+     * =====================================================
+     */
+
+    shell.api =
+      renderView("40_API");
+
+    shell.auth =
+      renderView("41_Auth");
+
+    shell.dashboardJS =
+      renderView("42_DashboardJS");
+
+    shell.formJS =
+      renderView("43_FormJS");
+
+    shell.historyJS =
+      renderView("44_HistoryJS");
+
+    shell.profileJS =
+      renderView("45_ProfileJS");
+
+    shell.app =
+      renderView("46_App");
+
+    shell.helper =
+      renderView("47_Helper");
+
+  ?>
+
+</head>
+
+
+<body>
+
+  <?!= shell.evaluate().getContent(); ?>
+
+</body>
+
+</html>

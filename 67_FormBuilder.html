@@ -1,0 +1,1801 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+67_FormBuilder.html
+Enterprise v3.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const FormBuilder = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    builders:new Map(),
+
+    forms:new Map(),
+
+    fields:new Map(),
+
+    layouts:new Map(),
+
+    settings:new Map(),
+
+    history:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    builder
+
+){
+
+    state.builders.set(
+
+        name,
+
+        builder
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.builders.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+FORM
+=========================================================*/
+
+function form(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.forms.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.forms.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+FIELDS
+=========================================================*/
+
+function fields(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.fields.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.fields.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+LAYOUT
+=========================================================*/
+
+function layout(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.layouts.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.layouts.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+SETTINGS
+=========================================================*/
+
+function settings(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.settings.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.settings.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.builders.delete(name);
+
+    state.forms.delete(name);
+
+    state.fields.delete(name);
+
+    state.layouts.delete(name);
+
+    state.settings.delete(name);
+
+    state.history.delete(name);
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    form,
+
+    fields,
+
+    layout,
+
+    settings,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+67_FormBuilder.html
+Enterprise v3.0
+Part 2 - Field Engine
+==========================================================-->
+
+<script>
+
+const FormField = (()=>{
+
+"use strict";
+
+/*=========================================================
+ADD FIELD
+=========================================================*/
+
+function add(
+
+    builder,
+
+    field
+
+){
+
+    const fields =
+
+        FormBuilder.fields(
+
+            builder
+
+        );
+
+    fields.push({
+
+        id :
+
+        field.id ||
+
+        crypto.randomUUID(),
+
+        name :
+
+        field.name ||
+
+        "",
+
+        label :
+
+        field.label ||
+
+        "New Field",
+
+        type :
+
+        field.type ||
+
+        "text",
+
+        value :
+
+        field.value ??
+
+        "",
+
+        placeholder :
+
+        field.placeholder ||
+
+        "",
+
+        required :
+
+        field.required ||
+
+        false,
+
+        readonly :
+
+        field.readonly ||
+
+        false,
+
+        disabled :
+
+        field.disabled ||
+
+        false,
+
+        options :
+
+        field.options ||
+
+        []
+
+    });
+
+    FormBuilder.fields(
+
+        builder,
+
+        fields
+
+    );
+
+}
+
+/*=========================================================
+UPDATE FIELD
+=========================================================*/
+
+function update(
+
+    builder,
+
+    id,
+
+    data
+
+){
+
+    const field =
+
+        get(
+
+            builder,
+
+            id
+
+        );
+
+    if(
+
+        field
+
+    ){
+
+        Object.assign(
+
+            field,
+
+            data
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+GET FIELD
+=========================================================*/
+
+function get(
+
+    builder,
+
+    id
+
+){
+
+    return FormBuilder
+
+        .fields(builder)
+
+        .find(function(field){
+
+            return field.id===id;
+
+        });
+
+}
+
+/*=========================================================
+REMOVE FIELD
+=========================================================*/
+
+function remove(
+
+    builder,
+
+    id
+
+){
+
+    FormBuilder.fields(
+
+        builder,
+
+        FormBuilder
+
+        .fields(builder)
+
+        .filter(function(field){
+
+            return field.id!==id;
+
+        })
+
+    );
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(
+
+    builder
+
+){
+
+    return FormBuilder
+
+        .fields(builder)
+
+        .length;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    add,
+
+    update,
+
+    get,
+
+    remove,
+
+    count
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+67_FormBuilder.html
+Enterprise v3.0
+Part 3 - Layout Engine
+==========================================================-->
+
+<script>
+
+const FormLayout = (()=>{
+
+"use strict";
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    builder,
+
+    layout
+
+){
+
+    FormBuilder.layout(
+
+        builder,
+
+        {
+
+            columns :
+
+            layout.columns ||
+
+            1,
+
+            gap :
+
+            layout.gap ||
+
+            16,
+
+            width :
+
+            layout.width ||
+
+            "100%",
+
+            responsive :
+
+            layout.responsive ??
+
+            true,
+
+            rows :
+
+            layout.rows ||
+
+            []
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(
+
+    builder
+
+){
+
+    return FormBuilder.layout(
+
+        builder
+
+    );
+
+}
+
+/*=========================================================
+ADD ROW
+=========================================================*/
+
+function addRow(
+
+    builder,
+
+    row
+
+){
+
+    const layout =
+
+        get(
+
+            builder
+
+        );
+
+    layout.rows =
+
+        layout.rows ||
+
+        [];
+
+    layout.rows.push(
+
+        row
+
+    );
+
+    FormBuilder.layout(
+
+        builder,
+
+        layout
+
+    );
+
+}
+
+/*=========================================================
+REMOVE ROW
+=========================================================*/
+
+function removeRow(
+
+    builder,
+
+    index
+
+){
+
+    const layout =
+
+        get(
+
+            builder
+
+        );
+
+    if(
+
+        !layout.rows
+
+    ){
+
+        return;
+
+    }
+
+    layout.rows.splice(
+
+        index,
+
+        1
+
+    );
+
+}
+
+/*=========================================================
+RESET
+=========================================================*/
+
+function reset(
+
+    builder
+
+){
+
+    FormBuilder.layout(
+
+        builder,
+
+        {}
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    get,
+
+    addRow,
+
+    removeRow,
+
+    reset
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+67_FormBuilder.html
+Enterprise v3.0
+Part 4 - Validation Engine
+==========================================================-->
+
+<script>
+
+const FormValidation = (()=>{
+
+"use strict";
+
+/*=========================================================
+VALIDATE
+=========================================================*/
+
+function validate(
+
+    builder
+
+){
+
+    const fields =
+
+        FormBuilder.fields(
+
+            builder
+
+        );
+
+    const errors = [];
+
+    fields.forEach(function(field){
+
+        if(
+
+            field.required &&
+
+            !valid(field)
+
+        ){
+
+            errors.push({
+
+                id :
+
+                field.id,
+
+                name :
+
+                field.name,
+
+                message :
+
+                field.label +
+
+                " is required."
+
+            });
+
+        }
+
+    });
+
+    return{
+
+        valid :
+
+        errors.length===0,
+
+        errors
+
+    };
+
+}
+
+/*=========================================================
+FIELD
+=========================================================*/
+
+function valid(field){
+
+    return field.value !==
+
+        null &&
+
+        field.value !==
+
+        undefined &&
+
+        String(
+
+            field.value
+
+        ).trim() !== "";
+
+}
+
+/*=========================================================
+EMAIL
+=========================================================*/
+
+function email(value){
+
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+        .test(
+
+            value || ""
+
+        );
+
+}
+
+/*=========================================================
+NUMBER
+=========================================================*/
+
+function number(value){
+
+    return !isNaN(
+
+        Number(
+
+            value
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+RESET
+=========================================================*/
+
+function reset(
+
+    builder
+
+){
+
+    FormBuilder.fields(
+
+        builder
+
+    ).forEach(function(field){
+
+        field.error =
+
+        null;
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    validate,
+
+    valid,
+
+    email,
+
+    number,
+
+    reset
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+67_FormBuilder.html
+Enterprise v3.0
+Part 5 - Render Engine
+==========================================================-->
+
+<script>
+
+const FormRender = (()=>{
+
+"use strict";
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(
+
+    builder,
+
+    container
+
+){
+
+    const fields =
+
+        FormBuilder.fields(
+
+            builder
+
+        );
+
+    container.innerHTML =
+
+        fields.map(renderField)
+
+        .join("");
+
+}
+
+/*=========================================================
+FIELD
+=========================================================*/
+
+function renderField(
+
+    field
+
+){
+
+    switch(
+
+        field.type
+
+    ){
+
+        case "textarea":
+
+            return textarea(
+
+                field
+
+            );
+
+        case "select":
+
+            return select(
+
+                field
+
+            );
+
+        case "checkbox":
+
+            return checkbox(
+
+                field
+
+            );
+
+        default:
+
+            return input(
+
+                field
+
+            );
+
+    }
+
+}
+
+/*=========================================================
+INPUT
+=========================================================*/
+
+function input(
+
+    field
+
+){
+
+    return `
+
+<div class="rpn-field">
+
+<label>${field.label}</label>
+
+<input
+
+type="${field.type}"
+
+id="${field.id}"
+
+name="${field.name}"
+
+value="${field.value}"
+
+placeholder="${field.placeholder}"
+
+${field.required?"required":""}
+
+${field.readonly?"readonly":""}
+
+${field.disabled?"disabled":""}
+
+/>
+
+</div>
+
+`;
+
+}
+
+/*=========================================================
+TEXTAREA
+=========================================================*/
+
+function textarea(
+
+    field
+
+){
+
+    return `
+
+<div class="rpn-field">
+
+<label>${field.label}</label>
+
+<textarea
+
+id="${field.id}"
+
+name="${field.name}"
+
+placeholder="${field.placeholder}"
+
+${field.required?"required":""}
+
+>${field.value}</textarea>
+
+</div>
+
+`;
+
+}
+
+/*=========================================================
+SELECT
+=========================================================*/
+
+function select(
+
+    field
+
+){
+
+    return `
+
+<div class="rpn-field">
+
+<label>${field.label}</label>
+
+<select
+
+id="${field.id}"
+
+name="${field.name}"
+
+>
+
+${field.options.map(function(option){
+
+return `<option value="${option.value}">${option.label}</option>`;
+
+}).join("")}
+
+</select>
+
+</div>
+
+`;
+
+}
+
+/*=========================================================
+CHECKBOX
+=========================================================*/
+
+function checkbox(
+
+    field
+
+){
+
+    return `
+
+<div class="rpn-field">
+
+<label>
+
+<input
+
+type="checkbox"
+
+id="${field.id}"
+
+name="${field.name}"
+
+${field.value?"checked":""}
+
+/>
+
+${field.label}
+
+</label>
+
+</div>
+
+`;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    render,
+
+    renderField,
+
+    input,
+
+    textarea,
+
+    select,
+
+    checkbox
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+67_FormBuilder.html
+Enterprise v3.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const FormEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    builder,
+
+    event,
+
+    callback
+
+){
+
+    const element =
+
+        FormBuilder.get(
+
+            builder
+
+        );
+
+    if(
+
+        !element ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    element.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        builder +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    builder,
+
+    event
+
+){
+
+    const element =
+
+        FormBuilder.get(
+
+            builder
+
+        );
+
+    const key =
+
+        builder +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        element &&
+
+        callback
+
+    ){
+
+        element.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    builder,
+
+    event,
+
+    detail
+
+){
+
+    const element =
+
+        FormBuilder.get(
+
+            builder
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(
+
+    builder
+
+){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                builder +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                builder,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+67_FormBuilder.html
+Enterprise v3.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const FormTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes={
+
+    default   :"rpn-form-default",
+
+    light     :"rpn-form-light",
+
+    dark      :"rpn-form-dark",
+
+    primary   :"rpn-form-primary",
+
+    success   :"rpn-form-success",
+
+    warning   :"rpn-form-warning",
+
+    danger    :"rpn-form-danger",
+
+    corporate :"rpn-form-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    builder,
+
+    theme
+
+){
+
+    if(
+
+        !themes[theme]
+
+    ){
+
+        return;
+
+    }
+
+    const element =
+
+        FormBuilder.get(
+
+            builder
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(
+
+        themes
+
+    )
+
+    .forEach(function(css){
+
+        element.classList.remove(
+
+            css
+
+        );
+
+    });
+
+    element.classList.add(
+
+        themes[theme]
+
+    );
+
+}
+
+/*=========================================================
+SET DEFAULT
+=========================================================*/
+
+function setDefault(
+
+    theme
+
+){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current =
+
+            theme;
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    FormBuilder.state.builders
+
+    .forEach(function(
+
+        element,
+
+        name
+
+    ){
+
+        set(
+
+            name,
+
+            current
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] =
+
+        css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    setDefault,
+
+    get,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+67_FormBuilder.html
+Enterprise v3.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const FormProduction = (()=>{
+
+"use strict";
+
+const VERSION = "3.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config={}){
+
+    FormBuilder.register(
+
+        config.name,
+
+        document.body
+
+    );
+
+    FormBuilder.form(
+
+        config.name,
+
+        config.form ||
+
+        {}
+
+    );
+
+    FormBuilder.settings(
+
+        config.name,
+
+        config.settings ||
+
+        {}
+
+    );
+
+    FormLayout.set(
+
+        config.name,
+
+        config.layout ||
+
+        {}
+
+    );
+
+    FormTheme.set(
+
+        config.name,
+
+        config.theme ||
+
+        "default"
+
+    );
+
+    FormEvent.trigger(
+
+        config.name,
+
+        "ready",
+
+        {
+
+            version :
+
+            VERSION
+
+        }
+
+    );
+
+    return info();
+
+}
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(
+
+    builder,
+
+    container
+
+){
+
+    FormRender.render(
+
+        builder,
+
+        container
+
+    );
+
+}
+
+/*=========================================================
+VALIDATE
+=========================================================*/
+
+function validate(
+
+    builder
+
+){
+
+    return FormValidation.validate(
+
+        builder
+
+    );
+
+}
+
+/*=========================================================
+RESET
+=========================================================*/
+
+function reset(
+
+    builder
+
+){
+
+    FormBuilder.fields(
+
+        builder,
+
+        []
+
+    );
+
+    FormBuilder.layout(
+
+        builder,
+
+        {}
+
+    );
+
+    FormValidation.reset(
+
+        builder
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "FormBuilder",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    render,
+
+    validate,
+
+    reset,
+
+    info
+
+};
+
+})();
+
+</script>

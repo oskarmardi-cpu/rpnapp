@@ -1,0 +1,493 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+18_Used.html
+Enterprise Edition v5.0
+==========================================================-->
+
+<div class="used-page">
+
+  <!--=========================================
+    PAGE HEADER
+  ==========================================-->
+
+  <div class="page-header">
+
+    <div>
+
+      <h2>
+
+        Used Unit Management
+
+      </h2>
+
+      <span>
+
+        Appraisal • Refurbishment • Sales • Profit Analysis
+
+      </span>
+
+    </div>
+
+    <div class="header-action">
+
+      <button
+        class="btn btn-primary"
+        onclick="Used.appraisal()">
+
+        <i class="ri-search-eye-line"></i>
+
+        Appraisal
+
+      </button>
+
+      <button
+        class="btn btn-warning"
+        onclick="Used.refurbishment()">
+
+        <i class="ri-tools-line"></i>
+
+        Refurbishment
+
+      </button>
+
+      <button
+        class="btn btn-success"
+        onclick="Used.sales()">
+
+        <i class="ri-shopping-cart-line"></i>
+
+        Sales
+
+      </button>
+
+      <button
+        class="btn btn-info"
+        onclick="Used.refresh()">
+
+        <i class="ri-refresh-line"></i>
+
+        Refresh
+
+      </button>
+
+    </div>
+
+  </div>
+
+  <!--=========================================
+    KPI
+  ==========================================-->
+
+  <div class="dashboard-kpi">
+
+    <div id="usedAvailable"></div>
+
+    <div id="usedRepair"></div>
+
+    <div id="usedReady"></div>
+
+    <div id="usedBooked"></div>
+
+    <div id="usedSold"></div>
+
+    <div id="usedProfit"></div>
+
+  </div>
+
+  <!--=========================================
+    FILTER
+  ==========================================-->
+
+  <div class="page-filter">
+
+    <input
+
+      id="usedKeyword"
+
+      type="text"
+
+      placeholder="Search Unit / SN / Customer"
+
+      onkeyup="Used.search()">
+
+    <select
+
+      id="usedStatus"
+
+      onchange="Used.filter()">
+
+      <option value="">All Status</option>
+
+      <option>APPRAISAL</option>
+
+      <option>REFURBISHMENT</option>
+
+      <option>READY</option>
+
+      <option>BOOKED</option>
+
+      <option>SOLD</option>
+
+    </select>
+
+  </div>
+
+  <!--=========================================
+    GRID
+  ==========================================-->
+
+  <div id="usedGrid">
+
+  </div>
+
+</div>
+
+<script>
+
+const Used = (()=>{
+
+"use strict";
+
+let rows=[];
+
+/*=======================================================
+LOAD
+=======================================================*/
+
+async function load(){
+
+    Loader.show(
+
+        "Loading Used Unit..."
+
+    );
+
+    rows = await API.post(
+
+        "USED.LOAD",
+
+        {}
+
+    );
+
+    render();
+
+    Loader.hide();
+
+}
+
+/*=======================================================
+RENDER
+=======================================================*/
+
+function render(){
+
+    usedGrid.innerHTML =
+
+        Grid.render(
+
+            rows,
+
+            {
+
+                view:view,
+
+                edit:edit,
+
+                pricing:pricing,
+
+                history:history,
+
+                gallery:gallery,
+
+                inspection:inspection,
+
+                print:print
+
+            }
+
+        );
+
+}
+
+/*=======================================================
+SEARCH
+=======================================================*/
+
+function search(){
+
+    Grid.filter(
+
+        "usedGrid",
+
+        usedKeyword.value
+
+    );
+
+}
+
+/*=======================================================
+FILTER
+=======================================================*/
+
+function filter(){
+
+    Grid.filterColumn(
+
+        "usedGrid",
+
+        "STATUS",
+
+        usedStatus.value
+
+    );
+
+}
+
+/*=======================================================
+APPRAISAL
+=======================================================*/
+
+function appraisal(){
+
+    Router.load(
+
+        "18A_Appraisal"
+
+    );
+
+}
+
+/*=======================================================
+REFURBISHMENT
+=======================================================*/
+
+function refurbishment(){
+
+    Router.load(
+
+        "18B_Refurbishment"
+
+    );
+
+}
+
+/*=======================================================
+SALES
+=======================================================*/
+
+function sales(){
+
+    Router.load(
+
+        "18C_Sales"
+
+    );
+
+}
+
+/*=======================================================
+PRICING
+=======================================================*/
+
+function pricing(id){
+
+    Router.load(
+
+        "18D_Pricing",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+VIEW
+=======================================================*/
+
+function view(id){
+
+    Router.load(
+
+        "18E_Detail",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+EDIT
+=======================================================*/
+
+function edit(id){
+
+    Router.load(
+
+        "18F_Edit",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+INSPECTION
+=======================================================*/
+
+function inspection(id){
+
+    Router.load(
+
+        "18G_Inspection",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+PHOTO GALLERY
+=======================================================*/
+
+function gallery(id){
+
+    Router.load(
+
+        "18H_Gallery",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+UNIT HISTORY
+=======================================================*/
+
+function history(id){
+
+    Router.load(
+
+        "18I_History",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+PRINT
+=======================================================*/
+
+async function print(id){
+
+    Loader.show();
+
+    const pdf = await API.post(
+
+        "REPORT.PDF",
+
+        {
+
+            TYPE:"USED",
+
+            ID:id
+
+        }
+
+    );
+
+    Loader.hide();
+
+    window.open(
+
+        pdf.URL,
+
+        "_blank"
+
+    );
+
+}
+
+/*=======================================================
+REFRESH
+=======================================================*/
+
+function refresh(){
+
+    load();
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    load,
+
+    render,
+
+    refresh,
+
+    search,
+
+    filter,
+
+    appraisal,
+
+    refurbishment,
+
+    sales,
+
+    pricing,
+
+    view,
+
+    edit,
+
+    inspection,
+
+    gallery,
+
+    history,
+
+    print
+
+};
+
+})();
+
+</script>

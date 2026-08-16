@@ -1,0 +1,325 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+20_Report.html
+Enterprise Edition v5.0
+==========================================================-->
+
+<div class="report-page">
+
+  <!--=========================================
+    PAGE HEADER
+  ==========================================-->
+
+  <div class="page-header">
+
+    <div>
+
+      <h2>
+
+        Report Center
+
+      </h2>
+
+      <span>
+
+        PDF • Excel • Analytics • Dashboard
+
+      </span>
+
+    </div>
+
+    <div class="header-action">
+
+      <button
+        class="btn btn-primary"
+        onclick="Report.generate()">
+
+        <i class="ri-file-chart-line"></i>
+
+        Generate
+
+      </button>
+
+      <button
+        class="btn btn-success"
+        onclick="Report.exportExcel()">
+
+        <i class="ri-file-excel-2-line"></i>
+
+        Excel
+
+      </button>
+
+      <button
+        class="btn btn-danger"
+        onclick="Report.exportPdf()">
+
+        <i class="ri-file-pdf-2-line"></i>
+
+        PDF
+
+      </button>
+
+      <button
+        class="btn btn-info"
+        onclick="Report.refresh()">
+
+        <i class="ri-refresh-line"></i>
+
+        Refresh
+
+      </button>
+
+    </div>
+
+  </div>
+
+  <!--=========================================
+    FILTER
+  ==========================================-->
+
+  <div class="page-filter">
+
+    <select id="reportType">
+
+      <option value="DASHBOARD">Dashboard</option>
+
+      <option value="RENTAL">Rental</option>
+
+      <option value="WORKSHOP">Workshop</option>
+
+      <option value="INVENTORY">Inventory</option>
+
+      <option value="USED">Used Unit</option>
+
+      <option value="EXPORT">Export</option>
+
+      <option value="CUSTOMER">Customer</option>
+
+      <option value="ASSET">Asset</option>
+
+    </select>
+
+    <input
+      id="dateFrom"
+      type="date">
+
+    <input
+      id="dateTo"
+      type="date">
+
+    <select id="reportBranch">
+
+      <option value="ALL">
+
+        All Branch
+
+      </option>
+
+    </select>
+
+  </div>
+
+  <!--=========================================
+    REPORT PREVIEW
+  ==========================================-->
+
+  <div
+    id="reportPreview"
+    class="report-preview">
+
+  </div>
+
+</div>
+
+<script>
+
+const Report = (()=>{
+
+"use strict";
+
+let reportData = null;
+
+/*=======================================================
+GENERATE
+=======================================================*/
+
+async function generate(){
+
+    Loader.show(
+
+        "Generating Report..."
+
+    );
+
+    reportData = await API.post(
+
+        "REPORT.GENERATE",
+
+        {
+
+            TYPE :
+
+              reportType.value,
+
+            DATE_FROM :
+
+              dateFrom.value,
+
+            DATE_TO :
+
+              dateTo.value,
+
+            BRANCH :
+
+              reportBranch.value
+
+        }
+
+    );
+
+    render();
+
+    Loader.hide();
+
+}
+
+/*=======================================================
+RENDER
+=======================================================*/
+
+function render(){
+
+    reportPreview.innerHTML =
+
+        Grid.render(
+
+            reportData
+
+        );
+
+}
+
+/*=======================================================
+PDF
+=======================================================*/
+
+async function exportPdf(){
+
+    Loader.show();
+
+    const file = await API.post(
+
+        "REPORT.PDF",
+
+        {
+
+            TYPE :
+
+              reportType.value,
+
+            DATE_FROM :
+
+              dateFrom.value,
+
+            DATE_TO :
+
+              dateTo.value,
+
+            BRANCH :
+
+              reportBranch.value
+
+        }
+
+    );
+
+    Loader.hide();
+
+    window.open(
+
+        file.URL,
+
+        "_blank"
+
+    );
+
+}
+
+/*=======================================================
+EXCEL
+=======================================================*/
+
+async function exportExcel(){
+
+    Loader.show();
+
+    const file = await API.post(
+
+        "REPORT.EXCEL",
+
+        {
+
+            TYPE :
+
+              reportType.value,
+
+            DATE_FROM :
+
+              dateFrom.value,
+
+            DATE_TO :
+
+              dateTo.value,
+
+            BRANCH :
+
+              reportBranch.value
+
+        }
+
+    );
+
+    Loader.hide();
+
+    window.open(
+
+        file.URL,
+
+        "_blank"
+
+    );
+
+}
+
+/*=======================================================
+REFRESH
+=======================================================*/
+
+function refresh(){
+
+    generate();
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    generate,
+
+    render,
+
+    exportPdf,
+
+    exportExcel,
+
+    refresh
+
+};
+
+})();
+
+</script>

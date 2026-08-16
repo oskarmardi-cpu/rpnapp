@@ -1,0 +1,1817 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+48_Calendar.html
+Enterprise v1.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const Calendar = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    calendars:new Map(),
+
+    events:new Map(),
+
+    currentDate:new Map(),
+
+    datasource:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    element
+
+){
+
+    state.calendars.set(
+
+        name,
+
+        element
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.calendars.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+EVENTS
+=========================================================*/
+
+function events(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.events.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.events.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+DATE
+=========================================================*/
+
+function date(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.currentDate.get(
+
+            name
+
+        ) ||
+
+        new Date();
+
+    }
+
+    state.currentDate.set(
+
+        name,
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+DATASOURCE
+=========================================================*/
+
+function datasource(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.datasource.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.datasource.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.calendars.delete(
+
+        name
+
+    );
+
+    state.events.delete(
+
+        name
+
+    );
+
+    state.currentDate.delete(
+
+        name
+
+    );
+
+    state.datasource.delete(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    events,
+
+    date,
+
+    datasource,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+48_Calendar.html
+Enterprise v1.0
+Part 2 - Render Engine
+==========================================================-->
+
+<script>
+
+const CalendarRender = (()=>{
+
+"use strict";
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(config){
+
+    const calendar =
+
+        document.createElement(
+
+            "div"
+
+        );
+
+    calendar.id =
+
+        config.id ||
+
+        config.name;
+
+    calendar.className =
+
+        config.className ||
+
+        "rpn-calendar";
+
+    calendar.innerHTML = `
+
+<div class="calendar-header"></div>
+
+<div class="calendar-toolbar"></div>
+
+<div class="calendar-weekday"></div>
+
+<div class="calendar-body"></div>
+
+<div class="calendar-footer"></div>
+
+`;
+
+    if(
+
+        config.container
+
+    ){
+
+        document
+
+        .getElementById(
+
+            config.container
+
+        )
+
+        .appendChild(
+
+            calendar
+
+        );
+
+    }
+
+    Calendar.register(
+
+        config.name,
+
+        calendar
+
+    );
+
+    return calendar;
+
+}
+
+/*=========================================================
+HEADER
+=========================================================*/
+
+function header(name){
+
+    const calendar =
+
+        Calendar.get(name);
+
+    return calendar
+
+        ? calendar.querySelector(
+
+            ".calendar-header"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+TOOLBAR
+=========================================================*/
+
+function toolbar(name){
+
+    const calendar =
+
+        Calendar.get(name);
+
+    return calendar
+
+        ? calendar.querySelector(
+
+            ".calendar-toolbar"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+BODY
+=========================================================*/
+
+function body(name){
+
+    const calendar =
+
+        Calendar.get(name);
+
+    return calendar
+
+        ? calendar.querySelector(
+
+            ".calendar-body"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+FOOTER
+=========================================================*/
+
+function footer(name){
+
+    const calendar =
+
+        Calendar.get(name);
+
+    return calendar
+
+        ? calendar.querySelector(
+
+            ".calendar-footer"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    const calendar =
+
+        Calendar.get(name);
+
+    if(
+
+        calendar &&
+
+        calendar.parentNode
+
+    ){
+
+        calendar.parentNode.removeChild(
+
+            calendar
+
+        );
+
+    }
+
+    Calendar.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    render,
+
+    header,
+
+    toolbar,
+
+    body,
+
+    footer,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+48_Calendar.html
+Enterprise v1.0
+Part 3 - Calendar Event Engine
+==========================================================-->
+
+<script>
+
+const CalendarEvent = (()=>{
+
+"use strict";
+
+/*=========================================================
+ADD
+=========================================================*/
+
+function add(
+
+    calendar,
+
+    event
+
+){
+
+    const events =
+
+        Calendar.events(
+
+            calendar
+
+        );
+
+    events.push(
+
+        event
+
+    );
+
+    Calendar.events(
+
+        calendar,
+
+        events
+
+    );
+
+    refresh(
+
+        calendar
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(
+
+    calendar,
+
+    id
+
+){
+
+    const events =
+
+        Calendar.events(
+
+            calendar
+
+        ).filter(function(item){
+
+            return item.id !== id;
+
+        });
+
+    Calendar.events(
+
+        calendar,
+
+        events
+
+    );
+
+    refresh(
+
+        calendar
+
+    );
+
+}
+
+/*=========================================================
+UPDATE
+=========================================================*/
+
+function update(
+
+    calendar,
+
+    event
+
+){
+
+    const events =
+
+        Calendar.events(
+
+            calendar
+
+        );
+
+    const index =
+
+        events.findIndex(function(item){
+
+            return item.id === event.id;
+
+        });
+
+    if(
+
+        index >= 0
+
+    ){
+
+        events[index] = event;
+
+    }
+
+    Calendar.events(
+
+        calendar,
+
+        events
+
+    );
+
+    refresh(
+
+        calendar
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(
+
+    calendar,
+
+    id
+
+){
+
+    return Calendar.events(
+
+        calendar
+
+    ).find(function(item){
+
+        return item.id === id;
+
+    });
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(calendar){
+
+    const body =
+
+        CalendarRender.body(
+
+            calendar
+
+        );
+
+    if(
+
+        !body
+
+    ){
+
+        return;
+
+    }
+
+    body.querySelectorAll(
+
+        ".calendar-event"
+
+    ).forEach(function(item){
+
+        item.remove();
+
+    });
+
+    Calendar.events(
+
+        calendar
+
+    ).forEach(function(event){
+
+        body.insertAdjacentHTML(
+
+            "beforeend",
+
+            render(event)
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(event){
+
+    return `
+
+<div
+class="calendar-event"
+data-id="${event.id}">
+
+<div class="calendar-event-time">
+
+${event.time || ""}
+
+</div>
+
+<div class="calendar-event-title">
+
+${event.title || ""}
+
+</div>
+
+</div>
+
+`;
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(calendar){
+
+    Calendar.events(
+
+        calendar,
+
+        []
+
+    );
+
+    refresh(
+
+        calendar
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    add,
+
+    remove,
+
+    update,
+
+    get,
+
+    refresh,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+48_Calendar.html
+Enterprise v1.0
+Part 4 - Navigation Engine
+==========================================================-->
+
+<script>
+
+const CalendarNavigation = (()=>{
+
+"use strict";
+
+/*=========================================================
+TODAY
+=========================================================*/
+
+function today(calendar){
+
+    Calendar.date(
+
+        calendar,
+
+        new Date()
+
+    );
+
+    refresh(
+
+        calendar
+
+    );
+
+}
+
+/*=========================================================
+NEXT MONTH
+=========================================================*/
+
+function nextMonth(calendar){
+
+    const date =
+
+        new Date(
+
+            Calendar.date(
+
+                calendar
+
+            )
+
+        );
+
+    date.setMonth(
+
+        date.getMonth()+1
+
+    );
+
+    Calendar.date(
+
+        calendar,
+
+        date
+
+    );
+
+    refresh(
+
+        calendar
+
+    );
+
+}
+
+/*=========================================================
+PREVIOUS MONTH
+=========================================================*/
+
+function previousMonth(calendar){
+
+    const date =
+
+        new Date(
+
+            Calendar.date(
+
+                calendar
+
+            )
+
+        );
+
+    date.setMonth(
+
+        date.getMonth()-1
+
+    );
+
+    Calendar.date(
+
+        calendar,
+
+        date
+
+    );
+
+    refresh(
+
+        calendar
+
+    );
+
+}
+
+/*=========================================================
+GOTO
+=========================================================*/
+
+function goto(
+
+    calendar,
+
+    date
+
+){
+
+    Calendar.date(
+
+        calendar,
+
+        new Date(date)
+
+    );
+
+    refresh(
+
+        calendar
+
+    );
+
+}
+
+/*=========================================================
+REFRESH HEADER
+=========================================================*/
+
+function refresh(calendar){
+
+    const header =
+
+        CalendarRender.header(
+
+            calendar
+
+        );
+
+    if(
+
+        !header
+
+    ){
+
+        return;
+
+    }
+
+    const date =
+
+        Calendar.date(
+
+            calendar
+
+        );
+
+    header.innerHTML =
+
+        date.toLocaleDateString(
+
+            "id-ID",
+
+            {
+
+                month:"long",
+
+                year:"numeric"
+
+            }
+
+        );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    today,
+
+    nextMonth,
+
+    previousMonth,
+
+    goto,
+
+    refresh
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+48_Calendar.html
+Enterprise v1.0
+Part 5 - Refresh Engine
+==========================================================-->
+
+<script>
+
+const CalendarRefresh = (()=>{
+
+"use strict";
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+async function refresh(
+
+    calendar
+
+){
+
+    const source =
+
+        Calendar.datasource(
+
+            calendar
+
+        );
+
+    if(
+
+        !source.endpoint
+
+    ){
+
+        CalendarEvent.refresh(
+
+            calendar
+
+        );
+
+        CalendarNavigation.refresh(
+
+            calendar
+
+        );
+
+        return;
+
+    }
+
+    const result =
+
+        await API.post(
+
+            source.endpoint,
+
+            source.parameter || {}
+
+        );
+
+    Calendar.events(
+
+        calendar,
+
+        result.data || []
+
+    );
+
+    CalendarNavigation.refresh(
+
+        calendar
+
+    );
+
+    CalendarEvent.refresh(
+
+        calendar
+
+    );
+
+}
+
+/*=========================================================
+AUTO REFRESH
+=========================================================*/
+
+function auto(
+
+    calendar,
+
+    interval
+
+){
+
+    stop(
+
+        calendar
+
+    );
+
+    const timer =
+
+        setInterval(
+
+            function(){
+
+                refresh(
+
+                    calendar
+
+                );
+
+            },
+
+            interval || 60000
+
+        );
+
+    Calendar.datasource(
+
+        "__timer__" +
+
+        calendar,
+
+        timer
+
+    );
+
+}
+
+/*=========================================================
+STOP
+=========================================================*/
+
+function stop(
+
+    calendar
+
+){
+
+    const timer =
+
+        Calendar.datasource(
+
+            "__timer__" +
+
+            calendar
+
+        );
+
+    if(
+
+        timer
+
+    ){
+
+        clearInterval(
+
+            timer
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+RELOAD
+=========================================================*/
+
+async function reload(
+
+    calendar
+
+){
+
+    await refresh(
+
+        calendar
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    refresh,
+
+    auto,
+
+    stop,
+
+    reload
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+48_Calendar.html
+Enterprise v1.0
+Part 6 - Event Handler
+==========================================================-->
+
+<script>
+
+const CalendarHandler = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    calendar,
+
+    event,
+
+    callback
+
+){
+
+    const element =
+
+        Calendar.get(
+
+            calendar
+
+        );
+
+    if(
+
+        !element ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    element.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        calendar +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    calendar,
+
+    event
+
+){
+
+    const element =
+
+        Calendar.get(
+
+            calendar
+
+        );
+
+    const key =
+
+        calendar +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        element &&
+
+        callback
+
+    ){
+
+        element.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    calendar,
+
+    event,
+
+    detail
+
+){
+
+    const element =
+
+        Calendar.get(
+
+            calendar
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(
+
+    calendar
+
+){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                calendar +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                calendar,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+48_Calendar.html
+Enterprise v1.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const CalendarTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-calendar-default",
+
+    light     : "rpn-calendar-light",
+
+    dark      : "rpn-calendar-dark",
+
+    primary   : "rpn-calendar-primary",
+
+    success   : "rpn-calendar-success",
+
+    warning   : "rpn-calendar-warning",
+
+    danger    : "rpn-calendar-danger",
+
+    corporate : "rpn-calendar-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    calendar,
+
+    theme
+
+){
+
+    if(
+
+        !themes[theme]
+
+    ){
+
+        return;
+
+    }
+
+    const element =
+
+        Calendar.get(
+
+            calendar
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(
+
+        themes
+
+    )
+
+    .forEach(function(css){
+
+        element.classList.remove(
+
+            css
+
+        );
+
+    });
+
+    element.classList.add(
+
+        themes[theme]
+
+    );
+
+}
+
+/*=========================================================
+SET DEFAULT
+=========================================================*/
+
+function setDefault(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current = theme;
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    Calendar.state.calendars
+
+    .forEach(function(
+
+        calendar,
+
+        name
+
+    ){
+
+        set(
+
+            name,
+
+            current
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] = css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    setDefault,
+
+    get,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+48_Calendar.html
+Enterprise v1.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const CalendarProduction = (()=>{
+
+"use strict";
+
+const VERSION = "1.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config){
+
+    const calendar =
+
+        CalendarRender.render(
+
+            config
+
+        );
+
+    CalendarTheme.set(
+
+        config.name,
+
+        config.theme ||
+
+        "default"
+
+    );
+
+    Calendar.date(
+
+        config.name,
+
+        config.date ||
+
+        new Date()
+
+    );
+
+    Calendar.datasource(
+
+        config.name,
+
+        config.datasource ||
+
+        {}
+
+    );
+
+    Calendar.events(
+
+        config.name,
+
+        config.events ||
+
+        []
+
+    );
+
+    CalendarNavigation.refresh(
+
+        config.name
+
+    );
+
+    CalendarEvent.refresh(
+
+        config.name
+
+    );
+
+    return calendar;
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+async function refresh(name){
+
+    await CalendarRefresh.refresh(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+RELOAD
+=========================================================*/
+
+async function reload(name){
+
+    await CalendarRefresh.reload(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    CalendarEvent.clear(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    CalendarRefresh.stop(
+
+        name
+
+    );
+
+    CalendarHandler.clear(
+
+        name
+
+    );
+
+    CalendarRender.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "Calendar",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    refresh,
+
+    reload,
+
+    clear,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

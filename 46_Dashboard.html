@@ -1,0 +1,1735 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+46_Dashboard.html
+Enterprise v1.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const Dashboard = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    dashboards:new Map(),
+
+    widgets:new Map(),
+
+    layouts:new Map(),
+
+    datasource:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    element
+
+){
+
+    state.dashboards.set(
+
+        name,
+
+        element
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.dashboards.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+WIDGETS
+=========================================================*/
+
+function widgets(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.widgets.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.widgets.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+LAYOUT
+=========================================================*/
+
+function layout(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.layouts.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.layouts.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+DATASOURCE
+=========================================================*/
+
+function datasource(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.datasource.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.datasource.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.dashboards.delete(
+
+        name
+
+    );
+
+    state.widgets.delete(
+
+        name
+
+    );
+
+    state.layouts.delete(
+
+        name
+
+    );
+
+    state.datasource.delete(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    widgets,
+
+    layout,
+
+    datasource,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+46_Dashboard.html
+Enterprise v1.0
+Part 2 - Render Engine
+==========================================================-->
+
+<script>
+
+const DashboardRender = (()=>{
+
+"use strict";
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(config){
+
+    const dashboard =
+
+        document.createElement(
+
+            "div"
+
+        );
+
+    dashboard.id =
+
+        config.id ||
+
+        config.name;
+
+    dashboard.className =
+
+        config.className ||
+
+        "rpn-dashboard";
+
+    dashboard.innerHTML = `
+
+<div class="dashboard-header"></div>
+
+<div class="dashboard-toolbar"></div>
+
+<div class="dashboard-content"></div>
+
+<div class="dashboard-footer"></div>
+
+`;
+
+    if(
+
+        config.container
+
+    ){
+
+        document
+
+        .getElementById(
+
+            config.container
+
+        )
+
+        .appendChild(
+
+            dashboard
+
+        );
+
+    }
+
+    Dashboard.register(
+
+        config.name,
+
+        dashboard
+
+    );
+
+    return dashboard;
+
+}
+
+/*=========================================================
+HEADER
+=========================================================*/
+
+function header(name){
+
+    const dashboard =
+
+        Dashboard.get(name);
+
+    return dashboard
+
+        ? dashboard.querySelector(
+
+            ".dashboard-header"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+TOOLBAR
+=========================================================*/
+
+function toolbar(name){
+
+    const dashboard =
+
+        Dashboard.get(name);
+
+    return dashboard
+
+        ? dashboard.querySelector(
+
+            ".dashboard-toolbar"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+CONTENT
+=========================================================*/
+
+function content(name){
+
+    const dashboard =
+
+        Dashboard.get(name);
+
+    return dashboard
+
+        ? dashboard.querySelector(
+
+            ".dashboard-content"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+FOOTER
+=========================================================*/
+
+function footer(name){
+
+    const dashboard =
+
+        Dashboard.get(name);
+
+    return dashboard
+
+        ? dashboard.querySelector(
+
+            ".dashboard-footer"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    const dashboard =
+
+        Dashboard.get(name);
+
+    if(
+
+        dashboard &&
+
+        dashboard.parentNode
+
+    ){
+
+        dashboard.parentNode.removeChild(
+
+            dashboard
+
+        );
+
+    }
+
+    Dashboard.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    render,
+
+    header,
+
+    toolbar,
+
+    content,
+
+    footer,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+46_Dashboard.html
+Enterprise v1.0
+Part 3 - Widget Engine
+==========================================================-->
+
+<script>
+
+const DashboardWidget = (()=>{
+
+"use strict";
+
+/*=========================================================
+ADD
+=========================================================*/
+
+function add(
+
+    dashboard,
+
+    widget
+
+){
+
+    const widgets =
+
+        Dashboard.widgets(
+
+            dashboard
+
+        );
+
+    widgets.push(
+
+        widget
+
+    );
+
+    Dashboard.widgets(
+
+        dashboard,
+
+        widgets
+
+    );
+
+    refresh(
+
+        dashboard
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(
+
+    dashboard,
+
+    id
+
+){
+
+    const widgets =
+
+        Dashboard.widgets(
+
+            dashboard
+
+        ).filter(function(widget){
+
+            return widget.id !== id;
+
+        });
+
+    Dashboard.widgets(
+
+        dashboard,
+
+        widgets
+
+    );
+
+    refresh(
+
+        dashboard
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(
+
+    dashboard,
+
+    id
+
+){
+
+    return Dashboard.widgets(
+
+        dashboard
+
+    ).find(function(widget){
+
+        return widget.id === id;
+
+    });
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(dashboard){
+
+    const container =
+
+        DashboardRender.content(
+
+            dashboard
+
+        );
+
+    if(
+
+        !container
+
+    ){
+
+        return;
+
+    }
+
+    let html = "";
+
+    Dashboard.widgets(
+
+        dashboard
+
+    ).forEach(function(widget){
+
+        html += render(
+
+            widget
+
+        );
+
+    });
+
+    container.innerHTML =
+
+        html;
+
+}
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(widget){
+
+    return `
+
+<div
+class="dashboard-widget"
+data-id="${widget.id}">
+
+<div
+class="widget-title">
+
+${widget.title || ""}
+
+</div>
+
+<div
+class="widget-body">
+
+${widget.content || ""}
+
+</div>
+
+</div>
+
+`;
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(dashboard){
+
+    Dashboard.widgets(
+
+        dashboard,
+
+        []
+
+    );
+
+    refresh(
+
+        dashboard
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    add,
+
+    remove,
+
+    get,
+
+    refresh,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+46_Dashboard.html
+Enterprise v1.0
+Part 4 - Layout Engine
+==========================================================-->
+
+<script>
+
+const DashboardLayout = (()=>{
+
+"use strict";
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    dashboard,
+
+    layout
+
+){
+
+    Dashboard.layout(
+
+        dashboard,
+
+        layout
+
+    );
+
+    apply(
+
+        dashboard
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(
+
+    dashboard
+
+){
+
+    return Dashboard.layout(
+
+        dashboard
+
+    );
+
+}
+
+/*=========================================================
+APPLY
+=========================================================*/
+
+function apply(
+
+    dashboard
+
+){
+
+    const content =
+
+        DashboardRender.content(
+
+            dashboard
+
+        );
+
+    if(
+
+        !content
+
+    ){
+
+        return;
+
+    }
+
+    const layout =
+
+        get(
+
+            dashboard
+
+        );
+
+    content.style.display =
+
+        "grid";
+
+    content.style.gridTemplateColumns =
+
+        layout.columns ||
+
+        "repeat(12,1fr)";
+
+    content.style.gridTemplateRows =
+
+        layout.rows ||
+
+        "auto";
+
+    content.style.gap =
+
+        layout.gap ||
+
+        "12px";
+
+}
+
+/*=========================================================
+RESIZE
+=========================================================*/
+
+function resize(
+
+    dashboard,
+
+    columns
+
+){
+
+    const layout =
+
+        get(
+
+            dashboard
+
+        );
+
+    layout.columns =
+
+        columns;
+
+    set(
+
+        dashboard,
+
+        layout
+
+    );
+
+}
+
+/*=========================================================
+RESET
+=========================================================*/
+
+function reset(
+
+    dashboard
+
+){
+
+    set(
+
+        dashboard,
+
+        {
+
+            columns :
+
+            "repeat(12,1fr)",
+
+            rows :
+
+            "auto",
+
+            gap :
+
+            "12px"
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    get,
+
+    apply,
+
+    resize,
+
+    reset
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+46_Dashboard.html
+Enterprise v1.0
+Part 5 - Refresh Engine
+==========================================================-->
+
+<script>
+
+const DashboardRefresh = (()=>{
+
+"use strict";
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+async function refresh(
+
+    dashboard
+
+){
+
+    const source =
+
+        Dashboard.datasource(
+
+            dashboard
+
+        );
+
+    if(
+
+        !source.endpoint
+
+    ){
+
+        DashboardWidget.refresh(
+
+            dashboard
+
+        );
+
+        return;
+
+    }
+
+    const result =
+
+        await API.post(
+
+            source.endpoint,
+
+            source.parameter || {}
+
+        );
+
+    Dashboard.widgets(
+
+        dashboard,
+
+        result.data || []
+
+    );
+
+    DashboardWidget.refresh(
+
+        dashboard
+
+    );
+
+}
+
+/*=========================================================
+AUTO REFRESH
+=========================================================*/
+
+function auto(
+
+    dashboard,
+
+    interval
+
+){
+
+    stop(
+
+        dashboard
+
+    );
+
+    const timer =
+
+        setInterval(
+
+            function(){
+
+                refresh(
+
+                    dashboard
+
+                );
+
+            },
+
+            interval || 60000
+
+        );
+
+    Dashboard.layout(
+
+        "__timer__" +
+
+        dashboard,
+
+        timer
+
+    );
+
+}
+
+/*=========================================================
+STOP
+=========================================================*/
+
+function stop(
+
+    dashboard
+
+){
+
+    const timer =
+
+        Dashboard.layout(
+
+            "__timer__" +
+
+            dashboard
+
+        );
+
+    if(
+
+        timer
+
+    ){
+
+        clearInterval(
+
+            timer
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+RELOAD
+=========================================================*/
+
+async function reload(
+
+    dashboard
+
+){
+
+    await refresh(
+
+        dashboard
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    refresh,
+
+    auto,
+
+    stop,
+
+    reload
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+46_Dashboard.html
+Enterprise v1.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const DashboardEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    dashboard,
+
+    event,
+
+    callback
+
+){
+
+    const element =
+
+        Dashboard.get(
+
+            dashboard
+
+        );
+
+    if(
+
+        !element ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    element.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        dashboard +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    dashboard,
+
+    event
+
+){
+
+    const element =
+
+        Dashboard.get(
+
+            dashboard
+
+        );
+
+    const key =
+
+        dashboard +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        element &&
+
+        callback
+
+    ){
+
+        element.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    dashboard,
+
+    event,
+
+    detail
+
+){
+
+    const element =
+
+        Dashboard.get(
+
+            dashboard
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(
+
+    dashboard
+
+){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                dashboard +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                dashboard,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+46_Dashboard.html
+Enterprise v1.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const DashboardTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-dashboard-default",
+
+    light     : "rpn-dashboard-light",
+
+    dark      : "rpn-dashboard-dark",
+
+    primary   : "rpn-dashboard-primary",
+
+    success   : "rpn-dashboard-success",
+
+    warning   : "rpn-dashboard-warning",
+
+    danger    : "rpn-dashboard-danger",
+
+    corporate : "rpn-dashboard-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    dashboard,
+
+    theme
+
+){
+
+    if(
+
+        !themes[theme]
+
+    ){
+
+        return;
+
+    }
+
+    const element =
+
+        Dashboard.get(
+
+            dashboard
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(themes)
+
+    .forEach(function(css){
+
+        element.classList.remove(css);
+
+    });
+
+    element.classList.add(
+
+        themes[theme]
+
+    );
+
+}
+
+/*=========================================================
+DEFAULT
+=========================================================*/
+
+function setDefault(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current =
+
+        theme;
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    Dashboard.state.dashboards
+
+    .forEach(function(
+
+        dashboard,
+
+        name
+
+    ){
+
+        set(
+
+            name,
+
+            current
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] = css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    setDefault,
+
+    get,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+46_Dashboard.html
+Enterprise v1.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const DashboardProduction = (()=>{
+
+"use strict";
+
+const VERSION = "1.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config){
+
+    const dashboard =
+
+        DashboardRender.render(
+
+            config
+
+        );
+
+    DashboardTheme.set(
+
+        config.name,
+
+        config.theme ||
+
+        "default"
+
+    );
+
+    Dashboard.layout(
+
+        config.name,
+
+        config.layout ||
+
+        {}
+
+    );
+
+    Dashboard.datasource(
+
+        config.name,
+
+        config.datasource ||
+
+        {}
+
+    );
+
+    DashboardLayout.apply(
+
+        config.name
+
+    );
+
+    if(
+
+        config.widgets
+
+    ){
+
+        Dashboard.widgets(
+
+            config.name,
+
+            config.widgets
+
+        );
+
+        DashboardWidget.refresh(
+
+            config.name
+
+        );
+
+    }
+
+    return dashboard;
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+async function refresh(name){
+
+    await DashboardRefresh.refresh(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+RELOAD
+=========================================================*/
+
+async function reload(name){
+
+    await DashboardRefresh.reload(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    DashboardWidget.clear(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    DashboardRefresh.stop(
+
+        name
+
+    );
+
+    DashboardEvent.clear(
+
+        name
+
+    );
+
+    DashboardRender.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "Dashboard",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    refresh,
+
+    reload,
+
+    clear,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

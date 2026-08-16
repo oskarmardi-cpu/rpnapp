@@ -1,0 +1,1857 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+55_Workflow.html
+Enterprise v1.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const Workflow = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    workflows:new Map(),
+
+    steps:new Map(),
+
+    instances:new Map(),
+
+    datasource:new Map(),
+
+    history:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    element
+
+){
+
+    state.workflows.set(
+
+        name,
+
+        element
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.workflows.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+STEPS
+=========================================================*/
+
+function steps(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.steps.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.steps.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+INSTANCES
+=========================================================*/
+
+function instances(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.instances.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.instances.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+DATASOURCE
+=========================================================*/
+
+function datasource(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.datasource.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.datasource.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+HISTORY
+=========================================================*/
+
+function history(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.history.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.history.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.workflows.delete(name);
+
+    state.steps.delete(name);
+
+    state.instances.delete(name);
+
+    state.datasource.delete(name);
+
+    state.history.delete(name);
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    steps,
+
+    instances,
+
+    datasource,
+
+    history,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+55_Workflow.html
+Enterprise v1.0
+Part 2 - Render Engine
+==========================================================-->
+
+<script>
+
+const WorkflowRender = (()=>{
+
+"use strict";
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(config){
+
+    const workflow =
+
+        document.createElement(
+
+            "div"
+
+        );
+
+    workflow.id =
+
+        config.id ||
+
+        config.name;
+
+    workflow.className =
+
+        config.className ||
+
+        "rpn-workflow";
+
+    workflow.innerHTML = `
+
+<div class="workflow-header"></div>
+
+<div class="workflow-toolbar"></div>
+
+<div class="workflow-canvas"></div>
+
+<div class="workflow-footer"></div>
+
+`;
+
+    if(
+
+        config.container
+
+    ){
+
+        document
+
+        .getElementById(
+
+            config.container
+
+        )
+
+        .appendChild(
+
+            workflow
+
+        );
+
+    }
+
+    Workflow.register(
+
+        config.name,
+
+        workflow
+
+    );
+
+    return workflow;
+
+}
+
+/*=========================================================
+HEADER
+=========================================================*/
+
+function header(name){
+
+    const workflow =
+
+        Workflow.get(name);
+
+    return workflow
+
+        ? workflow.querySelector(
+
+            ".workflow-header"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+TOOLBAR
+=========================================================*/
+
+function toolbar(name){
+
+    const workflow =
+
+        Workflow.get(name);
+
+    return workflow
+
+        ? workflow.querySelector(
+
+            ".workflow-toolbar"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+CANVAS
+=========================================================*/
+
+function canvas(name){
+
+    const workflow =
+
+        Workflow.get(name);
+
+    return workflow
+
+        ? workflow.querySelector(
+
+            ".workflow-canvas"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+FOOTER
+=========================================================*/
+
+function footer(name){
+
+    const workflow =
+
+        Workflow.get(name);
+
+    return workflow
+
+        ? workflow.querySelector(
+
+            ".workflow-footer"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    const workflow =
+
+        Workflow.get(name);
+
+    if(
+
+        workflow &&
+
+        workflow.parentNode
+
+    ){
+
+        workflow.parentNode.removeChild(
+
+            workflow
+
+        );
+
+    }
+
+    Workflow.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    render,
+
+    header,
+
+    toolbar,
+
+    canvas,
+
+    footer,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+55_Workflow.html
+Enterprise v1.0
+Part 3 - Step Engine
+==========================================================-->
+
+<script>
+
+const WorkflowStep = (()=>{
+
+"use strict";
+
+/*=========================================================
+ADD
+=========================================================*/
+
+function add(
+
+    name,
+
+    step
+
+){
+
+    const steps =
+
+        Workflow.steps(
+
+            name
+
+        );
+
+    steps.push({
+
+        id :
+
+        step.id ||
+
+        Date.now(),
+
+        name :
+
+        step.name ||
+
+        "",
+
+        title :
+
+        step.title ||
+
+        "",
+
+        order :
+
+        step.order ||
+
+        steps.length + 1,
+
+        status :
+
+        step.status ||
+
+        "Pending",
+
+        action :
+
+        step.action ||
+
+        null
+
+    });
+
+    Workflow.steps(
+
+        name,
+
+        steps
+
+    );
+
+    render(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(
+
+    name,
+
+    id
+
+){
+
+    return Workflow
+
+        .steps(name)
+
+        .find(function(step){
+
+            return step.id === id;
+
+        });
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(
+
+    name,
+
+    id
+
+){
+
+    const steps =
+
+        Workflow.steps(
+
+            name
+
+        ).filter(function(step){
+
+            return step.id !== id;
+
+        });
+
+    Workflow.steps(
+
+        name,
+
+        steps
+
+    );
+
+    render(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(name){
+
+    const canvas =
+
+        WorkflowRender.canvas(
+
+            name
+
+        );
+
+    if(
+
+        !canvas
+
+    ){
+
+        return;
+
+    }
+
+    canvas.innerHTML = "";
+
+    Workflow.steps(
+
+        name
+
+    ).forEach(function(step){
+
+        canvas.insertAdjacentHTML(
+
+            "beforeend",
+
+            template(step)
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+TEMPLATE
+=========================================================*/
+
+function template(step){
+
+return `
+
+<div
+class="workflow-step"
+data-id="${step.id}">
+
+<div class="workflow-step-order">
+
+${step.order}
+
+</div>
+
+<div class="workflow-step-title">
+
+${step.title}
+
+</div>
+
+<div class="workflow-step-status">
+
+${step.status}
+
+</div>
+
+</div>
+
+`;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    add,
+
+    get,
+
+    remove,
+
+    render
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+55_Workflow.html
+Enterprise v1.0
+Part 4 - Workflow Engine
+==========================================================-->
+
+<script>
+
+const WorkflowEngine = (()=>{
+
+"use strict";
+
+/*=========================================================
+START
+=========================================================*/
+
+function start(
+
+    name,
+
+    instance
+
+){
+
+    const instances =
+
+        Workflow.instances(
+
+            name
+
+        );
+
+    instances.push({
+
+        id :
+
+        instance.id ||
+
+        Date.now(),
+
+        current :
+
+        1,
+
+        status :
+
+        "Running",
+
+        data :
+
+        instance.data ||
+
+        {},
+
+        started :
+
+        new Date()
+
+    });
+
+    Workflow.instances(
+
+        name,
+
+        instances
+
+    );
+
+}
+
+/*=========================================================
+NEXT
+=========================================================*/
+
+function next(
+
+    name,
+
+    id
+
+){
+
+    const instance =
+
+        get(
+
+            name,
+
+            id
+
+        );
+
+    if(
+
+        !instance
+
+    ){
+
+        return;
+
+    }
+
+    instance.current++;
+
+    const total =
+
+        Workflow.steps(
+
+            name
+
+        ).length;
+
+    if(
+
+        instance.current >
+
+        total
+
+    ){
+
+        instance.status =
+
+            "Completed";
+
+        instance.finished =
+
+            new Date();
+
+    }
+
+}
+
+/*=========================================================
+CANCEL
+=========================================================*/
+
+function cancel(
+
+    name,
+
+    id
+
+){
+
+    const instance =
+
+        get(
+
+            name,
+
+            id
+
+        );
+
+    if(
+
+        instance
+
+    ){
+
+        instance.status =
+
+            "Cancelled";
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(
+
+    name,
+
+    id
+
+){
+
+    return Workflow
+
+        .instances(name)
+
+        .find(function(item){
+
+            return item.id===id;
+
+        });
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(name){
+
+    return Workflow
+
+        .instances(name)
+
+        .length;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    start,
+
+    next,
+
+    cancel,
+
+    get,
+
+    count
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+55_Workflow.html
+Enterprise v1.0
+Part 5 - History Engine
+==========================================================-->
+
+<script>
+
+const WorkflowHistory = (()=>{
+
+"use strict";
+
+/*=========================================================
+ADD
+=========================================================*/
+
+function add(
+
+    name,
+
+    record
+
+){
+
+    const history =
+
+        Workflow.history(
+
+            name
+
+        );
+
+    history.push({
+
+        id :
+
+        record.id,
+
+        workflow :
+
+        record.workflow ||
+
+        "",
+
+        step :
+
+        record.step ||
+
+        "",
+
+        status :
+
+        record.status ||
+
+        "",
+
+        actor :
+
+        record.actor ||
+
+        "",
+
+        remark :
+
+        record.remark ||
+
+        "",
+
+        datetime :
+
+        new Date()
+
+    });
+
+    Workflow.history(
+
+        name,
+
+        history
+
+    );
+
+}
+
+/*=========================================================
+LIST
+=========================================================*/
+
+function list(name){
+
+    return Workflow.history(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(
+
+    name,
+
+    id
+
+){
+
+    return list(
+
+        name
+
+    ).find(function(item){
+
+        return item.id === id;
+
+    });
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    Workflow.history(
+
+        name,
+
+        []
+
+    );
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(name){
+
+    return list(
+
+        name
+
+    ).length;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    add,
+
+    list,
+
+    get,
+
+    clear,
+
+    count
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+55_Workflow.html
+Enterprise v1.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const WorkflowEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    workflow,
+
+    event,
+
+    callback
+
+){
+
+    const element =
+
+        Workflow.get(
+
+            workflow
+
+        );
+
+    if(
+
+        !element ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    element.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        workflow +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    workflow,
+
+    event
+
+){
+
+    const element =
+
+        Workflow.get(
+
+            workflow
+
+        );
+
+    const key =
+
+        workflow +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        element &&
+
+        callback
+
+    ){
+
+        element.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    workflow,
+
+    event,
+
+    detail
+
+){
+
+    const element =
+
+        Workflow.get(
+
+            workflow
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(
+
+    workflow
+
+){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                workflow +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                workflow,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+55_Workflow.html
+Enterprise v1.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const WorkflowTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-workflow-default",
+
+    light     : "rpn-workflow-light",
+
+    dark      : "rpn-workflow-dark",
+
+    primary   : "rpn-workflow-primary",
+
+    success   : "rpn-workflow-success",
+
+    warning   : "rpn-workflow-warning",
+
+    danger    : "rpn-workflow-danger",
+
+    corporate : "rpn-workflow-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    workflow,
+
+    theme
+
+){
+
+    if(
+
+        !themes[theme]
+
+    ){
+
+        return;
+
+    }
+
+    const element =
+
+        Workflow.get(
+
+            workflow
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(
+
+        themes
+
+    )
+
+    .forEach(function(css){
+
+        element.classList.remove(
+
+            css
+
+        );
+
+    });
+
+    element.classList.add(
+
+        themes[theme]
+
+    );
+
+}
+
+/*=========================================================
+SET DEFAULT
+=========================================================*/
+
+function setDefault(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current =
+
+            theme;
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    Workflow.state.workflows
+
+    .forEach(function(
+
+        element,
+
+        name
+
+    ){
+
+        set(
+
+            name,
+
+            current
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] =
+
+        css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    setDefault,
+
+    get,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+55_Workflow.html
+Enterprise v1.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const WorkflowProduction = (()=>{
+
+"use strict";
+
+const VERSION = "1.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+async function boot(config){
+
+    const workflow =
+
+        WorkflowRender.render(
+
+            config
+
+        );
+
+    WorkflowTheme.set(
+
+        config.name,
+
+        config.theme ||
+
+        "default"
+
+    );
+
+    Workflow.datasource(
+
+        config.name,
+
+        config.datasource ||
+
+        {}
+
+    );
+
+    Workflow.steps(
+
+        config.name,
+
+        config.steps ||
+
+        []
+
+    );
+
+    Workflow.instances(
+
+        config.name,
+
+        config.instances ||
+
+        []
+
+    );
+
+    WorkflowStep.render(
+
+        config.name
+
+    );
+
+    WorkflowEvent.trigger(
+
+        config.name,
+
+        "ready",
+
+        {
+
+            steps :
+
+            Workflow.steps(
+
+                config.name
+
+            ).length,
+
+            instances :
+
+            Workflow.instances(
+
+                config.name
+
+            ).length
+
+        }
+
+    );
+
+    return workflow;
+
+}
+
+/*=========================================================
+START
+=========================================================*/
+
+function start(
+
+    name,
+
+    instance
+
+){
+
+    WorkflowEngine.start(
+
+        name,
+
+        instance
+
+    );
+
+    WorkflowEvent.trigger(
+
+        name,
+
+        "start",
+
+        instance
+
+    );
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(name){
+
+    WorkflowStep.render(
+
+        name
+
+    );
+
+    WorkflowEvent.trigger(
+
+        name,
+
+        "refresh",
+
+        {
+
+            running :
+
+            WorkflowEngine.count(
+
+                name
+
+            )
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    Workflow.instances(
+
+        name,
+
+        []
+
+    );
+
+    WorkflowHistory.clear(
+
+        name
+
+    );
+
+    WorkflowStep.render(
+
+        name
+
+    );
+
+    WorkflowEvent.trigger(
+
+        name,
+
+        "clear",
+
+        {}
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    WorkflowEvent.clear(
+
+        name
+
+    );
+
+    WorkflowHistory.clear(
+
+        name
+
+    );
+
+    WorkflowRender.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "Workflow",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    start,
+
+    refresh,
+
+    clear,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

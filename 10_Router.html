@@ -1,0 +1,355 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+10_Router.html
+Enterprise Edition v5.0
+==========================================================-->
+
+<script>
+
+const Router = (()=>{
+
+"use strict";
+
+const pages = {
+
+    LOGIN        : "03_Login",
+
+    DASHBOARD    : "13_Dashboard",
+
+    MASTER       : "14_Master",
+
+    RENTAL       : "15_Rental",
+
+    WORKSHOP     : "16_Workshop",
+
+    INVENTORY    : "17_Inventory",
+
+    USED         : "18_Used",
+
+    EXPORT       : "19_Export",
+
+    REPORT       : "20_Report",
+
+    ADMIN        : "21_Admin",
+
+    PROFILE      : "22_Profile",
+
+    SETTING      : "23_Setting"
+
+};
+
+let currentPage = "";
+
+/*=======================================================
+LOAD PAGE
+=======================================================*/
+
+function load(page){
+
+    if(currentPage===page){
+
+        return;
+
+    }
+
+    Loader.show(
+
+        "Loading " + page
+
+    );
+
+    google.script.run
+
+    .withSuccessHandler(function(html){
+
+        pageContainer.innerHTML =
+
+            html;
+
+        currentPage = page;
+
+        Loader.hide();
+
+    })
+
+    .withFailureHandler(function(err){
+
+        Loader.hide();
+
+        Toast.error(
+
+            err.message
+
+        );
+
+    })
+
+    .renderPage(page);
+
+}
+
+/*=======================================================
+LOGIN
+=======================================================*/
+
+function login(){
+
+    load(
+
+        pages.LOGIN
+
+    );
+
+}
+
+/*=======================================================
+DASHBOARD
+=======================================================*/
+
+function dashboard(){
+
+    load(
+
+        pages.DASHBOARD
+
+    );
+
+}
+
+/*=======================================================
+MASTER
+=======================================================*/
+
+function master(){
+
+    load(
+
+        pages.MASTER
+
+    );
+
+}
+
+function asset(){
+
+    load(
+
+        pages.MASTER
+
+    );
+
+}
+
+function customer(){
+
+    load(
+
+        pages.MASTER
+
+    );
+
+}
+
+function vendor(){
+
+    load(
+
+        pages.MASTER
+
+    );
+
+}
+
+function employee(){
+
+    load(
+
+        pages.MASTER
+
+    );
+
+}
+
+/*=======================================================
+RENTAL
+=======================================================*/
+
+function rental(){
+
+    load(
+
+        pages.RENTAL
+
+    );
+
+}
+
+/*=======================================================
+WORKSHOP
+=======================================================*/
+
+function workshop(){
+
+    load(
+
+        pages.WORKSHOP
+
+    );
+
+}
+
+/*=======================================================
+INVENTORY
+=======================================================*/
+
+function inventory(){
+
+    load(
+
+        pages.INVENTORY
+
+    );
+
+}
+
+/*=======================================================
+USED
+=======================================================*/
+
+function used(){
+
+    load(
+
+        pages.USED
+
+    );
+
+}
+
+/*=======================================================
+EXPORT
+=======================================================*/
+
+function export(){
+
+    load(
+
+        pages.EXPORT
+
+    );
+
+}
+
+/*=======================================================
+REPORT
+=======================================================*/
+
+function report(){
+
+    load(
+
+        pages.REPORT
+
+    );
+
+}
+
+/*=======================================================
+ADMIN
+=======================================================*/
+
+function admin(){
+
+    load(
+
+        pages.ADMIN
+
+    );
+
+}
+
+/*=======================================================
+PROFILE
+=======================================================*/
+
+function profile(){
+
+    load(
+
+        pages.PROFILE
+
+    );
+
+}
+
+/*=======================================================
+SETTING
+=======================================================*/
+
+function setting(){
+
+    load(
+
+        pages.SETTING
+
+    );
+
+}
+
+/*=======================================================
+CURRENT PAGE
+=======================================================*/
+
+function current(){
+
+    return currentPage;
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    load,
+
+    login,
+
+    dashboard,
+
+    master,
+
+    asset,
+
+    customer,
+
+    vendor,
+
+    employee,
+
+    rental,
+
+    workshop,
+
+    inventory,
+
+    used,
+
+    export,
+
+    report,
+
+    admin,
+
+    profile,
+
+    setting,
+
+    current
+
+};
+
+})();
+
+</script>

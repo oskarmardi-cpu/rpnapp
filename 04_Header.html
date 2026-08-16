@@ -1,0 +1,291 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+04_Header.html
+Enterprise Edition v5.0
+==========================================================-->
+
+<header class="rpn-header">
+
+  <!--=========================================
+    LEFT
+  ==========================================-->
+
+  <div class="header-left">
+
+    <button
+      id="btnSidebar"
+      class="icon-button"
+      onclick="Sidebar.toggle()">
+
+      <i class="ri-menu-fold-line"></i>
+
+    </button>
+
+
+    <div class="header-logo">
+
+      <img
+        src="<?= CONFIG.APP.LOGO ?>"
+        class="logo">
+
+      <div>
+
+        <div class="logo-title">
+
+          <?= CONFIG.APP.NAME ?>
+
+        </div>
+
+        <div class="logo-version">
+
+          Enterprise <?= CONFIG.VERSION.SYSTEM ?>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!--=========================================
+    CENTER
+  ==========================================-->
+
+  <div class="header-center">
+
+    <div class="search-box">
+
+      <i class="ri-search-line"></i>
+
+      <input
+        id="globalSearch"
+        type="text"
+        placeholder="Search Unit / SN / FN / WO / Customer..."
+        autocomplete="off">
+
+    </div>
+
+  </div>
+
+
+  <!--=========================================
+    RIGHT
+  ==========================================-->
+
+  <div class="header-right">
+
+
+    <!-- Branch -->
+
+    <select
+      id="branchSelector"
+      onchange="App.changeBranch()">
+
+    </select>
+
+
+    <!-- Fullscreen -->
+
+    <button
+      class="icon-button"
+      onclick="App.fullscreen()">
+
+      <i class="ri-fullscreen-line"></i>
+
+    </button>
+
+
+    <!-- Theme -->
+
+    <button
+      class="icon-button"
+      onclick="Theme.toggle()">
+
+      <i class="ri-contrast-2-line"></i>
+
+    </button>
+
+
+    <!-- Notification -->
+
+    <button
+      class="icon-button notification-button"
+      onclick="Notification.open()">
+
+      <i class="ri-notification-3-line"></i>
+
+      <span
+        id="notificationBadge"
+        class="badge">
+
+        0
+
+      </span>
+
+    </button>
+
+
+    <!-- User -->
+
+    <div
+      class="header-user"
+      onclick="Profile.open()">
+
+      <img
+        id="userPhoto"
+        class="avatar"
+        src="">
+
+      <div>
+
+        <div id="userName"></div>
+
+        <div id="userRole"></div>
+
+      </div>
+
+      <i class="ri-arrow-down-s-line"></i>
+
+    </div>
+
+  </div>
+
+</header>
+
+
+<script>
+
+const Header = (() => {
+
+  "use strict";
+
+
+  /*=======================================================
+    LOAD HEADER USER
+  =======================================================*/
+
+  function load(){
+
+    /*
+     * Auth adalah sumber user yang benar.
+     * Tidak menggunakan Session.
+     */
+
+    if(
+      typeof Auth === "undefined" ||
+      typeof Auth.getUser !== "function"
+    ){
+
+      return;
+
+    }
+
+
+    const user =
+      Auth.getUser();
+
+
+    if(!user){
+
+      return;
+
+    }
+
+
+    const userName =
+      document.getElementById(
+        "userName"
+      );
+
+
+    const userRole =
+      document.getElementById(
+        "userRole"
+      );
+
+
+    const userPhoto =
+      document.getElementById(
+        "userPhoto"
+      );
+
+
+    if(userName){
+
+      userName.textContent =
+        user.FULLNAME || "";
+
+    }
+
+
+    if(userRole){
+
+      userRole.textContent =
+        user.ROLE || "";
+
+    }
+
+
+    if(userPhoto){
+
+      userPhoto.src =
+        user.PHOTO || "";
+
+    }
+
+  }
+
+
+  /*=======================================================
+    NOTIFICATION
+  =======================================================*/
+
+  function notification(count){
+
+    const badge =
+      document.getElementById(
+        "notificationBadge"
+      );
+
+
+    if(!badge){
+
+      return;
+
+    }
+
+
+    const total =
+      Number(count) || 0;
+
+
+    badge.textContent =
+      total;
+
+
+    badge.style.display =
+      total > 0
+        ? "flex"
+        : "none";
+
+  }
+
+
+  /*=======================================================
+    PUBLIC API
+  =======================================================*/
+
+  return {
+
+    load,
+
+    notification
+
+  };
+
+
+})();
+
+</script>

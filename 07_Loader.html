@@ -1,0 +1,209 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+07_Loader.html
+Enterprise Edition v5.0
+==========================================================-->
+
+<div id="loaderOverlay" class="loader-overlay">
+
+  <div class="loader-container">
+
+    <!--=====================================
+      LOGO
+    ======================================-->
+
+    <img
+
+      src="<?= CONFIG.APP.LOGO ?>"
+
+      class="loader-logo"
+
+      alt="RPN"
+
+    >
+
+    <!--=====================================
+      SPINNER
+    ======================================-->
+
+    <div class="loader-spinner">
+
+      <div></div>
+
+      <div></div>
+
+      <div></div>
+
+      <div></div>
+
+    </div>
+
+    <!--=====================================
+      TITLE
+    ======================================-->
+
+    <div class="loader-title">
+
+      RPN Management System
+
+    </div>
+
+    <!--=====================================
+      MESSAGE
+    ======================================-->
+
+    <div
+
+      id="loaderMessage"
+
+      class="loader-message">
+
+      Please wait...
+
+    </div>
+
+    <!--=====================================
+      PROGRESS
+    ======================================-->
+
+    <div class="loader-progress">
+
+      <div
+
+        id="loaderProgress"
+
+        class="loader-progress-bar">
+
+      </div>
+
+    </div>
+
+    <!--=====================================
+      PERCENT
+    ======================================-->
+
+    <div
+
+      id="loaderPercent"
+
+      class="loader-percent">
+
+      0%
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+const Loader = (()=>{
+
+"use strict";
+
+let progress = 0;
+
+function show(message){
+
+    loaderOverlay.style.display =
+
+        "flex";
+
+    loaderMessage.innerHTML =
+
+        message ||
+
+        "Loading...";
+
+    setProgress(0);
+
+}
+
+function hide(){
+
+    setProgress(100);
+
+    setTimeout(function(){
+
+        loaderOverlay.style.display =
+
+            "none";
+
+        setProgress(0);
+
+    },300);
+
+}
+
+function setMessage(message){
+
+    loaderMessage.innerHTML =
+
+        message;
+
+}
+
+function setProgress(value){
+
+    progress = value;
+
+    loaderProgress.style.width =
+
+        value + "%";
+
+    loaderPercent.innerHTML =
+
+        value + "%";
+
+}
+
+function increase(step){
+
+    progress += (step || 10);
+
+    if(progress>100){
+
+        progress=100;
+
+    }
+
+    setProgress(progress);
+
+}
+
+function reset(){
+
+    progress=0;
+
+    setProgress(0);
+
+}
+
+function visible(){
+
+    return loaderOverlay.style.display==="flex";
+
+}
+
+return{
+
+    show,
+
+    hide,
+
+    reset,
+
+    visible,
+
+    increase,
+
+    setMessage,
+
+    setProgress
+
+};
+
+})();
+
+</script>

@@ -1,0 +1,1651 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+61_AuditTrail.html
+Enterprise v2.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const AuditTrail = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    instances:new Map(),
+
+    logs:new Map(),
+
+    settings:new Map(),
+
+    filters:new Map(),
+
+    history:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    instance
+
+){
+
+    state.instances.set(
+
+        name,
+
+        instance
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.instances.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+LOGS
+=========================================================*/
+
+function logs(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.logs.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.logs.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+SETTINGS
+=========================================================*/
+
+function settings(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.settings.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.settings.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+FILTERS
+=========================================================*/
+
+function filters(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.filters.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.filters.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+HISTORY
+=========================================================*/
+
+function history(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.history.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.history.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.instances.delete(name);
+
+    state.logs.delete(name);
+
+    state.settings.delete(name);
+
+    state.filters.delete(name);
+
+    state.history.delete(name);
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    logs,
+
+    settings,
+
+    filters,
+
+    history,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+61_AuditTrail.html
+Enterprise v2.0
+Part 2 - Log Engine
+==========================================================-->
+
+<script>
+
+const AuditLog = (()=>{
+
+"use strict";
+
+/*=========================================================
+ADD
+=========================================================*/
+
+function add(
+
+    name,
+
+    record
+
+){
+
+    const logs =
+
+        AuditTrail.logs(
+
+            name
+
+        );
+
+    logs.push({
+
+        id :
+
+        crypto.randomUUID(),
+
+        user :
+
+        record.user ||
+
+        "SYSTEM",
+
+        action :
+
+        record.action ||
+
+        "",
+
+        module :
+
+        record.module ||
+
+        "",
+
+        reference :
+
+        record.reference ||
+
+        "",
+
+        description :
+
+        record.description ||
+
+        "",
+
+        ip :
+
+        record.ip ||
+
+        "",
+
+        datetime :
+
+        new Date()
+
+    });
+
+    AuditTrail.logs(
+
+        name,
+
+        logs
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(
+
+    name,
+
+    id
+
+){
+
+    return AuditTrail
+
+        .logs(name)
+
+        .find(function(item){
+
+            return item.id===id;
+
+        });
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(
+
+    name,
+
+    id
+
+){
+
+    const logs =
+
+        AuditTrail.logs(
+
+            name
+
+        ).filter(function(item){
+
+            return item.id!==id;
+
+        });
+
+    AuditTrail.logs(
+
+        name,
+
+        logs
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    AuditTrail.logs(
+
+        name,
+
+        []
+
+    );
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(name){
+
+    return AuditTrail
+
+        .logs(name)
+
+        .length;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    add,
+
+    get,
+
+    remove,
+
+    clear,
+
+    count
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+61_AuditTrail.html
+Enterprise v2.0
+Part 3 - Filter Engine
+==========================================================-->
+
+<script>
+
+const AuditFilter = (()=>{
+
+"use strict";
+
+/*=========================================================
+USER
+=========================================================*/
+
+function user(
+
+    name,
+
+    username
+
+){
+
+    return AuditTrail
+
+        .logs(name)
+
+        .filter(function(log){
+
+            return log.user===
+
+                username;
+
+        });
+
+}
+
+/*=========================================================
+MODULE
+=========================================================*/
+
+function module(
+
+    name,
+
+    moduleName
+
+){
+
+    return AuditTrail
+
+        .logs(name)
+
+        .filter(function(log){
+
+            return log.module===
+
+                moduleName;
+
+        });
+
+}
+
+/*=========================================================
+ACTION
+=========================================================*/
+
+function action(
+
+    name,
+
+    actionName
+
+){
+
+    return AuditTrail
+
+        .logs(name)
+
+        .filter(function(log){
+
+            return log.action===
+
+                actionName;
+
+        });
+
+}
+
+/*=========================================================
+DATE RANGE
+=========================================================*/
+
+function date(
+
+    name,
+
+    start,
+
+    end
+
+){
+
+    return AuditTrail
+
+        .logs(name)
+
+        .filter(function(log){
+
+            const time =
+
+                new Date(
+
+                    log.datetime
+
+                ).getTime();
+
+            return time >=
+
+                start.getTime()
+
+                &&
+
+                time <=
+
+                end.getTime();
+
+        });
+
+}
+
+/*=========================================================
+ADVANCED
+=========================================================*/
+
+function advanced(
+
+    name,
+
+    filter={}
+
+){
+
+    return AuditTrail
+
+        .logs(name)
+
+        .filter(function(log){
+
+            return (
+
+                !filter.user ||
+
+                log.user===
+
+                filter.user
+
+            ) && (
+
+                !filter.module ||
+
+                log.module===
+
+                filter.module
+
+            ) && (
+
+                !filter.action ||
+
+                log.action===
+
+                filter.action
+
+            );
+
+        });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    user,
+
+    module,
+
+    action,
+
+    date,
+
+    advanced
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+61_AuditTrail.html
+Enterprise v2.0
+Part 4 - History Engine
+==========================================================-->
+
+<script>
+
+const AuditHistory = (()=>{
+
+"use strict";
+
+/*=========================================================
+ADD
+=========================================================*/
+
+function add(
+
+    name,
+
+    record
+
+){
+
+    const history =
+
+        AuditTrail.history(
+
+            name
+
+        );
+
+    history.push({
+
+        id :
+
+        record.id ||
+
+        crypto.randomUUID(),
+
+        action :
+
+        record.action ||
+
+        "",
+
+        module :
+
+        record.module ||
+
+        "",
+
+        user :
+
+        record.user ||
+
+        "",
+
+        datetime :
+
+        record.datetime ||
+
+        new Date(),
+
+        detail :
+
+        record.detail ||
+
+        {}
+
+    });
+
+    AuditTrail.history(
+
+        name,
+
+        history
+
+    );
+
+}
+
+/*=========================================================
+LIST
+=========================================================*/
+
+function list(name){
+
+    return AuditTrail.history(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(
+
+    name,
+
+    id
+
+){
+
+    return AuditTrail
+
+        .history(name)
+
+        .find(function(item){
+
+            return item.id===id;
+
+        });
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    AuditTrail.history(
+
+        name,
+
+        []
+
+    );
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(name){
+
+    return AuditTrail
+
+        .history(name)
+
+        .length;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    add,
+
+    list,
+
+    get,
+
+    clear,
+
+    count
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+61_AuditTrail.html
+Enterprise v2.0
+Part 5 - Export Engine
+==========================================================-->
+
+<script>
+
+const AuditExport = (()=>{
+
+"use strict";
+
+/*=========================================================
+EXPORT JSON
+=========================================================*/
+
+function json(
+
+    name,
+
+    filename
+
+){
+
+    ExportData.json(
+
+        name,
+
+        AuditTrail.logs(
+
+            name
+
+        ),
+
+        filename ||
+
+        "audit.json"
+
+    );
+
+}
+
+/*=========================================================
+EXPORT CSV
+=========================================================*/
+
+function csv(
+
+    name,
+
+    filename
+
+){
+
+    ExportCSV.exportFile(
+
+        name,
+
+        AuditTrail.logs(
+
+            name
+
+        ),
+
+        filename ||
+
+        "audit.csv"
+
+    );
+
+}
+
+/*=========================================================
+EXPORT EXCEL
+=========================================================*/
+
+function excel(
+
+    name,
+
+    filename
+
+){
+
+    ExportExcel.exportFile(
+
+        name,
+
+        AuditTrail.logs(
+
+            name
+
+        ),
+
+        filename ||
+
+        "audit.xlsx"
+
+    );
+
+}
+
+/*=========================================================
+EXPORT PDF
+=========================================================*/
+
+async function pdf(
+
+    name,
+
+    html,
+
+    filename
+
+){
+
+    return ExportPDF.exportFile(
+
+        name,
+
+        html,
+
+        filename ||
+
+        "audit.pdf"
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    json,
+
+    csv,
+
+    excel,
+
+    pdf
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+61_AuditTrail.html
+Enterprise v2.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const AuditEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    audit,
+
+    event,
+
+    callback
+
+){
+
+    const element =
+
+        AuditTrail.get(
+
+            audit
+
+        );
+
+    if(
+
+        !element ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    element.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        audit +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    audit,
+
+    event
+
+){
+
+    const element =
+
+        AuditTrail.get(
+
+            audit
+
+        );
+
+    const key =
+
+        audit +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        element &&
+
+        callback
+
+    ){
+
+        element.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    audit,
+
+    event,
+
+    detail
+
+){
+
+    const element =
+
+        AuditTrail.get(
+
+            audit
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(
+
+    audit
+
+){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                audit +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                audit,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+61_AuditTrail.html
+Enterprise v2.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const AuditTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-audit-default",
+
+    light     : "rpn-audit-light",
+
+    dark      : "rpn-audit-dark",
+
+    primary   : "rpn-audit-primary",
+
+    success   : "rpn-audit-success",
+
+    warning   : "rpn-audit-warning",
+
+    danger    : "rpn-audit-danger",
+
+    corporate : "rpn-audit-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    audit,
+
+    theme
+
+){
+
+    if(
+
+        !themes[theme]
+
+    ){
+
+        return;
+
+    }
+
+    const element =
+
+        AuditTrail.get(
+
+            audit
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(
+
+        themes
+
+    )
+
+    .forEach(function(css){
+
+        element.classList.remove(
+
+            css
+
+        );
+
+    });
+
+    element.classList.add(
+
+        themes[theme]
+
+    );
+
+}
+
+/*=========================================================
+SET DEFAULT
+=========================================================*/
+
+function setDefault(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current =
+
+            theme;
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    AuditTrail.state.instances
+
+    .forEach(function(
+
+        element,
+
+        name
+
+    ){
+
+        set(
+
+            name,
+
+            current
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] =
+
+        css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    setDefault,
+
+    get,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+61_AuditTrail.html
+Enterprise v2.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const AuditProduction = (()=>{
+
+"use strict";
+
+const VERSION = "2.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config={}){
+
+    AuditTrail.register(
+
+        config.name,
+
+        document.body
+
+    );
+
+    AuditTrail.logs(
+
+        config.name,
+
+        config.logs ||
+
+        []
+
+    );
+
+    AuditTrail.settings(
+
+        config.name,
+
+        config.settings ||
+
+        {}
+
+    );
+
+    AuditTrail.filters(
+
+        config.name,
+
+        config.filters ||
+
+        {}
+
+    );
+
+    AuditTheme.set(
+
+        config.name,
+
+        config.theme ||
+
+        "default"
+
+    );
+
+    AuditEvent.trigger(
+
+        config.name,
+
+        "ready",
+
+        {
+
+            total :
+
+            AuditLog.count(
+
+                config.name
+
+            )
+
+        }
+
+    );
+
+    return info();
+
+}
+
+/*=========================================================
+WRITE
+=========================================================*/
+
+function write(
+
+    name,
+
+    record
+
+){
+
+    AuditEvent.trigger(
+
+        name,
+
+        "beforeWrite",
+
+        record
+
+    );
+
+    AuditLog.add(
+
+        name,
+
+        record
+
+    );
+
+    AuditHistory.add(
+
+        name,
+
+        record
+
+    );
+
+    AuditEvent.trigger(
+
+        name,
+
+        "afterWrite",
+
+        record
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    AuditLog.clear(
+
+        name
+
+    );
+
+    AuditHistory.clear(
+
+        name
+
+    );
+
+    AuditEvent.trigger(
+
+        name,
+
+        "clear",
+
+        {}
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    AuditEvent.clear(
+
+        name
+
+    );
+
+    AuditTrail.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "AuditTrail",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    write,
+
+    clear,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

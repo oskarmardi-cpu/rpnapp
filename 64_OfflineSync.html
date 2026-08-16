@@ -1,0 +1,1589 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+64_OfflineSync.html
+Enterprise v2.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const OfflineSync = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    instances:new Map(),
+
+    queue:new Map(),
+
+    cache:new Map(),
+
+    status:new Map(),
+
+    settings:new Map(),
+
+    history:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    instance
+
+){
+
+    state.instances.set(
+
+        name,
+
+        instance
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.instances.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+QUEUE
+=========================================================*/
+
+function queue(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.queue.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.queue.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+CACHE
+=========================================================*/
+
+function cache(
+
+    key,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.cache.get(
+
+            key
+
+        );
+
+    }
+
+    state.cache.set(
+
+        key,
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+STATUS
+=========================================================*/
+
+function status(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.status.get(
+
+            name
+
+        ) || "OFFLINE";
+
+    }
+
+    state.status.set(
+
+        name,
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+SETTINGS
+=========================================================*/
+
+function settings(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.settings.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.settings.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.instances.delete(name);
+
+    state.queue.delete(name);
+
+    state.status.delete(name);
+
+    state.settings.delete(name);
+
+    state.history.delete(name);
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    queue,
+
+    cache,
+
+    status,
+
+    settings,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+64_OfflineSync.html
+Enterprise v2.0
+Part 2 - Queue Engine
+==========================================================-->
+
+<script>
+
+const OfflineQueue = (()=>{
+
+"use strict";
+
+/*=========================================================
+ADD
+=========================================================*/
+
+function add(
+
+    name,
+
+    action
+
+){
+
+    const queue =
+
+        OfflineSync.queue(
+
+            name
+
+        );
+
+    queue.push({
+
+        id :
+
+        crypto.randomUUID(),
+
+        action :
+
+        action.type ||
+
+        "UNKNOWN",
+
+        payload :
+
+        action.payload ||
+
+        {},
+
+        status :
+
+        "PENDING",
+
+        created :
+
+        new Date(),
+
+        retry :
+
+        0
+
+    });
+
+    OfflineSync.queue(
+
+        name,
+
+        queue
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(
+
+    name,
+
+    id
+
+){
+
+    return OfflineSync
+
+        .queue(name)
+
+        .find(function(item){
+
+            return item.id===id;
+
+        });
+
+}
+
+/*=========================================================
+UPDATE
+=========================================================*/
+
+function update(
+
+    name,
+
+    id,
+
+    data
+
+){
+
+    const queue =
+
+        OfflineSync.queue(
+
+            name
+
+        );
+
+    const item =
+
+        queue.find(function(row){
+
+            return row.id===id;
+
+        });
+
+    if(
+
+        item
+
+    ){
+
+        Object.assign(
+
+            item,
+
+            data
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(
+
+    name,
+
+    id
+
+){
+
+    OfflineSync.queue(
+
+        name,
+
+        OfflineSync
+
+        .queue(name)
+
+        .filter(function(item){
+
+            return item.id!==id;
+
+        })
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    OfflineSync.queue(
+
+        name,
+
+        []
+
+    );
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(name){
+
+    return OfflineSync
+
+        .queue(name)
+
+        .length;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    add,
+
+    get,
+
+    update,
+
+    remove,
+
+    clear,
+
+    count
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+64_OfflineSync.html
+Enterprise v2.0
+Part 3 - Cache Engine
+==========================================================-->
+
+<script>
+
+const OfflineCache = (()=>{
+
+"use strict";
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    key,
+
+    value
+
+){
+
+    OfflineSync.cache(
+
+        key,
+
+        {
+
+            value,
+
+            updated :
+
+            new Date()
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(key){
+
+    const cache =
+
+        OfflineSync.cache(
+
+            key
+
+        );
+
+    return cache
+
+        ? cache.value
+
+        : null;
+
+}
+
+/*=========================================================
+HAS
+=========================================================*/
+
+function has(key){
+
+    return OfflineSync
+
+        .state.cache
+
+        .has(key);
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(key){
+
+    OfflineSync.state
+
+        .cache
+
+        .delete(key);
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(){
+
+    OfflineSync.state
+
+        .cache
+
+        .clear();
+
+}
+
+/*=========================================================
+KEYS
+=========================================================*/
+
+function keys(){
+
+    return Array.from(
+
+        OfflineSync.state
+
+        .cache
+
+        .keys()
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    get,
+
+    has,
+
+    remove,
+
+    clear,
+
+    keys
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+64_OfflineSync.html
+Enterprise v2.0
+Part 4 - Sync Engine
+==========================================================-->
+
+<script>
+
+const OfflineSyncEngine = (()=>{
+
+"use strict";
+
+/*=========================================================
+SYNC
+=========================================================*/
+
+async function sync(name){
+
+    const queue =
+
+        OfflineSync.queue(
+
+            name
+
+        );
+
+    for(
+
+        const item of queue
+
+    ){
+
+        try{
+
+            await process(
+
+                item
+
+            );
+
+            item.status =
+
+                "SYNCED";
+
+            item.synced =
+
+                new Date();
+
+        }catch(error){
+
+            item.status =
+
+                "FAILED";
+
+            item.retry++;
+
+            item.error =
+
+                error.message;
+
+        }
+
+    }
+
+    return queue;
+
+}
+
+/*=========================================================
+PROCESS
+=========================================================*/
+
+async function process(item){
+
+    if(
+
+        typeof item.payload
+
+            .sync ===
+
+        "function"
+
+    ){
+
+        return await
+
+            item.payload
+
+            .sync();
+
+    }
+
+    return true;
+
+}
+
+/*=========================================================
+PENDING
+=========================================================*/
+
+function pending(name){
+
+    return OfflineSync
+
+        .queue(name)
+
+        .filter(function(item){
+
+            return item.status===
+
+                "PENDING";
+
+        });
+
+}
+
+/*=========================================================
+FAILED
+=========================================================*/
+
+function failed(name){
+
+    return OfflineSync
+
+        .queue(name)
+
+        .filter(function(item){
+
+            return item.status===
+
+                "FAILED";
+
+        });
+
+}
+
+/*=========================================================
+SYNCED
+=========================================================*/
+
+function synced(name){
+
+    return OfflineSync
+
+        .queue(name)
+
+        .filter(function(item){
+
+            return item.status===
+
+                "SYNCED";
+
+        });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    sync,
+
+    process,
+
+    pending,
+
+    failed,
+
+    synced
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+64_OfflineSync.html
+Enterprise v2.0
+Part 5 - Conflict Engine
+==========================================================-->
+
+<script>
+
+const OfflineConflict = (()=>{
+
+"use strict";
+
+/*=========================================================
+DETECT
+=========================================================*/
+
+function detect(
+
+    localData,
+
+    serverData
+
+){
+
+    return JSON.stringify(
+
+        localData
+
+    ) !== JSON.stringify(
+
+        serverData
+
+    );
+
+}
+
+/*=========================================================
+RESOLVE
+=========================================================*/
+
+function resolve(
+
+    strategy,
+
+    localData,
+
+    serverData
+
+){
+
+    switch(strategy){
+
+        case "LOCAL":
+
+            return localData;
+
+        case "SERVER":
+
+            return serverData;
+
+        case "LATEST":
+
+            return latest(
+
+                localData,
+
+                serverData
+
+            );
+
+        case "MERGE":
+
+            return merge(
+
+                localData,
+
+                serverData
+
+            );
+
+        default:
+
+            return serverData;
+
+    }
+
+}
+
+/*=========================================================
+LATEST
+=========================================================*/
+
+function latest(
+
+    localData,
+
+    serverData
+
+){
+
+    return new Date(
+
+        localData.updatedAt ||
+
+        0
+
+    ) >
+
+    new Date(
+
+        serverData.updatedAt ||
+
+        0
+
+    )
+
+    ? localData
+
+    : serverData;
+
+}
+
+/*=========================================================
+MERGE
+=========================================================*/
+
+function merge(
+
+    localData,
+
+    serverData
+
+){
+
+    return{
+
+        ...serverData,
+
+        ...localData
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    detect,
+
+    resolve,
+
+    latest,
+
+    merge
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+64_OfflineSync.html
+Enterprise v2.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const OfflineEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    sync,
+
+    event,
+
+    callback
+
+){
+
+    const element =
+
+        OfflineSync.get(
+
+            sync
+
+        );
+
+    if(
+
+        !element ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    element.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        sync +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    sync,
+
+    event
+
+){
+
+    const element =
+
+        OfflineSync.get(
+
+            sync
+
+        );
+
+    const key =
+
+        sync +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        element &&
+
+        callback
+
+    ){
+
+        element.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    sync,
+
+    event,
+
+    detail
+
+){
+
+    const element =
+
+        OfflineSync.get(
+
+            sync
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(sync){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                sync +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                sync,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+64_OfflineSync.html
+Enterprise v2.0
+Part 7 - Network Engine
+==========================================================-->
+
+<script>
+
+const OfflineNetwork = (()=>{
+
+"use strict";
+
+/*=========================================================
+ONLINE
+=========================================================*/
+
+function online(){
+
+    return navigator.onLine;
+
+}
+
+/*=========================================================
+OFFLINE
+=========================================================*/
+
+function offline(){
+
+    return !navigator.onLine;
+
+}
+
+/*=========================================================
+STATUS
+=========================================================*/
+
+function status(){
+
+    return online()
+
+        ? "ONLINE"
+
+        : "OFFLINE";
+
+}
+
+/*=========================================================
+START WATCH
+=========================================================*/
+
+function watch(name){
+
+    window.addEventListener(
+
+        "online",
+
+        function(){
+
+            OfflineSync.status(
+
+                name,
+
+                "ONLINE"
+
+            );
+
+            OfflineEvent.trigger(
+
+                name,
+
+                "online",
+
+                {}
+
+            );
+
+        }
+
+    );
+
+    window.addEventListener(
+
+        "offline",
+
+        function(){
+
+            OfflineSync.status(
+
+                name,
+
+                "OFFLINE"
+
+            );
+
+            OfflineEvent.trigger(
+
+                name,
+
+                "offline",
+
+                {}
+
+            );
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+PING
+=========================================================*/
+
+async function ping(
+
+    url="/"
+
+){
+
+    try{
+
+        const response =
+
+            await fetch(
+
+                url,
+
+                {
+
+                    method:"HEAD",
+
+                    cache:"no-store"
+
+                }
+
+            );
+
+        return response.ok;
+
+    }catch(e){
+
+        return false;
+
+    }
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    online,
+
+    offline,
+
+    status,
+
+    watch,
+
+    ping
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+64_OfflineSync.html
+Enterprise v2.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const OfflineProduction = (()=>{
+
+"use strict";
+
+const VERSION = "2.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config={}){
+
+    OfflineSync.register(
+
+        config.name,
+
+        document.body
+
+    );
+
+    OfflineSync.settings(
+
+        config.name,
+
+        config.settings ||
+
+        {}
+
+    );
+
+    OfflineSync.status(
+
+        config.name,
+
+        OfflineNetwork.status()
+
+    );
+
+    OfflineNetwork.watch(
+
+        config.name
+
+    );
+
+    OfflineEvent.trigger(
+
+        config.name,
+
+        "ready",
+
+        {
+
+            status :
+
+            OfflineNetwork.status()
+
+        }
+
+    );
+
+    return info();
+
+}
+
+/*=========================================================
+SYNC
+=========================================================*/
+
+async function sync(name){
+
+    OfflineEvent.trigger(
+
+        name,
+
+        "beforeSync",
+
+        {}
+
+    );
+
+    const result =
+
+        await OfflineSyncEngine.sync(
+
+            name
+
+        );
+
+    OfflineEvent.trigger(
+
+        name,
+
+        "afterSync",
+
+        {
+
+            total :
+
+            result.length
+
+        }
+
+    );
+
+    return result;
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    OfflineQueue.clear(
+
+        name
+
+    );
+
+    OfflineCache.clear();
+
+    OfflineEvent.trigger(
+
+        name,
+
+        "clear",
+
+        {}
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    OfflineEvent.clear(
+
+        name
+
+    );
+
+    OfflineSync.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "OfflineSync",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    sync,
+
+    clear,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

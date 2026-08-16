@@ -1,0 +1,1811 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+59_ExportEngine.html
+Enterprise v2.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const ExportEngine = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    exporters:new Map(),
+
+    formats:new Map(),
+
+    options:new Map(),
+
+    queue:new Map(),
+
+    history:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    exporter
+
+){
+
+    state.exporters.set(
+
+        name,
+
+        exporter
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.exporters.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+FORMAT
+=========================================================*/
+
+function format(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.formats.get(
+
+            name
+
+        ) || "xlsx";
+
+    }
+
+    state.formats.set(
+
+        name,
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+OPTIONS
+=========================================================*/
+
+function options(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.options.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.options.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+QUEUE
+=========================================================*/
+
+function queue(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.queue.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.queue.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+HISTORY
+=========================================================*/
+
+function history(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.history.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.history.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.exporters.delete(name);
+
+    state.formats.delete(name);
+
+    state.options.delete(name);
+
+    state.queue.delete(name);
+
+    state.history.delete(name);
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    format,
+
+    options,
+
+    queue,
+
+    history,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+59_ExportEngine.html
+Enterprise v2.0
+Part 2 - Excel Engine
+==========================================================-->
+
+<script>
+
+const ExportExcel = (()=>{
+
+"use strict";
+
+/*=========================================================
+EXPORT
+=========================================================*/
+
+function exportFile(
+
+    name,
+
+    data,
+
+    filename
+
+){
+
+    const workbook =
+
+        createWorkbook(
+
+            data
+
+        );
+
+    download(
+
+        workbook,
+
+        filename ||
+
+        name +
+
+        ".xlsx"
+
+    );
+
+}
+
+/*=========================================================
+CREATE
+=========================================================*/
+
+function createWorkbook(data){
+
+    if(
+
+        typeof XLSX ===
+
+        "undefined"
+
+    ){
+
+        throw new Error(
+
+            "XLSX library not found."
+
+        );
+
+    }
+
+    const workbook =
+
+        XLSX.utils.book_new();
+
+    const sheet =
+
+        XLSX.utils.json_to_sheet(
+
+            data || []
+
+        );
+
+    XLSX.utils.book_append_sheet(
+
+        workbook,
+
+        sheet,
+
+        "Sheet1"
+
+    );
+
+    return workbook;
+
+}
+
+/*=========================================================
+DOWNLOAD
+=========================================================*/
+
+function download(
+
+    workbook,
+
+    filename
+
+){
+
+    XLSX.writeFile(
+
+        workbook,
+
+        filename
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    exportFile,
+
+    createWorkbook,
+
+    download
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+59_ExportEngine.html
+Enterprise v2.0
+Part 3 - CSV Engine
+==========================================================-->
+
+<script>
+
+const ExportCSV = (()=>{
+
+"use strict";
+
+/*=========================================================
+EXPORT
+=========================================================*/
+
+function exportFile(
+
+    name,
+
+    data,
+
+    filename
+
+){
+
+    const csv =
+
+        convert(
+
+            data
+
+        );
+
+    download(
+
+        csv,
+
+        filename ||
+
+        name +
+
+        ".csv"
+
+    );
+
+}
+
+/*=========================================================
+CONVERT
+=========================================================*/
+
+function convert(data){
+
+    if(
+
+        !Array.isArray(
+
+            data
+
+        ) ||
+
+        data.length===0
+
+    ){
+
+        return "";
+
+    }
+
+    const headers =
+
+        Object.keys(
+
+            data[0]
+
+        );
+
+    const rows =
+
+        data.map(function(row){
+
+            return headers.map(function(key){
+
+                return escape(
+
+                    row[key]
+
+                );
+
+            }).join(",");
+
+        });
+
+    return [
+
+        headers.join(","),
+
+        ...rows
+
+    ].join("\n");
+
+}
+
+/*=========================================================
+ESCAPE
+=========================================================*/
+
+function escape(value){
+
+    if(
+
+        value===null ||
+
+        value===undefined
+
+    ){
+
+        return "";
+
+    }
+
+    const text =
+
+        String(value)
+
+        .replace(/"/g,'""');
+
+    return '"' +
+
+        text +
+
+        '"';
+
+}
+
+/*=========================================================
+DOWNLOAD
+=========================================================*/
+
+function download(
+
+    csv,
+
+    filename
+
+){
+
+    const blob =
+
+        new Blob(
+
+            [csv],
+
+            {
+
+                type :
+
+                "text/csv;charset=utf-8"
+
+            }
+
+        );
+
+    const url =
+
+        URL.createObjectURL(
+
+            blob
+
+        );
+
+    const link =
+
+        document.createElement(
+
+            "a"
+
+        );
+
+    link.href =
+
+        url;
+
+    link.download =
+
+        filename;
+
+    document.body.appendChild(
+
+        link
+
+    );
+
+    link.click();
+
+    document.body.removeChild(
+
+        link
+
+    );
+
+    URL.revokeObjectURL(
+
+        url
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    exportFile,
+
+    convert,
+
+    download
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+59_ExportEngine.html
+Enterprise v2.0
+Part 4 - PDF Engine
+==========================================================-->
+
+<script>
+
+const ExportPDF = (()=>{
+
+"use strict";
+
+/*=========================================================
+EXPORT
+=========================================================*/
+
+async function exportFile(
+
+    name,
+
+    html,
+
+    filename
+
+){
+
+    if(
+
+        typeof html2pdf ===
+
+        "undefined"
+
+    ){
+
+        throw new Error(
+
+            "html2pdf library not found."
+
+        );
+
+    }
+
+    const options = {
+
+        margin : 10,
+
+        filename :
+
+        filename ||
+
+        name +
+
+        ".pdf",
+
+        image : {
+
+            type : "jpeg",
+
+            quality : 0.98
+
+        },
+
+        html2canvas : {
+
+            scale : 2
+
+        },
+
+        jsPDF : {
+
+            unit : "mm",
+
+            format : "a4",
+
+            orientation :
+
+            "portrait"
+
+        }
+
+    };
+
+    return html2pdf()
+
+        .set(options)
+
+        .from(html)
+
+        .save();
+
+}
+
+/*=========================================================
+ELEMENT
+=========================================================*/
+
+function element(
+
+    selector,
+
+    filename
+
+){
+
+    const target =
+
+        typeof selector ===
+
+        "string"
+
+        ? document.querySelector(
+
+            selector
+
+          )
+
+        : selector;
+
+    if(
+
+        !target
+
+    ){
+
+        return;
+
+    }
+
+    return exportFile(
+
+        "document",
+
+        target,
+
+        filename
+
+    );
+
+}
+
+/*=========================================================
+HTML
+=========================================================*/
+
+function html(
+
+    content,
+
+    filename
+
+){
+
+    const container =
+
+        document.createElement(
+
+            "div"
+
+        );
+
+    container.innerHTML =
+
+        content;
+
+    return exportFile(
+
+        "document",
+
+        container,
+
+        filename
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    exportFile,
+
+    element,
+
+    html
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+59_ExportEngine.html
+Enterprise v2.0
+Part 5 - JSON/XML Engine
+==========================================================-->
+
+<script>
+
+const ExportData = (()=>{
+
+"use strict";
+
+/*=========================================================
+JSON
+=========================================================*/
+
+function json(
+
+    name,
+
+    data,
+
+    filename
+
+){
+
+    const content =
+
+        JSON.stringify(
+
+            data,
+
+            null,
+
+            2
+
+        );
+
+    download(
+
+        content,
+
+        "application/json",
+
+        filename ||
+
+        name +
+
+        ".json"
+
+    );
+
+}
+
+/*=========================================================
+XML
+=========================================================*/
+
+function xml(
+
+    name,
+
+    data,
+
+    root="items",
+
+    filename
+
+){
+
+    const content =
+
+        convertXML(
+
+            data,
+
+            root
+
+        );
+
+    download(
+
+        content,
+
+        "application/xml",
+
+        filename ||
+
+        name +
+
+        ".xml"
+
+    );
+
+}
+
+/*=========================================================
+CONVERT XML
+=========================================================*/
+
+function convertXML(
+
+    data,
+
+    root
+
+){
+
+    let xml =
+
+        `<?xml version="1.0" encoding="UTF-8"?>`;
+
+    xml +=
+
+        `<${root}>`;
+
+    (data || []).forEach(function(item){
+
+        xml += "<item>";
+
+        Object.keys(item).forEach(function(key){
+
+            xml +=
+
+                `<${key}>${escape(item[key])}</${key}>`;
+
+        });
+
+        xml += "</item>";
+
+    });
+
+    xml +=
+
+        `</${root}>`;
+
+    return xml;
+
+}
+
+/*=========================================================
+ESCAPE XML
+=========================================================*/
+
+function escape(value){
+
+    return String(
+
+        value ?? ""
+
+    )
+
+    .replace(/&/g,"&amp;")
+
+    .replace(/</g,"&lt;")
+
+    .replace(/>/g,"&gt;")
+
+    .replace(/"/g,"&quot;")
+
+    .replace(/'/g,"&apos;");
+
+}
+
+/*=========================================================
+DOWNLOAD
+=========================================================*/
+
+function download(
+
+    content,
+
+    type,
+
+    filename
+
+){
+
+    const blob =
+
+        new Blob(
+
+            [content],
+
+            {
+
+                type
+
+            }
+
+        );
+
+    const url =
+
+        URL.createObjectURL(
+
+            blob
+
+        );
+
+    const link =
+
+        document.createElement(
+
+            "a"
+
+        );
+
+    link.href =
+
+        url;
+
+    link.download =
+
+        filename;
+
+    document.body.appendChild(
+
+        link
+
+    );
+
+    link.click();
+
+    document.body.removeChild(
+
+        link
+
+    );
+
+    URL.revokeObjectURL(
+
+        url
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    json,
+
+    xml,
+
+    convertXML
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+59_ExportEngine.html
+Enterprise v2.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const ExportEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    exporter,
+
+    event,
+
+    callback
+
+){
+
+    const element =
+
+        ExportEngine.get(
+
+            exporter
+
+        );
+
+    if(
+
+        !element ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    element.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        exporter +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    exporter,
+
+    event
+
+){
+
+    const element =
+
+        ExportEngine.get(
+
+            exporter
+
+        );
+
+    const key =
+
+        exporter +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        element &&
+
+        callback
+
+    ){
+
+        element.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    exporter,
+
+    event,
+
+    detail
+
+){
+
+    const element =
+
+        ExportEngine.get(
+
+            exporter
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(
+
+    exporter
+
+){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                exporter +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                exporter,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+59_ExportEngine.html
+Enterprise v2.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const ExportTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-export-default",
+
+    light     : "rpn-export-light",
+
+    dark      : "rpn-export-dark",
+
+    primary   : "rpn-export-primary",
+
+    success   : "rpn-export-success",
+
+    warning   : "rpn-export-warning",
+
+    danger    : "rpn-export-danger",
+
+    corporate : "rpn-export-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    exporter,
+
+    theme
+
+){
+
+    if(
+
+        !themes[theme]
+
+    ){
+
+        return;
+
+    }
+
+    const element =
+
+        ExportEngine.get(
+
+            exporter
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(
+
+        themes
+
+    )
+
+    .forEach(function(css){
+
+        element.classList.remove(
+
+            css
+
+        );
+
+    });
+
+    element.classList.add(
+
+        themes[theme]
+
+    );
+
+}
+
+/*=========================================================
+SET DEFAULT
+=========================================================*/
+
+function setDefault(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current =
+
+            theme;
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    ExportEngine.state.exporters
+
+    .forEach(function(
+
+        element,
+
+        name
+
+    ){
+
+        set(
+
+            name,
+
+            current
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] =
+
+        css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    setDefault,
+
+    get,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+59_ExportEngine.html
+Enterprise v2.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const ExportProduction = (()=>{
+
+"use strict";
+
+const VERSION = "2.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config={}){
+
+    ExportEngine.register(
+
+        config.name,
+
+        document.body
+
+    );
+
+    ExportEngine.format(
+
+        config.name,
+
+        config.format ||
+
+        "xlsx"
+
+    );
+
+    ExportEngine.options(
+
+        config.name,
+
+        config.options ||
+
+        {}
+
+    );
+
+    ExportTheme.set(
+
+        config.name,
+
+        config.theme ||
+
+        "default"
+
+    );
+
+    ExportEvent.trigger(
+
+        config.name,
+
+        "ready",
+
+        {
+
+            format :
+
+            ExportEngine.format(
+
+                config.name
+
+            )
+
+        }
+
+    );
+
+    return info();
+
+}
+
+/*=========================================================
+EXPORT
+=========================================================*/
+
+async function exportFile(
+
+    name,
+
+    data,
+
+    filename
+
+){
+
+    const format =
+
+        ExportEngine.format(
+
+            name
+
+        );
+
+    ExportEvent.trigger(
+
+        name,
+
+        "beforeExport",
+
+        {
+
+            format,
+
+            filename
+
+        }
+
+    );
+
+    switch(
+
+        format
+
+    ){
+
+        case "xlsx":
+
+            ExportExcel.exportFile(
+
+                name,
+
+                data,
+
+                filename
+
+            );
+
+            break;
+
+        case "csv":
+
+            ExportCSV.exportFile(
+
+                name,
+
+                data,
+
+                filename
+
+            );
+
+            break;
+
+        case "pdf":
+
+            await ExportPDF.exportFile(
+
+                name,
+
+                data,
+
+                filename
+
+            );
+
+            break;
+
+        case "json":
+
+            ExportData.json(
+
+                name,
+
+                data,
+
+                filename
+
+            );
+
+            break;
+
+        case "xml":
+
+            ExportData.xml(
+
+                name,
+
+                data,
+
+                "items",
+
+                filename
+
+            );
+
+            break;
+
+    }
+
+    ExportEvent.trigger(
+
+        name,
+
+        "afterExport",
+
+        {
+
+            format,
+
+            filename
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+RESET
+=========================================================*/
+
+function reset(name){
+
+    ExportEngine.format(
+
+        name,
+
+        "xlsx"
+
+    );
+
+    ExportEngine.options(
+
+        name,
+
+        {}
+
+    );
+
+    ExportEngine.queue(
+
+        name,
+
+        []
+
+    );
+
+    ExportEngine.history(
+
+        name,
+
+        []
+
+    );
+
+    ExportEvent.clear(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "ExportEngine",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    exportFile,
+
+    reset,
+
+    info
+
+};
+
+})();
+
+</script>

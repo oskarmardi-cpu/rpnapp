@@ -1,0 +1,1527 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+35_Select.html
+Enterprise v1.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const Select = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    elements:new Map(),
+
+    options:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    element
+
+){
+
+    state.elements.set(
+
+        name,
+
+        element
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.elements.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+SET OPTIONS
+=========================================================*/
+
+function setOptions(
+
+    name,
+
+    data
+
+){
+
+    state.options.set(
+
+        name,
+
+        data || []
+
+    );
+
+}
+
+/*=========================================================
+GET OPTIONS
+=========================================================*/
+
+function getOptions(name){
+
+    return state.options.get(
+
+        name
+
+    ) || [];
+
+}
+
+/*=========================================================
+VALUE
+=========================================================*/
+
+function value(
+
+    name,
+
+    value
+
+){
+
+    const el=get(name);
+
+    if(!el){
+
+        return null;
+
+    }
+
+    if(arguments.length===1){
+
+        return el.value;
+
+    }
+
+    el.value=value;
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    const el=get(name);
+
+    if(el){
+
+        el.selectedIndex=0;
+
+    }
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    setOptions,
+
+    getOptions,
+
+    value,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+35_Select.html
+Enterprise v1.0
+Part 2 - Render Engine
+==========================================================-->
+
+<script>
+
+const SelectRender = (()=>{
+
+"use strict";
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(config){
+
+    const select =
+
+        document.createElement(
+
+            "select"
+
+        );
+
+    select.id =
+
+        config.id ||
+
+        config.name;
+
+    select.name =
+
+        config.name;
+
+    select.className =
+
+        config.className ||
+
+        "rpn-select";
+
+    if(
+
+        config.disabled
+
+    ){
+
+        select.disabled = true;
+
+    }
+
+    if(
+
+        config.required
+
+    ){
+
+        select.required = true;
+
+    }
+
+    renderOptions(
+
+        select,
+
+        config.options || []
+
+    );
+
+    if(
+
+        config.container
+
+    ){
+
+        document
+
+        .getElementById(
+
+            config.container
+
+        )
+
+        .appendChild(
+
+            select
+
+        );
+
+    }
+
+    Select.register(
+
+        config.name,
+
+        select
+
+    );
+
+    Select.setOptions(
+
+        config.name,
+
+        config.options || []
+
+    );
+
+    return select;
+
+}
+
+/*=========================================================
+OPTIONS
+=========================================================*/
+
+function renderOptions(
+
+    select,
+
+    options
+
+){
+
+    let html = "";
+
+    html += `
+
+<option value="">
+
+-- Select --
+
+</option>
+
+`;
+
+    options.forEach(function(item){
+
+        html += `
+
+<option
+
+value="${item.value}">
+
+${item.text}
+
+</option>
+
+`;
+
+    });
+
+    select.innerHTML = html;
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(name){
+
+    const select =
+
+        Select.get(name);
+
+    if(
+
+        !select
+
+    ){
+
+        return;
+
+    }
+
+    renderOptions(
+
+        select,
+
+        Select.getOptions(name)
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    const select =
+
+        Select.get(name);
+
+    if(
+
+        select &&
+
+        select.parentNode
+
+    ){
+
+        select.parentNode.removeChild(
+
+            select
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    render,
+
+    refresh,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+35_Select.html
+Enterprise v1.0
+Part 3 - Data Source Engine
+==========================================================-->
+
+<script>
+
+const SelectData = (()=>{
+
+"use strict";
+
+/*=========================================================
+LOAD ARRAY
+=========================================================*/
+
+function load(
+
+    name,
+
+    data
+
+){
+
+    Select.setOptions(
+
+        name,
+
+        data || []
+
+    );
+
+    SelectRender.refresh(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+LOAD API
+=========================================================*/
+
+async function api(
+
+    name,
+
+    endpoint,
+
+    parameter
+
+){
+
+    const result =
+
+        await API.post(
+
+            endpoint,
+
+            parameter || {}
+
+        );
+
+    load(
+
+        name,
+
+        result.data || []
+
+    );
+
+}
+
+/*=========================================================
+ADD
+=========================================================*/
+
+function add(
+
+    name,
+
+    option
+
+){
+
+    const list =
+
+        Select.getOptions(name);
+
+    list.push(option);
+
+    load(
+
+        name,
+
+        list
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(
+
+    name,
+
+    value
+
+){
+
+    const list =
+
+        Select
+
+        .getOptions(name)
+
+        .filter(function(item){
+
+            return item.value != value;
+
+        });
+
+    load(
+
+        name,
+
+        list
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    load(
+
+        name,
+
+        []
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    load,
+
+    api,
+
+    add,
+
+    remove,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+35_Select.html
+Enterprise v1.0
+Part 4 - Search Engine
+==========================================================-->
+
+<script>
+
+const SelectSearch = (()=>{
+
+"use strict";
+
+/*=========================================================
+SEARCH
+=========================================================*/
+
+function search(
+
+    name,
+
+    keyword
+
+){
+
+    keyword = String(
+
+        keyword || ""
+
+    )
+
+    .toLowerCase()
+
+    .trim();
+
+    const source =
+
+        Select.getOptions(name);
+
+    if(
+
+        keyword===""
+
+    ){
+
+        SelectRender.refresh(
+
+            name
+
+        );
+
+        return;
+
+    }
+
+    const result =
+
+        source.filter(function(item){
+
+            return String(
+
+                item.text
+
+            )
+
+            .toLowerCase()
+
+            .includes(keyword);
+
+        });
+
+    const select =
+
+        Select.get(name);
+
+    if(
+
+        !select
+
+    ){
+
+        return;
+
+    }
+
+    render(
+
+        select,
+
+        result
+
+    );
+
+}
+
+/*=========================================================
+RESET
+=========================================================*/
+
+function reset(name){
+
+    SelectRender.refresh(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(
+
+    select,
+
+    options
+
+){
+
+    let html =
+
+        '<option value="">-- Select --</option>';
+
+    options.forEach(function(item){
+
+        html += `
+
+<option value="${item.value}">
+
+${item.text}
+
+</option>
+
+`;
+
+    });
+
+    select.innerHTML =
+
+        html;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    search,
+
+    reset
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+35_Select.html
+Enterprise v1.0
+Part 5 - Event Engine
+==========================================================-->
+
+<script>
+
+const SelectEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    name,
+
+    event,
+
+    callback
+
+){
+
+    const select =
+
+        Select.get(name);
+
+    if(
+
+        !select ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    select.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        name + ":" + event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    name,
+
+    event
+
+){
+
+    const select =
+
+        Select.get(name);
+
+    const key =
+
+        name + ":" + event;
+
+    const callback =
+
+        listeners.get(key);
+
+    if(
+
+        select &&
+
+        callback
+
+    ){
+
+        select.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    name,
+
+    event
+
+){
+
+    const select =
+
+        Select.get(name);
+
+    if(
+
+        select
+
+    ){
+
+        select.dispatchEvent(
+
+            new Event(
+
+                event
+
+            )
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+ENABLE
+=========================================================*/
+
+function enable(name){
+
+    const select =
+
+        Select.get(name);
+
+    if(
+
+        select
+
+    ){
+
+        select.disabled = false;
+
+    }
+
+}
+
+/*=========================================================
+DISABLE
+=========================================================*/
+
+function disable(name){
+
+    const select =
+
+        Select.get(name);
+
+    if(
+
+        select
+
+    ){
+
+        select.disabled = true;
+
+    }
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    enable,
+
+    disable
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+35_Select.html
+Enterprise v1.0
+Part 6 - Validation Engine
+==========================================================-->
+
+<script>
+
+const SelectValidation = (()=>{
+
+"use strict";
+
+const errors = new Map();
+
+/*=========================================================
+VALIDATE
+=========================================================*/
+
+function validate(
+
+    name,
+
+    rules
+
+){
+
+    clear(name);
+
+    const select =
+
+        Select.get(name);
+
+    if(
+
+        !select
+
+    ){
+
+        return false;
+
+    }
+
+    const value =
+
+        select.value;
+
+    if(
+
+        rules.required &&
+
+        value===""
+
+    ){
+
+        return error(
+
+            name,
+
+            "Please select an option."
+
+        );
+
+    }
+
+    return true;
+
+}
+
+/*=========================================================
+ERROR
+=========================================================*/
+
+function error(
+
+    name,
+
+    message
+
+){
+
+    const select =
+
+        Select.get(name);
+
+    if(select){
+
+        select.classList.add(
+
+            "is-invalid"
+
+        );
+
+    }
+
+    errors.set(
+
+        name,
+
+        message
+
+    );
+
+    return false;
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    const select =
+
+        Select.get(name);
+
+    if(select){
+
+        select.classList.remove(
+
+            "is-invalid"
+
+        );
+
+    }
+
+    errors.delete(name);
+
+}
+
+/*=========================================================
+CLEAR ALL
+=========================================================*/
+
+function clearAll(){
+
+    errors.forEach(function(v,k){
+
+        clear(k);
+
+    });
+
+}
+
+/*=========================================================
+HAS ERROR
+=========================================================*/
+
+function hasError(name){
+
+    return errors.has(name);
+
+}
+
+/*=========================================================
+GET ERROR
+=========================================================*/
+
+function getError(name){
+
+    return errors.get(name);
+
+}
+
+/*=========================================================
+GET ERRORS
+=========================================================*/
+
+function getErrors(){
+
+    return Object.fromEntries(
+
+        errors
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    validate,
+
+    clear,
+
+    clearAll,
+
+    hasError,
+
+    getError,
+
+    getErrors
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+35_Select.html
+Enterprise v1.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const SelectTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-select-default",
+
+    light     : "rpn-select-light",
+
+    dark      : "rpn-select-dark",
+
+    corporate : "rpn-select-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current = theme;
+
+        applyAll();
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY
+=========================================================*/
+
+function apply(name){
+
+    const select =
+
+        Select.get(name);
+
+    if(
+
+        !select
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(themes)
+
+    .forEach(function(css){
+
+        select.classList.remove(css);
+
+    });
+
+    select.classList.add(
+
+        themes[current]
+
+    );
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    Select.state.elements
+
+    .forEach(function(
+
+        select,
+
+        name
+
+    ){
+
+        apply(name);
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] = css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    get,
+
+    apply,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+35_Select.html
+Enterprise v1.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const SelectProduction = (()=>{
+
+"use strict";
+
+const VERSION = "1.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config){
+
+    const select =
+
+        SelectRender.render(
+
+            config
+
+        );
+
+    SelectTheme.apply(
+
+        config.name
+
+    );
+
+    return select;
+
+}
+
+/*=========================================================
+LOAD
+=========================================================*/
+
+function load(
+
+    name,
+
+    data
+
+){
+
+    SelectData.load(
+
+        name,
+
+        data
+
+    );
+
+}
+
+/*=========================================================
+LOAD API
+=========================================================*/
+
+async function loadApi(
+
+    name,
+
+    endpoint,
+
+    parameter
+
+){
+
+    return await SelectData.api(
+
+        name,
+
+        endpoint,
+
+        parameter
+
+    );
+
+}
+
+/*=========================================================
+VALUE
+=========================================================*/
+
+function value(
+
+    name,
+
+    value
+
+){
+
+    return Select.value(
+
+        name,
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+VALIDATE
+=========================================================*/
+
+function validate(
+
+    name,
+
+    rules
+
+){
+
+    return SelectValidation.validate(
+
+        name,
+
+        rules
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    Select.clear(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(name){
+
+    SelectRender.refresh(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    SelectRender.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "Select",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    load,
+
+    loadApi,
+
+    value,
+
+    validate,
+
+    clear,
+
+    refresh,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

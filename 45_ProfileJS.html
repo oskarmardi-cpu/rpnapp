@@ -1,0 +1,215 @@
+<script>
+/* ==========================================================
+   RPN SYSTEM
+   PROFILE CONTROLLER
+========================================================== */
+
+const ProfileController = (() => {
+
+    "use strict";
+
+    /**
+     * Initialize
+     */
+    function init() {
+
+        bindEvent();
+
+    }
+
+    /**
+     * Bind Event
+     */
+    function bindEvent() {
+
+        const btnEdit = document.getElementById("btnEditProfile");
+        const btnPassword = document.getElementById("btnChangePassword");
+        const btnSetting = document.getElementById("btnSetting");
+        const btnAbout = document.getElementById("btnAbout");
+        const btnLogout = document.getElementById("btnLogout");
+
+        if (btnEdit) {
+            btnEdit.addEventListener("click", editProfile);
+        }
+
+        if (btnPassword) {
+            btnPassword.addEventListener("click", changePassword);
+        }
+
+        if (btnSetting) {
+            btnSetting.addEventListener("click", openSetting);
+        }
+
+        if (btnAbout) {
+            btnAbout.addEventListener("click", showAbout);
+        }
+
+        if (btnLogout) {
+            btnLogout.addEventListener("click", Auth.logout);
+        }
+
+    }
+
+    /**
+     * Load Profile
+     */
+    function loadProfile() {
+
+        showLoader(
+            "Profile",
+            "Mengambil data pengguna..."
+        );
+
+        API.getProfile(
+
+            onSuccess,
+
+            onError
+
+        );
+
+    }
+
+    /**
+     * Success
+     */
+    function onSuccess(response) {
+
+        hideLoader();
+
+        if (!response || !response.success) {
+
+            showModal(
+
+                "Profile",
+
+                response?.message || "Data profile tidak tersedia."
+
+            );
+
+            return;
+
+        }
+
+        renderProfile(response.user);
+
+    }
+
+    /**
+     * Error
+     */
+    function onError(error) {
+
+        hideLoader();
+
+        showModal(
+
+            "System Error",
+
+            error.message || String(error)
+
+        );
+
+    }
+
+    /**
+     * Render Profile
+     */
+    function renderProfile(user) {
+
+        if (!user) return;
+
+        document.getElementById("profileName").textContent =
+            user.name || "-";
+
+        document.getElementById("profileRole").textContent =
+            user.role || "-";
+
+        document.getElementById("profileUsername").textContent =
+            user.username || "-";
+
+        document.getElementById("profileBranch").textContent =
+            user.branch || "-";
+
+        document.getElementById("profileEmail").textContent =
+            user.email || "-";
+
+        document.getElementById("profilePhone").textContent =
+            user.phone || "-";
+
+    }
+
+    /**
+     * Edit Profile
+     */
+    function editProfile() {
+
+        showToast(
+
+            "Fitur Edit Profile akan segera tersedia."
+
+        );
+
+    }
+
+    /**
+     * Change Password
+     */
+    function changePassword() {
+
+        showToast(
+
+            "Fitur Ganti Password akan segera tersedia."
+
+        );
+
+    }
+
+    /**
+     * Setting
+     */
+    function openSetting() {
+
+        showToast(
+
+            "Fitur Pengaturan akan segera tersedia."
+
+        );
+
+    }
+
+    /**
+     * About
+     */
+    function showAbout() {
+
+        showModal(
+
+            "RPN System",
+
+            "Refurbished Product National System\nVersion 1.0.0"
+
+        );
+
+    }
+
+    return {
+
+        init,
+
+        loadProfile
+
+    };
+
+})();
+
+/* ==========================================================
+   INITIALIZE
+========================================================== */
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    ProfileController.init();
+
+});
+</script>

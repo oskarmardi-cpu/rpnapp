@@ -1,0 +1,1547 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+36_DatePicker.html
+Enterprise v1.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const DatePicker = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    elements:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    element
+
+){
+
+    state.elements.set(
+
+        name,
+
+        element
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.elements.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+VALUE
+=========================================================*/
+
+function value(
+
+    name,
+
+    value
+
+){
+
+    const input=get(name);
+
+    if(!input){
+
+        return null;
+
+    }
+
+    if(arguments.length===1){
+
+        return input.value;
+
+    }
+
+    input.value=value;
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    const input=get(name);
+
+    if(input){
+
+        input.value="";
+
+    }
+
+}
+
+/*=========================================================
+TODAY
+=========================================================*/
+
+function today(name){
+
+    const input=get(name);
+
+    if(input){
+
+        input.value=
+
+        new Date()
+
+        .toISOString()
+
+        .split("T")[0];
+
+    }
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    value,
+
+    clear,
+
+    today
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+36_DatePicker.html
+Enterprise v1.0
+Part 2 - Render Engine
+==========================================================-->
+
+<script>
+
+const DatePickerRender = (()=>{
+
+"use strict";
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(config){
+
+    const input =
+
+        document.createElement(
+
+            "input"
+
+        );
+
+    input.type = "date";
+
+    input.id =
+
+        config.id ||
+
+        config.name;
+
+    input.name =
+
+        config.name;
+
+    input.className =
+
+        config.className ||
+
+        "rpn-datepicker";
+
+    input.value =
+
+        config.value || "";
+
+    if(
+
+        config.min
+
+    ){
+
+        input.min =
+
+            config.min;
+
+    }
+
+    if(
+
+        config.max
+
+    ){
+
+        input.max =
+
+            config.max;
+
+    }
+
+    if(
+
+        config.required
+
+    ){
+
+        input.required = true;
+
+    }
+
+    if(
+
+        config.disabled
+
+    ){
+
+        input.disabled = true;
+
+    }
+
+    if(
+
+        config.readonly
+
+    ){
+
+        input.readOnly = true;
+
+    }
+
+    if(
+
+        config.container
+
+    ){
+
+        document
+
+        .getElementById(
+
+            config.container
+
+        )
+
+        .appendChild(
+
+            input
+
+        );
+
+    }
+
+    DatePicker.register(
+
+        config.name,
+
+        input
+
+    );
+
+    return input;
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    const input =
+
+        DatePicker.get(name);
+
+    if(
+
+        input &&
+
+        input.parentNode
+
+    ){
+
+        input.parentNode.removeChild(
+
+            input
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    render,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+36_DatePicker.html
+Enterprise v1.0
+Part 3 - Calendar Engine
+==========================================================-->
+
+<script>
+
+const DatePickerCalendar = (()=>{
+
+"use strict";
+
+/*=========================================================
+OPEN
+=========================================================*/
+
+function open(name){
+
+    const input =
+
+        DatePicker.get(name);
+
+    if(!input){
+
+        return;
+
+    }
+
+    input.focus();
+
+    input.showPicker?.();
+
+}
+
+/*=========================================================
+CLOSE
+=========================================================*/
+
+function close(name){
+
+    const input =
+
+        DatePicker.get(name);
+
+    if(input){
+
+        input.blur();
+
+    }
+
+}
+
+/*=========================================================
+TODAY
+=========================================================*/
+
+function today(name){
+
+    DatePicker.today(name);
+
+}
+
+/*=========================================================
+NEXT DAY
+=========================================================*/
+
+function nextDay(name){
+
+    move(name,1);
+
+}
+
+/*=========================================================
+PREVIOUS DAY
+=========================================================*/
+
+function previousDay(name){
+
+    move(name,-1);
+
+}
+
+/*=========================================================
+MOVE
+=========================================================*/
+
+function move(
+
+    name,
+
+    days
+
+){
+
+    const input =
+
+        DatePicker.get(name);
+
+    if(
+
+        !input ||
+
+        !input.value
+
+    ){
+
+        return;
+
+    }
+
+    const date =
+
+        new Date(input.value);
+
+    date.setDate(
+
+        date.getDate()+days
+
+    );
+
+    input.value =
+
+        date
+
+        .toISOString()
+
+        .split("T")[0];
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    open,
+
+    close,
+
+    today,
+
+    nextDay,
+
+    previousDay
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+36_DatePicker.html
+Enterprise v1.0
+Part 4 - Range Engine
+==========================================================-->
+
+<script>
+
+const DatePickerRange = (()=>{
+
+"use strict";
+
+/*=========================================================
+SET MIN
+=========================================================*/
+
+function setMin(
+
+    name,
+
+    date
+
+){
+
+    const input =
+
+        DatePicker.get(name);
+
+    if(input){
+
+        input.min = date;
+
+    }
+
+}
+
+/*=========================================================
+SET MAX
+=========================================================*/
+
+function setMax(
+
+    name,
+
+    date
+
+){
+
+    const input =
+
+        DatePicker.get(name);
+
+    if(input){
+
+        input.max = date;
+
+    }
+
+}
+
+/*=========================================================
+SET RANGE
+=========================================================*/
+
+function setRange(
+
+    name,
+
+    min,
+
+    max
+
+){
+
+    setMin(
+
+        name,
+
+        min
+
+    );
+
+    setMax(
+
+        name,
+
+        max
+
+    );
+
+}
+
+/*=========================================================
+LINK
+=========================================================*/
+
+function link(
+
+    startName,
+
+    endName
+
+){
+
+    const start =
+
+        DatePicker.get(
+
+            startName
+
+        );
+
+    const end =
+
+        DatePicker.get(
+
+            endName
+
+        );
+
+    if(
+
+        !start ||
+
+        !end
+
+    ){
+
+        return;
+
+    }
+
+    start.addEventListener(
+
+        "change",
+
+        function(){
+
+            end.min =
+
+                start.value;
+
+        }
+
+    );
+
+    end.addEventListener(
+
+        "change",
+
+        function(){
+
+            start.max =
+
+                end.value;
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+CHECK
+=========================================================*/
+
+function valid(
+
+    startName,
+
+    endName
+
+){
+
+    const start =
+
+        DatePicker.value(
+
+            startName
+
+        );
+
+    const end =
+
+        DatePicker.value(
+
+            endName
+
+        );
+
+    if(
+
+        !start ||
+
+        !end
+
+    ){
+
+        return true;
+
+    }
+
+    return start <= end;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    setMin,
+
+    setMax,
+
+    setRange,
+
+    link,
+
+    valid
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+36_DatePicker.html
+Enterprise v1.0
+Part 5 - Validation Engine
+==========================================================-->
+
+<script>
+
+const DatePickerValidation = (()=>{
+
+"use strict";
+
+const errors = new Map();
+
+/*=========================================================
+VALIDATE
+=========================================================*/
+
+function validate(
+
+    name,
+
+    rules
+
+){
+
+    clear(name);
+
+    const input =
+
+        DatePicker.get(name);
+
+    if(!input){
+
+        return false;
+
+    }
+
+    const value =
+
+        input.value;
+
+    if(
+
+        rules.required &&
+
+        value===""
+
+    ){
+
+        return error(
+
+            name,
+
+            "Date is required."
+
+        );
+
+    }
+
+    if(
+
+        rules.min &&
+
+        value < rules.min
+
+    ){
+
+        return error(
+
+            name,
+
+            "Minimum date : " +
+
+            rules.min
+
+        );
+
+    }
+
+    if(
+
+        rules.max &&
+
+        value > rules.max
+
+    ){
+
+        return error(
+
+            name,
+
+            "Maximum date : " +
+
+            rules.max
+
+        );
+
+    }
+
+    return true;
+
+}
+
+/*=========================================================
+ERROR
+=========================================================*/
+
+function error(
+
+    name,
+
+    message
+
+){
+
+    const input =
+
+        DatePicker.get(name);
+
+    if(input){
+
+        input.classList.add(
+
+            "is-invalid"
+
+        );
+
+    }
+
+    errors.set(
+
+        name,
+
+        message
+
+    );
+
+    return false;
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    const input =
+
+        DatePicker.get(name);
+
+    if(input){
+
+        input.classList.remove(
+
+            "is-invalid"
+
+        );
+
+    }
+
+    errors.delete(name);
+
+}
+
+/*=========================================================
+CLEAR ALL
+=========================================================*/
+
+function clearAll(){
+
+    errors.forEach(function(v,k){
+
+        clear(k);
+
+    });
+
+}
+
+/*=========================================================
+HAS ERROR
+=========================================================*/
+
+function hasError(name){
+
+    return errors.has(name);
+
+}
+
+/*=========================================================
+GET ERROR
+=========================================================*/
+
+function getError(name){
+
+    return errors.get(name);
+
+}
+
+/*=========================================================
+GET ERRORS
+=========================================================*/
+
+function getErrors(){
+
+    return Object.fromEntries(
+
+        errors
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    validate,
+
+    clear,
+
+    clearAll,
+
+    hasError,
+
+    getError,
+
+    getErrors
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+36_DatePicker.html
+Enterprise v1.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const DatePickerEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    name,
+
+    event,
+
+    callback
+
+){
+
+    const input =
+
+        DatePicker.get(name);
+
+    if(
+
+        !input ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    input.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        name + ":" + event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    name,
+
+    event
+
+){
+
+    const input =
+
+        DatePicker.get(name);
+
+    const key =
+
+        name + ":" + event;
+
+    const callback =
+
+        listeners.get(key);
+
+    if(
+
+        input &&
+
+        callback
+
+    ){
+
+        input.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    name,
+
+    event
+
+){
+
+    const input =
+
+        DatePicker.get(name);
+
+    if(
+
+        input
+
+    ){
+
+        input.dispatchEvent(
+
+            new Event(
+
+                event
+
+            )
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+ENABLE
+=========================================================*/
+
+function enable(name){
+
+    const input =
+
+        DatePicker.get(name);
+
+    if(
+
+        input
+
+    ){
+
+        input.disabled = false;
+
+    }
+
+}
+
+/*=========================================================
+DISABLE
+=========================================================*/
+
+function disable(name){
+
+    const input =
+
+        DatePicker.get(name);
+
+    if(
+
+        input
+
+    ){
+
+        input.disabled = true;
+
+    }
+
+}
+
+/*=========================================================
+FOCUS
+=========================================================*/
+
+function focus(name){
+
+    const input =
+
+        DatePicker.get(name);
+
+    if(
+
+        input
+
+    ){
+
+        input.focus();
+
+    }
+
+}
+
+/*=========================================================
+BLUR
+=========================================================*/
+
+function blur(name){
+
+    const input =
+
+        DatePicker.get(name);
+
+    if(
+
+        input
+
+    ){
+
+        input.blur();
+
+    }
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    enable,
+
+    disable,
+
+    focus,
+
+    blur
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+36_DatePicker.html
+Enterprise v1.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const DatePickerTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-datepicker-default",
+
+    light     : "rpn-datepicker-light",
+
+    dark      : "rpn-datepicker-dark",
+
+    corporate : "rpn-datepicker-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current = theme;
+
+        applyAll();
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY
+=========================================================*/
+
+function apply(name){
+
+    const input =
+
+        DatePicker.get(name);
+
+    if(
+
+        !input
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(themes)
+
+    .forEach(function(css){
+
+        input.classList.remove(css);
+
+    });
+
+    input.classList.add(
+
+        themes[current]
+
+    );
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    DatePicker.state.elements
+
+    .forEach(function(
+
+        input,
+
+        name
+
+    ){
+
+        apply(name);
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] = css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    get,
+
+    apply,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+36_DatePicker.html
+Enterprise v1.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const DatePickerProduction = (()=>{
+
+"use strict";
+
+const VERSION = "1.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config){
+
+    const input =
+
+        DatePickerRender.render(
+
+            config
+
+        );
+
+    DatePickerTheme.apply(
+
+        config.name
+
+    );
+
+    return input;
+
+}
+
+/*=========================================================
+VALUE
+=========================================================*/
+
+function value(
+
+    name,
+
+    value
+
+){
+
+    return DatePicker.value(
+
+        name,
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+TODAY
+=========================================================*/
+
+function today(name){
+
+    DatePicker.today(name);
+
+}
+
+/*=========================================================
+VALIDATE
+=========================================================*/
+
+function validate(
+
+    name,
+
+    rules
+
+){
+
+    return DatePickerValidation.validate(
+
+        name,
+
+        rules
+
+    );
+
+}
+
+/*=========================================================
+OPEN
+=========================================================*/
+
+function open(name){
+
+    DatePickerCalendar.open(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    DatePicker.clear(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    DatePickerRender.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "DatePicker",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    value,
+
+    today,
+
+    validate,
+
+    open,
+
+    clear,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

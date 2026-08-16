@@ -1,0 +1,1403 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+32_Table.html
+Enterprise v1.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const Table = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    id:null,
+
+    container:null,
+
+    columns:[],
+
+    rows:[]
+
+};
+
+/*=========================================================
+CREATE
+=========================================================*/
+
+function create(config){
+
+    state.id=config.id;
+
+    state.container=
+
+        document.getElementById(
+
+            config.id
+
+        );
+
+    state.columns=
+
+        config.columns||[];
+
+    render();
+
+}
+
+/*=========================================================
+SET DATA
+=========================================================*/
+
+function setData(data){
+
+    state.rows=data||[];
+
+    refresh();
+
+}
+
+/*=========================================================
+GET DATA
+=========================================================*/
+
+function getData(){
+
+    return state.rows;
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(){
+
+    state.rows=[];
+
+    refresh();
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(){
+
+    TableRender.render();
+
+}
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(){
+
+    state.container.innerHTML=`
+
+<table class="rpn-table">
+
+<thead></thead>
+
+<tbody></tbody>
+
+</table>
+
+`;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    create,
+
+    setData,
+
+    getData,
+
+    clear,
+
+    refresh
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+32_Table.html
+Enterprise v1.0
+Part 2 - Render Engine
+==========================================================-->
+
+<script>
+
+const TableRender = (()=>{
+
+"use strict";
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(){
+
+    renderHeader();
+
+    renderBody();
+
+}
+
+/*=========================================================
+HEADER
+=========================================================*/
+
+function renderHeader(){
+
+    const thead =
+
+        Table.state.container
+
+        .querySelector(
+
+            "thead"
+
+        );
+
+    let html="";
+
+    html+="<tr>";
+
+    Table.state.columns.forEach(
+
+        function(col){
+
+            html+=`
+
+<th
+
+style="width:${col.width||150}px"
+
+class="${col.className||''}">
+
+${col.title}
+
+</th>
+
+`;
+
+        }
+
+    );
+
+    html+="</tr>";
+
+    thead.innerHTML=html;
+
+}
+
+/*=========================================================
+BODY
+=========================================================*/
+
+function renderBody(){
+
+    const tbody=
+
+        Table.state.container
+
+        .querySelector(
+
+            "tbody"
+
+        );
+
+    if(
+
+        Table.state.rows.length===0
+
+    ){
+
+        tbody.innerHTML=empty();
+
+        return;
+
+    }
+
+    let html="";
+
+    Table.state.rows.forEach(
+
+        function(row){
+
+            html+=rowRender(row);
+
+        }
+
+    );
+
+    tbody.innerHTML=html;
+
+}
+
+/*=========================================================
+ROW
+=========================================================*/
+
+function rowRender(row){
+
+    let html="";
+
+    html+="<tr>";
+
+    Table.state.columns.forEach(
+
+        function(col){
+
+            html+=cell(
+
+                row,
+
+                col
+
+            );
+
+        }
+
+    );
+
+    html+="</tr>";
+
+    return html;
+
+}
+
+/*=========================================================
+CELL
+=========================================================*/
+
+function cell(
+
+    row,
+
+    column
+
+){
+
+    return `
+
+<td>
+
+${
+
+row[
+
+column.field
+
+] ?? ""
+
+}
+
+</td>
+
+`;
+
+}
+
+/*=========================================================
+EMPTY
+=========================================================*/
+
+function empty(){
+
+return`
+
+<tr>
+
+<td
+
+colspan="${Table.state.columns.length}"
+
+class="table-empty">
+
+No Data
+
+</td>
+
+</tr>
+
+`;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    render
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+32_Table.html
+Enterprise v1.0
+Part 3 - Column Engine
+==========================================================-->
+
+<script>
+
+const TableColumn = (()=>{
+
+"use strict";
+
+/*=========================================================
+NORMALIZE
+=========================================================*/
+
+function normalize(columns){
+
+    return (columns||[]).map(function(col){
+
+        return Object.assign({
+
+            title      : "",
+
+            field      : "",
+
+            width      : 150,
+
+            align      : "left",
+
+            visible    : true,
+
+            className  : "",
+
+            formatter  : null
+
+        },col);
+
+    });
+
+}
+
+/*=========================================================
+VISIBLE
+=========================================================*/
+
+function visible(){
+
+    return Table.state.columns.filter(
+
+        c=>c.visible
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(field){
+
+    return Table.state.columns.find(
+
+        c=>c.field===field
+
+    );
+
+}
+
+/*=========================================================
+SHOW
+=========================================================*/
+
+function show(field){
+
+    const col=get(field);
+
+    if(col){
+
+        col.visible=true;
+
+        Table.refresh();
+
+    }
+
+}
+
+/*=========================================================
+HIDE
+=========================================================*/
+
+function hide(field){
+
+    const col=get(field);
+
+    if(col){
+
+        col.visible=false;
+
+        Table.refresh();
+
+    }
+
+}
+
+/*=========================================================
+TOGGLE
+=========================================================*/
+
+function toggle(field){
+
+    const col=get(field);
+
+    if(col){
+
+        col.visible=!col.visible;
+
+        Table.refresh();
+
+    }
+
+}
+
+/*=========================================================
+SET WIDTH
+=========================================================*/
+
+function setWidth(
+
+    field,
+
+    width
+
+){
+
+    const col=get(field);
+
+    if(col){
+
+        col.width=width;
+
+        Table.refresh();
+
+    }
+
+}
+
+/*=========================================================
+MOVE
+=========================================================*/
+
+function move(
+
+    from,
+
+    to
+
+){
+
+    const list=
+
+        Table.state.columns;
+
+    const item=
+
+        list.splice(
+
+            from,
+
+            1
+
+        )[0];
+
+    list.splice(
+
+        to,
+
+        0,
+
+        item
+
+    );
+
+    Table.refresh();
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    normalize,
+
+    visible,
+
+    get,
+
+    show,
+
+    hide,
+
+    toggle,
+
+    setWidth,
+
+    move
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+32_Table.html
+Enterprise v1.0
+Part 4 - Formatter Engine
+==========================================================-->
+
+<script>
+
+const TableFormatter = (()=>{
+
+"use strict";
+
+/*=========================================================
+FORMAT
+=========================================================*/
+
+function format(
+
+    value,
+
+    column,
+
+    row
+
+){
+
+    if(
+
+        typeof column.formatter ===
+
+        "function"
+
+    ){
+
+        return column.formatter(
+
+            value,
+
+            row,
+
+            column
+
+        );
+
+    }
+
+    switch(
+
+        column.type
+
+    ){
+
+        case "number":
+
+            return number(value);
+
+        case "currency":
+
+            return currency(value);
+
+        case "date":
+
+            return date(value);
+
+        case "datetime":
+
+            return datetime(value);
+
+        case "badge":
+
+            return badge(value);
+
+        case "boolean":
+
+            return boolean(value);
+
+        default:
+
+            return text(value);
+
+    }
+
+}
+
+/*=========================================================
+TEXT
+=========================================================*/
+
+function text(value){
+
+    return value ?? "";
+
+}
+
+/*=========================================================
+NUMBER
+=========================================================*/
+
+function number(value){
+
+    return Number(
+
+        value || 0
+
+    ).toLocaleString();
+
+}
+
+/*=========================================================
+CURRENCY
+=========================================================*/
+
+function currency(value){
+
+    return "Rp " +
+
+    Number(
+
+        value || 0
+
+    ).toLocaleString(
+
+        "id-ID"
+
+    );
+
+}
+
+/*=========================================================
+DATE
+=========================================================*/
+
+function date(value){
+
+    if(!value){
+
+        return "";
+
+    }
+
+    return new Date(
+
+        value
+
+    ).toLocaleDateString(
+
+        "id-ID"
+
+    );
+
+}
+
+/*=========================================================
+DATETIME
+=========================================================*/
+
+function datetime(value){
+
+    if(!value){
+
+        return "";
+
+    }
+
+    return new Date(
+
+        value
+
+    ).toLocaleString(
+
+        "id-ID"
+
+    );
+
+}
+
+/*=========================================================
+BOOLEAN
+=========================================================*/
+
+function boolean(value){
+
+    return value
+
+        ? "✔"
+
+        : "✖";
+
+}
+
+/*=========================================================
+BADGE
+=========================================================*/
+
+function badge(value){
+
+    return `
+
+<span class="table-badge">
+
+${value}
+
+</span>
+
+`;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    format
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+32_Table.html
+Enterprise v1.0
+Part 5 - Responsive Engine
+==========================================================-->
+
+<script>
+
+const TableResponsive = (()=>{
+
+"use strict";
+
+let mode = "desktop";
+
+/*=========================================================
+INIT
+=========================================================*/
+
+function init(){
+
+    detect();
+
+    window.addEventListener(
+
+        "resize",
+
+        detect
+
+    );
+
+}
+
+/*=========================================================
+DETECT
+=========================================================*/
+
+function detect(){
+
+    const width =
+
+        window.innerWidth;
+
+    if(width >= 1200){
+
+        mode = "desktop";
+
+    }
+
+    else if(width >= 992){
+
+        mode = "laptop";
+
+    }
+
+    else if(width >= 768){
+
+        mode = "tablet";
+
+    }
+
+    else{
+
+        mode = "mobile";
+
+    }
+
+    apply();
+
+}
+
+/*=========================================================
+APPLY
+=========================================================*/
+
+function apply(){
+
+    const table =
+
+        Table.state.container
+
+        .querySelector(
+
+            ".rpn-table"
+
+        );
+
+    if(!table){
+
+        return;
+
+    }
+
+    table.classList.remove(
+
+        "table-desktop",
+
+        "table-laptop",
+
+        "table-tablet",
+
+        "table-mobile"
+
+    );
+
+    table.classList.add(
+
+        "table-" + mode
+
+    );
+
+    Table.state.container
+
+    .style.overflowX =
+
+        mode==="mobile"
+
+        ? "auto"
+
+        : "";
+
+}
+
+/*=========================================================
+MODE
+=========================================================*/
+
+function current(){
+
+    return mode;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    init,
+
+    current
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+32_Table.html
+Enterprise v1.0
+Part 6 - Export Engine
+==========================================================-->
+
+<script>
+
+const TableExport = (()=>{
+
+"use strict";
+
+/*=========================================================
+CSV
+=========================================================*/
+
+function csv(fileName){
+
+    const data =
+
+        Table.getData();
+
+    if(
+
+        data.length===0
+
+    ){
+
+        return;
+
+    }
+
+    const columns=
+
+        TableColumn.visible();
+
+    const csv=[];
+
+    csv.push(
+
+        columns
+
+        .map(c=>c.title)
+
+        .join(",")
+
+    );
+
+    data.forEach(function(row){
+
+        csv.push(
+
+            columns.map(function(col){
+
+                return '"' +
+
+                String(
+
+                    row[col.field] ?? ""
+
+                ).replace(/"/g,'""') +
+
+                '"';
+
+            }).join(",")
+
+        );
+
+    });
+
+    download(
+
+        fileName || "Table",
+
+        csv.join("\n"),
+
+        "text/csv",
+
+        ".csv"
+
+    );
+
+}
+
+/*=========================================================
+JSON
+=========================================================*/
+
+function json(fileName){
+
+    download(
+
+        fileName || "Table",
+
+        JSON.stringify(
+
+            Table.getData(),
+
+            null,
+
+            2
+
+        ),
+
+        "application/json",
+
+        ".json"
+
+    );
+
+}
+
+/*=========================================================
+DOWNLOAD
+=========================================================*/
+
+function download(
+
+    file,
+
+    content,
+
+    type,
+
+    ext
+
+){
+
+    const blob =
+
+        new Blob(
+
+            [content],
+
+            {
+
+                type:type
+
+            }
+
+        );
+
+    const url=
+
+        URL.createObjectURL(
+
+            blob
+
+        );
+
+    const a=
+
+        document.createElement("a");
+
+    a.href=url;
+
+    a.download=
+
+        file+ext;
+
+    a.click();
+
+    URL.revokeObjectURL(
+
+        url
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    csv,
+
+    json
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+32_Table.html
+Enterprise v1.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const TableTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default : "table-theme-default",
+
+    dark : "table-theme-dark",
+
+    light : "table-theme-light",
+
+    corporate : "table-theme-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(name){
+
+    if(
+
+        !themes[name]
+
+    ){
+
+        return;
+
+    }
+
+    current = name;
+
+    apply();
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY
+=========================================================*/
+
+function apply(){
+
+    const table =
+
+        Table.state.container
+
+        .querySelector(
+
+            ".rpn-table"
+
+        );
+
+    if(
+
+        !table
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(themes)
+
+    .forEach(function(css){
+
+        table.classList.remove(css);
+
+    });
+
+    table.classList.add(
+
+        themes[current]
+
+    );
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    cssClass
+
+){
+
+    themes[name] = cssClass;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    get,
+
+    apply,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+32_Table.html
+Enterprise v1.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const TableProduction = (()=>{
+
+"use strict";
+
+const VERSION = "1.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config){
+
+    Table.create(config);
+
+    TableTheme.apply();
+
+    TableResponsive.init();
+
+}
+
+/*=========================================================
+LOAD
+=========================================================*/
+
+function load(data){
+
+    Table.setData(data);
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(){
+
+    Table.refresh();
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(){
+
+    Table.clear();
+
+}
+
+/*=========================================================
+EXPORT
+=========================================================*/
+
+function exportCSV(fileName){
+
+    TableExport.csv(fileName);
+
+}
+
+function exportJSON(fileName){
+
+    TableExport.json(fileName);
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(){
+
+    Table.clear();
+
+    Table.state.container.innerHTML="";
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "Table",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    load,
+
+    refresh,
+
+    clear,
+
+    destroy,
+
+    exportCSV,
+
+    exportJSON,
+
+    info
+
+};
+
+})();
+
+</script>

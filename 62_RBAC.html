@@ -1,0 +1,1531 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+62_RBAC.html
+Enterprise v2.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const RBAC = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    roles:new Map(),
+
+    users:new Map(),
+
+    permissions:new Map(),
+
+    sessions:new Map(),
+
+    policies:new Map()
+
+};
+
+/*=========================================================
+REGISTER ROLE
+=========================================================*/
+
+function register(
+
+    role,
+
+    data
+
+){
+
+    state.roles.set(
+
+        role,
+
+        data || {}
+
+    );
+
+}
+
+/*=========================================================
+GET ROLE
+=========================================================*/
+
+function role(name){
+
+    return state.roles.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+USER
+=========================================================*/
+
+function user(
+
+    id,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.users.get(
+
+            id
+
+        ) || {};
+
+    }
+
+    state.users.set(
+
+        id,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+PERMISSION
+=========================================================*/
+
+function permission(
+
+    role,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.permissions.get(
+
+            role
+
+        ) || [];
+
+    }
+
+    state.permissions.set(
+
+        role,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+SESSION
+=========================================================*/
+
+function session(
+
+    id,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.sessions.get(
+
+            id
+
+        ) || {};
+
+    }
+
+    state.sessions.set(
+
+        id,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(role){
+
+    state.roles.delete(role);
+
+    state.permissions.delete(role);
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    role,
+
+    user,
+
+    permission,
+
+    session,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+62_RBAC.html
+Enterprise v2.0
+Part 2 - Role Engine
+==========================================================-->
+
+<script>
+
+const RBACRole = (()=>{
+
+"use strict";
+
+/*=========================================================
+ADD ROLE
+=========================================================*/
+
+function add(
+
+    role,
+
+    data={}
+
+){
+
+    RBAC.register(
+
+        role,
+
+        {
+
+            name :
+
+            role,
+
+            description :
+
+            data.description ||
+
+            "",
+
+            level :
+
+            data.level ||
+
+            0,
+
+            active :
+
+            data.active ??
+
+            true,
+
+            created :
+
+            new Date()
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+UPDATE ROLE
+=========================================================*/
+
+function update(
+
+    role,
+
+    data={}
+
+){
+
+    const current =
+
+        RBAC.role(
+
+            role
+
+        );
+
+    if(
+
+        !current
+
+    ){
+
+        return;
+
+    }
+
+    RBAC.register(
+
+        role,
+
+        {
+
+            ...current,
+
+            ...data,
+
+            updated :
+
+            new Date()
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+DELETE ROLE
+=========================================================*/
+
+function remove(role){
+
+    RBAC.remove(
+
+        role
+
+    );
+
+}
+
+/*=========================================================
+LIST ROLE
+=========================================================*/
+
+function list(){
+
+    return Array.from(
+
+        RBAC.state.roles.values()
+
+    );
+
+}
+
+/*=========================================================
+EXISTS
+=========================================================*/
+
+function exists(role){
+
+    return RBAC.state.roles.has(
+
+        role
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    add,
+
+    update,
+
+    remove,
+
+    list,
+
+    exists
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+62_RBAC.html
+Enterprise v2.0
+Part 3 - Permission Engine
+==========================================================-->
+
+<script>
+
+const RBACPermission = (()=>{
+
+"use strict";
+
+/*=========================================================
+GRANT
+=========================================================*/
+
+function grant(
+
+    role,
+
+    permission
+
+){
+
+    const permissions =
+
+        RBAC.permission(
+
+            role
+
+        );
+
+    if(
+
+        !permissions.includes(
+
+            permission
+
+        )
+
+    ){
+
+        permissions.push(
+
+            permission
+
+        );
+
+    }
+
+    RBAC.permission(
+
+        role,
+
+        permissions
+
+    );
+
+}
+
+/*=========================================================
+REVOKE
+=========================================================*/
+
+function revoke(
+
+    role,
+
+    permission
+
+){
+
+    const permissions =
+
+        RBAC.permission(
+
+            role
+
+        ).filter(function(item){
+
+            return item !==
+
+                permission;
+
+        });
+
+    RBAC.permission(
+
+        role,
+
+        permissions
+
+    );
+
+}
+
+/*=========================================================
+HAS
+=========================================================*/
+
+function has(
+
+    role,
+
+    permission
+
+){
+
+    return RBAC.permission(
+
+        role
+
+    ).includes(
+
+        permission
+
+    );
+
+}
+
+/*=========================================================
+LIST
+=========================================================*/
+
+function list(role){
+
+    return RBAC.permission(
+
+        role
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(role){
+
+    RBAC.permission(
+
+        role,
+
+        []
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    grant,
+
+    revoke,
+
+    has,
+
+    list,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+62_RBAC.html
+Enterprise v2.0
+Part 4 - Session Engine
+==========================================================-->
+
+<script>
+
+const RBACSession = (()=>{
+
+"use strict";
+
+/*=========================================================
+LOGIN
+=========================================================*/
+
+function login(
+
+    userId,
+
+    sessionData={}
+
+){
+
+    RBAC.session(
+
+        userId,
+
+        {
+
+            userId,
+
+            loginTime :
+
+            new Date(),
+
+            status :
+
+            "ACTIVE",
+
+            token :
+
+            sessionData.token ||
+
+            "",
+
+            role :
+
+            sessionData.role ||
+
+            "",
+
+            ip :
+
+            sessionData.ip ||
+
+            "",
+
+            ...sessionData
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+LOGOUT
+=========================================================*/
+
+function logout(userId){
+
+    const session =
+
+        RBAC.session(
+
+            userId
+
+        );
+
+    if(
+
+        !session.userId
+
+    ){
+
+        return;
+
+    }
+
+    session.status =
+
+        "INACTIVE";
+
+    session.logoutTime =
+
+        new Date();
+
+    RBAC.session(
+
+        userId,
+
+        session
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(userId){
+
+    return RBAC.session(
+
+        userId
+
+    );
+
+}
+
+/*=========================================================
+ACTIVE
+=========================================================*/
+
+function active(userId){
+
+    const session =
+
+        get(
+
+            userId
+
+        );
+
+    return session.status ===
+
+        "ACTIVE";
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(userId){
+
+    RBAC.state.sessions.delete(
+
+        userId
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    login,
+
+    logout,
+
+    get,
+
+    active,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+62_RBAC.html
+Enterprise v2.0
+Part 5 - Policy Engine
+==========================================================-->
+
+<script>
+
+const RBACPolicy = (()=>{
+
+"use strict";
+
+/*=========================================================
+ADD POLICY
+=========================================================*/
+
+function add(
+
+    name,
+
+    policy
+
+){
+
+    RBAC.state.policies.set(
+
+        name,
+
+        {
+
+            name,
+
+            description :
+
+            policy.description ||
+
+            "",
+
+            rules :
+
+            policy.rules ||
+
+            [],
+
+            active :
+
+            policy.active ??
+
+            true,
+
+            created :
+
+            new Date()
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+GET POLICY
+=========================================================*/
+
+function get(name){
+
+    return RBAC.state.policies.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+REMOVE POLICY
+=========================================================*/
+
+function remove(name){
+
+    RBAC.state.policies.delete(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+VALIDATE
+=========================================================*/
+
+function validate(
+
+    policyName,
+
+    context={}
+
+){
+
+    const policy =
+
+        get(
+
+            policyName
+
+        );
+
+    if(
+
+        !policy ||
+
+        !policy.active
+
+    ){
+
+        return false;
+
+    }
+
+    return policy.rules.every(
+
+        function(rule){
+
+            return typeof rule ===
+
+                "function"
+
+                ? rule(context)
+
+                : true;
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+LIST
+=========================================================*/
+
+function list(){
+
+    return Array.from(
+
+        RBAC.state.policies.values()
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    add,
+
+    get,
+
+    remove,
+
+    validate,
+
+    list
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+62_RBAC.html
+Enterprise v2.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const RBACEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    name,
+
+    event,
+
+    callback
+
+){
+
+    const element =
+
+        RBAC.get(
+
+            name
+
+        );
+
+    if(
+
+        !element ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    element.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        name +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    name,
+
+    event
+
+){
+
+    const element =
+
+        RBAC.get(
+
+            name
+
+        );
+
+    const key =
+
+        name +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        element &&
+
+        callback
+
+    ){
+
+        element.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    name,
+
+    event,
+
+    detail
+
+){
+
+    const element =
+
+        RBAC.get(
+
+            name
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                name +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                name,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+62_RBAC.html
+Enterprise v2.0
+Part 7 - Security Engine
+==========================================================-->
+
+<script>
+
+const RBACSecurity = (()=>{
+
+"use strict";
+
+/*=========================================================
+AUTHORIZE
+=========================================================*/
+
+function authorize(
+
+    userId,
+
+    permission
+
+){
+
+    const user =
+
+        RBAC.user(
+
+            userId
+
+        );
+
+    if(
+
+        !user ||
+
+        !user.role
+
+    ){
+
+        return false;
+
+    }
+
+    return RBACPermission.has(
+
+        user.role,
+
+        permission
+
+    );
+
+}
+
+/*=========================================================
+AUTHENTICATE
+=========================================================*/
+
+function authenticate(
+
+    userId
+
+){
+
+    return RBACSession.active(
+
+        userId
+
+    );
+
+}
+
+/*=========================================================
+ACCESS
+=========================================================*/
+
+function access(
+
+    userId,
+
+    permission
+
+){
+
+    return authenticate(
+
+        userId
+
+    ) && authorize(
+
+        userId,
+
+        permission
+
+    );
+
+}
+
+/*=========================================================
+DENY
+=========================================================*/
+
+function deny(){
+
+    throw new Error(
+
+        "Access Denied."
+
+    );
+
+}
+
+/*=========================================================
+REQUIRE
+=========================================================*/
+
+function requirePermission(
+
+    userId,
+
+    permission
+
+){
+
+    if(
+
+        !access(
+
+            userId,
+
+            permission
+
+        )
+
+    ){
+
+        deny();
+
+    }
+
+    return true;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    authenticate,
+
+    authorize,
+
+    access,
+
+    deny,
+
+    requirePermission
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+62_RBAC.html
+Enterprise v2.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const RBACProduction = (()=>{
+
+"use strict";
+
+const VERSION = "2.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config={}){
+
+    Object.entries(
+
+        config.roles || {}
+
+    ).forEach(function([
+
+        role,
+
+        data
+
+    ]){
+
+        RBAC.register(
+
+            role,
+
+            data
+
+        );
+
+    });
+
+    Object.entries(
+
+        config.permissions || {}
+
+    ).forEach(function([
+
+        role,
+
+        permissions
+
+    ]){
+
+        RBAC.permission(
+
+            role,
+
+            permissions
+
+        );
+
+    });
+
+    RBACEvent.trigger(
+
+        "system",
+
+        "ready",
+
+        {
+
+            roles :
+
+            RBACRole.list().length
+
+        }
+
+    );
+
+    return info();
+
+}
+
+/*=========================================================
+LOGIN
+=========================================================*/
+
+function login(
+
+    userId,
+
+    session
+
+){
+
+    RBACSession.login(
+
+        userId,
+
+        session
+
+    );
+
+    RBACEvent.trigger(
+
+        "system",
+
+        "login",
+
+        {
+
+            userId
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+LOGOUT
+=========================================================*/
+
+function logout(userId){
+
+    RBACSession.logout(
+
+        userId
+
+    );
+
+    RBACEvent.trigger(
+
+        "system",
+
+        "logout",
+
+        {
+
+            userId
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+CHECK ACCESS
+=========================================================*/
+
+function can(
+
+    userId,
+
+    permission
+
+){
+
+    return RBACSecurity.access(
+
+        userId,
+
+        permission
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "RBAC",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    login,
+
+    logout,
+
+    can,
+
+    info
+
+};
+
+})();
+
+</script>

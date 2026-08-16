@@ -1,0 +1,1625 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+63_DigitalSignature.html
+Enterprise v2.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const DigitalSignature = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    providers:new Map(),
+
+    signatures:new Map(),
+
+    certificates:new Map(),
+
+    settings:new Map(),
+
+    history:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    provider
+
+){
+
+    state.providers.set(
+
+        name,
+
+        provider
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.providers.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+SIGNATURE
+=========================================================*/
+
+function signature(
+
+    id,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.signatures.get(
+
+            id
+
+        ) || null;
+
+    }
+
+    state.signatures.set(
+
+        id,
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+CERTIFICATE
+=========================================================*/
+
+function certificate(
+
+    id,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.certificates.get(
+
+            id
+
+        ) || null;
+
+    }
+
+    state.certificates.set(
+
+        id,
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+SETTINGS
+=========================================================*/
+
+function settings(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.settings.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.settings.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+HISTORY
+=========================================================*/
+
+function history(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.history.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.history.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.providers.delete(name);
+
+    state.settings.delete(name);
+
+    state.history.delete(name);
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    signature,
+
+    certificate,
+
+    settings,
+
+    history,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+63_DigitalSignature.html
+Enterprise v2.0
+Part 2 - Signature Engine
+==========================================================-->
+
+<script>
+
+const SignatureEngine = (()=>{
+
+"use strict";
+
+/*=========================================================
+CREATE
+=========================================================*/
+
+async function create(
+
+    id,
+
+    data,
+
+    algorithm="SHA-256"
+
+){
+
+    const encoder =
+
+        new TextEncoder();
+
+    const buffer =
+
+        encoder.encode(
+
+            JSON.stringify(
+
+                data
+
+            )
+
+        );
+
+    const hash =
+
+        await crypto.subtle.digest(
+
+            algorithm,
+
+            buffer
+
+        );
+
+    const signature =
+
+        toHex(
+
+            hash
+
+        );
+
+    DigitalSignature.signature(
+
+        id,
+
+        {
+
+            id,
+
+            algorithm,
+
+            signature,
+
+            created :
+
+            new Date()
+
+        }
+
+    );
+
+    return signature;
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(id){
+
+    return DigitalSignature.signature(
+
+        id
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(id){
+
+    DigitalSignature.state
+
+        .signatures
+
+        .delete(id);
+
+}
+
+/*=========================================================
+HEX
+=========================================================*/
+
+function toHex(buffer){
+
+    return Array.from(
+
+        new Uint8Array(
+
+            buffer
+
+        )
+
+    )
+
+    .map(function(byte){
+
+        return byte
+
+            .toString(16)
+
+            .padStart(
+
+                2,
+
+                "0"
+
+            );
+
+    })
+
+    .join("");
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    create,
+
+    get,
+
+    remove,
+
+    toHex
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+63_DigitalSignature.html
+Enterprise v2.0
+Part 3 - Certificate Engine
+==========================================================-->
+
+<script>
+
+const CertificateEngine = (()=>{
+
+"use strict";
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    id,
+
+    certificate
+
+){
+
+    DigitalSignature.certificate(
+
+        id,
+
+        {
+
+            id,
+
+            issuer :
+
+            certificate.issuer ||
+
+            "",
+
+            subject :
+
+            certificate.subject ||
+
+            "",
+
+            serialNumber :
+
+            certificate.serialNumber ||
+
+            "",
+
+            validFrom :
+
+            certificate.validFrom ||
+
+            null,
+
+            validTo :
+
+            certificate.validTo ||
+
+            null,
+
+            publicKey :
+
+            certificate.publicKey ||
+
+            "",
+
+            created :
+
+            new Date()
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(id){
+
+    return DigitalSignature.certificate(
+
+        id
+
+    );
+
+}
+
+/*=========================================================
+VALID
+=========================================================*/
+
+function valid(id){
+
+    const cert =
+
+        get(id);
+
+    if(
+
+        !cert
+
+    ){
+
+        return false;
+
+    }
+
+    const now =
+
+        Date.now();
+
+    return now >=
+
+        new Date(
+
+            cert.validFrom
+
+        ).getTime()
+
+        &&
+
+        now <=
+
+        new Date(
+
+            cert.validTo
+
+        ).getTime();
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(id){
+
+    DigitalSignature.state
+
+        .certificates
+
+        .delete(
+
+            id
+
+        );
+
+}
+
+/*=========================================================
+LIST
+=========================================================*/
+
+function list(){
+
+    return Array.from(
+
+        DigitalSignature.state
+
+        .certificates
+
+        .values()
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    register,
+
+    get,
+
+    valid,
+
+    remove,
+
+    list
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+63_DigitalSignature.html
+Enterprise v2.0
+Part 4 - Verification Engine
+==========================================================-->
+
+<script>
+
+const VerificationEngine = (()=>{
+
+"use strict";
+
+/*=========================================================
+VERIFY SIGNATURE
+=========================================================*/
+
+async function verify(
+
+    id,
+
+    data
+
+){
+
+    const sign =
+
+        SignatureEngine.get(
+
+            id
+
+        );
+
+    if(
+
+        !sign
+
+    ){
+
+        return false;
+
+    }
+
+    const current =
+
+        await SignatureEngine.create(
+
+            "__VERIFY__",
+
+            data,
+
+            sign.algorithm
+
+        );
+
+    SignatureEngine.remove(
+
+        "__VERIFY__"
+
+    );
+
+    return current===
+
+        sign.signature;
+
+}
+
+/*=========================================================
+VERIFY CERTIFICATE
+=========================================================*/
+
+function certificate(id){
+
+    return CertificateEngine.valid(
+
+        id
+
+    );
+
+}
+
+/*=========================================================
+VERIFY DOCUMENT
+=========================================================*/
+
+async function document(
+
+    id,
+
+    data
+
+){
+
+    const sign =
+
+        await verify(
+
+            id,
+
+            data
+
+        );
+
+    const cert =
+
+        certificate(
+
+            id
+
+        );
+
+    return{
+
+        valid :
+
+        sign && cert,
+
+        signature :
+
+        sign,
+
+        certificate :
+
+        cert
+
+    };
+
+}
+
+/*=========================================================
+STATUS
+=========================================================*/
+
+async function status(
+
+    id,
+
+    data
+
+){
+
+    const result =
+
+        await document(
+
+            id,
+
+            data
+
+        );
+
+    return result.valid
+
+        ? "VALID"
+
+        : "INVALID";
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    verify,
+
+    certificate,
+
+    document,
+
+    status
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+63_DigitalSignature.html
+Enterprise v2.0
+Part 5 - Storage Engine
+==========================================================-->
+
+<script>
+
+const SignatureStorage = (()=>{
+
+"use strict";
+
+/*=========================================================
+SAVE
+=========================================================*/
+
+function save(
+
+    id
+
+){
+
+    const signature =
+
+        SignatureEngine.get(
+
+            id
+
+        );
+
+    if(
+
+        !signature
+
+    ){
+
+        return false;
+
+    }
+
+    localStorage.setItem(
+
+        "RPN_SIGNATURE_" +
+
+        id,
+
+        JSON.stringify(
+
+            signature
+
+        )
+
+    );
+
+    return true;
+
+}
+
+/*=========================================================
+LOAD
+=========================================================*/
+
+function load(id){
+
+    const data =
+
+        localStorage.getItem(
+
+            "RPN_SIGNATURE_" +
+
+            id
+
+        );
+
+    if(
+
+        !data
+
+    ){
+
+        return null;
+
+    }
+
+    const signature =
+
+        JSON.parse(
+
+            data
+
+        );
+
+    DigitalSignature.signature(
+
+        id,
+
+        signature
+
+    );
+
+    return signature;
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(id){
+
+    localStorage.removeItem(
+
+        "RPN_SIGNATURE_" +
+
+        id
+
+    );
+
+    DigitalSignature.state
+
+        .signatures
+
+        .delete(
+
+            id
+
+        );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(){
+
+    Object.keys(
+
+        localStorage
+
+    ).forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                "RPN_SIGNATURE_"
+
+            )
+
+        ){
+
+            localStorage.removeItem(
+
+                key
+
+            );
+
+        }
+
+    });
+
+    DigitalSignature.state
+
+        .signatures
+
+        .clear();
+
+}
+
+/*=========================================================
+LIST
+=========================================================*/
+
+function list(){
+
+    return Array.from(
+
+        DigitalSignature.state
+
+        .signatures
+
+        .values()
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    save,
+
+    load,
+
+    remove,
+
+    clear,
+
+    list
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+63_DigitalSignature.html
+Enterprise v2.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const SignatureEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    provider,
+
+    event,
+
+    callback
+
+){
+
+    const element =
+
+        DigitalSignature.get(
+
+            provider
+
+        );
+
+    if(
+
+        !element ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    element.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        provider +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    provider,
+
+    event
+
+){
+
+    const element =
+
+        DigitalSignature.get(
+
+            provider
+
+        );
+
+    const key =
+
+        provider +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        element &&
+
+        callback
+
+    ){
+
+        element.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    provider,
+
+    event,
+
+    detail
+
+){
+
+    const element =
+
+        DigitalSignature.get(
+
+            provider
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(provider){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                provider +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                provider,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+63_DigitalSignature.html
+Enterprise v2.0
+Part 7 - Security Engine
+==========================================================-->
+
+<script>
+
+const SignatureSecurity = (()=>{
+
+"use strict";
+
+/*=========================================================
+ENCRYPT
+=========================================================*/
+
+async function encrypt(
+
+    text
+
+){
+
+    const encoder =
+
+        new TextEncoder();
+
+    const buffer =
+
+        encoder.encode(
+
+            text
+
+        );
+
+    return crypto.subtle.digest(
+
+        "SHA-256",
+
+        buffer
+
+    );
+
+}
+
+/*=========================================================
+HASH
+=========================================================*/
+
+async function hash(
+
+    value
+
+){
+
+    const digest =
+
+        await encrypt(
+
+            value
+
+        );
+
+    return Array.from(
+
+        new Uint8Array(
+
+            digest
+
+        )
+
+    )
+
+    .map(function(byte){
+
+        return byte
+
+            .toString(16)
+
+            .padStart(
+
+                2,
+
+                "0"
+
+            );
+
+    })
+
+    .join("");
+
+}
+
+/*=========================================================
+VERIFY HASH
+=========================================================*/
+
+async function verifyHash(
+
+    value,
+
+    checksum
+
+){
+
+    return(
+
+        await hash(
+
+            value
+
+        )
+
+    )===checksum;
+
+}
+
+/*=========================================================
+TIMESTAMP
+=========================================================*/
+
+function timestamp(){
+
+    return{
+
+        utc :
+
+        new Date()
+
+        .toISOString(),
+
+        local :
+
+        new Date()
+
+    };
+
+}
+
+/*=========================================================
+INTEGRITY
+=========================================================*/
+
+async function integrity(
+
+    data,
+
+    checksum
+
+){
+
+    return verifyHash(
+
+        JSON.stringify(
+
+            data
+
+        ),
+
+        checksum
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    encrypt,
+
+    hash,
+
+    verifyHash,
+
+    timestamp,
+
+    integrity
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+63_DigitalSignature.html
+Enterprise v2.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const SignatureProduction = (()=>{
+
+"use strict";
+
+const VERSION = "2.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config={}){
+
+    DigitalSignature.register(
+
+        config.name,
+
+        document.body
+
+    );
+
+    DigitalSignature.settings(
+
+        config.name,
+
+        config.settings ||
+
+        {}
+
+    );
+
+    SignatureEvent.trigger(
+
+        config.name,
+
+        "ready",
+
+        {
+
+            provider :
+
+            config.name
+
+        }
+
+    );
+
+    return info();
+
+}
+
+/*=========================================================
+SIGN
+=========================================================*/
+
+async function sign(
+
+    id,
+
+    data
+
+){
+
+    SignatureEvent.trigger(
+
+        "system",
+
+        "beforeSign",
+
+        {
+
+            id
+
+        }
+
+    );
+
+    const signature =
+
+        await SignatureEngine.create(
+
+            id,
+
+            data
+
+        );
+
+    SignatureStorage.save(
+
+        id
+
+    );
+
+    SignatureEvent.trigger(
+
+        "system",
+
+        "afterSign",
+
+        {
+
+            id,
+
+            signature
+
+        }
+
+    );
+
+    return signature;
+
+}
+
+/*=========================================================
+VERIFY
+=========================================================*/
+
+async function verify(
+
+    id,
+
+    data
+
+){
+
+    return VerificationEngine.document(
+
+        id,
+
+        data
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(){
+
+    SignatureStorage.clear();
+
+    DigitalSignature.state
+
+        .certificates
+
+        .clear();
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "DigitalSignature",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    sign,
+
+    verify,
+
+    clear,
+
+    info
+
+};
+
+})();
+
+</script>

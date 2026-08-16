@@ -1,0 +1,503 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+19_Export.html
+Enterprise Edition v5.0
+==========================================================-->
+
+<div class="export-page">
+
+  <!--=========================================
+    PAGE HEADER
+  ==========================================-->
+
+  <div class="page-header">
+
+    <div>
+
+      <h2>
+
+        Export Management
+
+      </h2>
+
+      <span>
+
+        Export Order • Stuffing • Shipping • BL Tracking
+
+      </span>
+
+    </div>
+
+    <div class="header-action">
+
+      <button
+        class="btn btn-primary"
+        onclick="Export.create()">
+
+        <i class="ri-add-line"></i>
+
+        Export Order
+
+      </button>
+
+      <button
+        class="btn btn-warning"
+        onclick="Export.container()">
+
+        <i class="ri-inbox-line"></i>
+
+        Container
+
+      </button>
+
+      <button
+        class="btn btn-success"
+        onclick="Export.shipping()">
+
+        <i class="ri-ship-line"></i>
+
+        Shipping
+
+      </button>
+
+      <button
+        class="btn btn-info"
+        onclick="Export.refresh()">
+
+        <i class="ri-refresh-line"></i>
+
+        Refresh
+
+      </button>
+
+    </div>
+
+  </div>
+
+  <!--=========================================
+    KPI
+  ==========================================-->
+
+  <div class="dashboard-kpi">
+
+    <div id="exportOpen"></div>
+
+    <div id="exportStuffing"></div>
+
+    <div id="exportShipping"></div>
+
+    <div id="exportTransit"></div>
+
+    <div id="exportDelivered"></div>
+
+    <div id="exportRevenue"></div>
+
+  </div>
+
+  <!--=========================================
+    FILTER
+  ==========================================-->
+
+  <div class="page-filter">
+
+    <input
+
+      id="exportKeyword"
+
+      type="text"
+
+      placeholder="Search Export No / Customer / Container"
+
+      onkeyup="Export.search()">
+
+    <select
+
+      id="exportStatus"
+
+      onchange="Export.filter()">
+
+      <option value="">All Status</option>
+
+      <option>OPEN</option>
+
+      <option>INSPECTION</option>
+
+      <option>STUFFING</option>
+
+      <option>SHIPPING</option>
+
+      <option>DELIVERED</option>
+
+      <option>CANCEL</option>
+
+    </select>
+
+  </div>
+
+  <!--=========================================
+    GRID
+  ==========================================-->
+
+  <div id="exportGrid">
+
+  </div>
+
+</div>
+
+<script>
+
+const Export = (()=>{
+
+"use strict";
+
+let rows=[];
+
+/*=======================================================
+LOAD
+=======================================================*/
+
+async function load(){
+
+    Loader.show(
+
+        "Loading Export..."
+
+    );
+
+    rows = await API.post(
+
+        "EXPORT.LOAD",
+
+        {}
+
+    );
+
+    render();
+
+    Loader.hide();
+
+}
+
+/*=======================================================
+RENDER
+=======================================================*/
+
+function render(){
+
+    exportGrid.innerHTML =
+
+        Grid.render(
+
+            rows,
+
+            {
+
+                view:view,
+
+                edit:edit,
+
+                inspection:inspection,
+
+                stuffing:stuffing,
+
+                shipping:shipping,
+
+                tracking:tracking,
+
+                document:documentFile,
+
+                print:print
+
+            }
+
+        );
+
+}
+
+/*=======================================================
+SEARCH
+=======================================================*/
+
+function search(){
+
+    Grid.filter(
+
+        "exportGrid",
+
+        exportKeyword.value
+
+    );
+
+}
+
+/*=======================================================
+FILTER
+=======================================================*/
+
+function filter(){
+
+    Grid.filterColumn(
+
+        "exportGrid",
+
+        "STATUS",
+
+        exportStatus.value
+
+    );
+
+}
+
+/*=======================================================
+CREATE
+=======================================================*/
+
+function create(){
+
+    Router.load(
+
+        "19A_ExportOrder"
+
+    );
+
+}
+
+/*=======================================================
+CONTAINER
+=======================================================*/
+
+function container(){
+
+    Router.load(
+
+        "19B_Container"
+
+    );
+
+}
+
+/*=======================================================
+INSPECTION
+=======================================================*/
+
+function inspection(id){
+
+    Router.load(
+
+        "19C_Inspection",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+STUFFING
+=======================================================*/
+
+function stuffing(id){
+
+    Router.load(
+
+        "19D_Stuffing",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+SHIPPING
+=======================================================*/
+
+function shipping(id){
+
+    Router.load(
+
+        "19E_Shipping",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+TRACKING
+=======================================================*/
+
+function tracking(id){
+
+    Router.load(
+
+        "19F_Tracking",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+DOCUMENT
+=======================================================*/
+
+function documentFile(id){
+
+    Router.load(
+
+        "19G_Document",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+VIEW
+=======================================================*/
+
+function view(id){
+
+    Router.load(
+
+        "19H_Detail",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+EDIT
+=======================================================*/
+
+function edit(id){
+
+    Router.load(
+
+        "19I_Edit",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+PRINT
+=======================================================*/
+
+async function print(id){
+
+    Loader.show();
+
+    const pdf = await API.post(
+
+        "REPORT.PDF",
+
+        {
+
+            TYPE:"EXPORT",
+
+            ID:id
+
+        }
+
+    );
+
+    Loader.hide();
+
+    window.open(
+
+        pdf.URL,
+
+        "_blank"
+
+    );
+
+}
+
+/*=======================================================
+REFRESH
+=======================================================*/
+
+function refresh(){
+
+    load();
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    load,
+
+    render,
+
+    refresh,
+
+    search,
+
+    filter,
+
+    create,
+
+    container,
+
+    inspection,
+
+    stuffing,
+
+    shipping,
+
+    tracking,
+
+    document:documentFile,
+
+    view,
+
+    edit,
+
+    print
+
+};
+
+})();
+
+</script>

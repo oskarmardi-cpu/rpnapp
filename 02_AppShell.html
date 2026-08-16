@@ -1,0 +1,158 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+02_AppShell.html
+Enterprise Edition v5.0
+==========================================================-->
+
+<div id="rpn-app">
+
+
+  <!--=======================================================
+    HEADER
+    INITIAL STATE: HIDDEN
+    App akan menampilkan setelah login berhasil.
+  ========================================================-->
+
+  <header
+    id="app-header"
+    style="display:none;">
+
+    <?!= HtmlService
+      .createTemplateFromFile("04_Header")
+      .evaluate()
+      .getContent(); ?>
+
+  </header>
+
+
+
+  <!--=======================================================
+    APPLICATION LAYOUT
+  ========================================================-->
+
+  <div class="app-layout">
+
+
+    <!--=====================================================
+      SIDEBAR
+      INITIAL STATE: HIDDEN
+    ======================================================-->
+
+    <aside
+      id="app-sidebar"
+      style="display:none;">
+
+      <?!= HtmlService
+        .createTemplateFromFile("05_Sidebar")
+        .evaluate()
+        .getContent(); ?>
+
+    </aside>
+
+
+
+    <!--=====================================================
+      MAIN
+    ======================================================-->
+
+    <main id="app-main">
+
+
+      <div id="page-container">
+
+
+        <!--=================================================
+          LOGIN VIEW
+        ==================================================-->
+
+        <section
+          id="login-view-container"
+          class="app-page">
+
+          <?!= HtmlService
+            .createTemplateFromFile("10_Login")
+            .evaluate()
+            .getContent(); ?>
+
+        </section>
+
+
+
+        <!--=================================================
+          DASHBOARD VIEW
+        ==================================================-->
+
+        <section
+          id="dashboard-view-container"
+          class="app-page"
+          style="display:none;">
+
+          <?!= HtmlService
+            .createTemplateFromFile("20_Dashboard")
+            .evaluate()
+            .getContent(); ?>
+
+        </section>
+
+
+      </div>
+
+
+    </main>
+
+
+  </div>
+
+
+
+  <!--=======================================================
+    FOOTER
+    INITIAL STATE: HIDDEN
+  ========================================================-->
+
+  <footer
+    id="app-footer"
+    style="display:none;">
+
+    <?!= HtmlService
+      .createTemplateFromFile("06_Footer")
+      .evaluate()
+      .getContent(); ?>
+
+  </footer>
+
+
+</div>
+
+
+
+<!--=========================================================
+ GLOBAL LOADER
+==========================================================-->
+
+<?!= HtmlService
+  .createTemplateFromFile("07_Loader")
+  .evaluate()
+  .getContent(); ?>
+
+
+
+<!--=========================================================
+ GLOBAL TOAST
+==========================================================-->
+
+<?!= HtmlService
+  .createTemplateFromFile("08_Toast")
+  .evaluate()
+  .getContent(); ?>
+
+
+
+<!--=========================================================
+ GLOBAL MODAL
+==========================================================-->
+
+<?!= HtmlService
+  .createTemplateFromFile("09_Modal")
+  .evaluate()
+  .getContent(); ?>

@@ -1,0 +1,314 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+11_API.html
+Enterprise Edition v5.1
+API Controller
+==========================================================-->
+
+<script>
+
+const API = (() => {
+
+    "use strict";
+
+    const DEFAULT_TIMEOUT = 60000;
+    const DEFAULT_RETRY = 3;
+
+    /*=======================================================
+      POST
+    =======================================================*/
+
+    function post(
+        action,
+        payload,
+        option
+    ){
+
+        return execute(
+            action,
+            payload || {},
+            option || {}
+        );
+
+    }
+
+    /*=======================================================
+      GET
+    =======================================================*/
+
+    function get(
+        action,
+        payload,
+        option
+    ){
+
+        return execute(
+            action,
+            payload || {},
+            option || {}
+        );
+
+    }
+
+    /*=======================================================
+      LOGIN
+    =======================================================*/
+
+    function login(
+        username,
+        password
+    ){
+
+        return post(
+
+            "AUTH.LOGIN",
+
+            {
+                USERNAME : String(username || "").trim(),
+                PASSWORD : String(password || "")
+            },
+
+            {
+                retry : 1
+            }
+
+        );
+
+    }
+
+    /*=======================================================
+      UPLOAD
+    =======================================================*/
+
+    function upload(
+        action,
+        payload,
+        file,
+        option
+    ){
+
+        payload = payload || {};
+
+        payload.FILE = file;
+
+        return execute(
+            action,
+            payload,
+            option || {}
+        );
+
+    }
+
+    /*=======================================================
+      DOWNLOAD
+    =======================================================*/
+
+    function download(
+        action,
+        payload,
+        option
+    ){
+
+        return execute(
+            action,
+            payload || {},
+            option || {}
+        );
+
+    }
+
+    /*=======================================================
+      EXECUTE
+    =======================================================*/
+
+    function execute(
+        action,
+        payload,
+        option
+    ){
+
+        option = option || {};
+
+        const retry =
+            option.retry !== undefined
+                ? option.retry
+                : DEFAULT_RETRY;
+
+        const timeout =
+            option.timeout || DEFAULT_TIMEOUT;
+
+        return new Promise(
+
+            function(
+                resolve,
+                reject
+            ){
+
+                executeRetry(
+                    action,
+                    payload || {},
+                    retry,
+                    timeout,
+                    resolve,
+                    reject
+                );
+
+            }
+
+        );
+
+    }
+
+    /*=======================================================
+      RETRY
+    =======================================================*/
+
+    function executeRetry(
+        action,
+        payload,
+        retry,
+        timeout,
+        resolve,
+        reject
+    ){
+
+        let finished = false;
+
+        const timer = setTimeout(
+
+            function(){
+
+                if(finished){
+                    return;
+                }
+
+                finished = true;
+
+                reject(
+                    new Error(
+                        "Request timeout."
+                    )
+                );
+
+            },
+
+            timeout
+
+        );
+
+        google.script.run
+
+            .withSuccessHandler(
+
+                function(result){
+
+                    if(finished){
+                        return;
+                    }
+
+                    finished = true;
+
+                    clearTimeout(timer);
+
+                    resolve(result);
+
+                }
+
+            )
+
+            .withFailureHandler(
+
+                function(error){
+
+                    clearTimeout(timer);
+
+                    if(retry > 1){
+
+                        executeRetry(
+
+                            action,
+                            payload,
+                            retry - 1,
+                            timeout,
+                            resolve,
+                            reject
+
+                        );
+
+                        return;
+
+                    }
+
+                    reject(error);
+
+                }
+
+            )
+
+            .api(
+                action,
+                payload
+            );
+
+    }
+
+    /*=======================================================
+      PING
+    =======================================================*/
+
+    function ping(){
+
+        return post(
+            "SYSTEM.PING",
+            {}
+        );
+
+    }
+
+    /*=======================================================
+      SESSION
+    =======================================================*/
+
+    function session(){
+
+        return post(
+            "AUTH.SESSION",
+            {}
+        );
+
+    }
+
+    /*=======================================================
+      LOGOUT
+    =======================================================*/
+
+    function logout(){
+
+        return post(
+            "AUTH.LOGOUT",
+            {}
+        );
+
+    }
+
+    /*=======================================================
+      PUBLIC
+    =======================================================*/
+
+    return {
+
+        get,
+        post,
+        login,
+        upload,
+        download,
+        execute,
+        ping,
+        session,
+        logout
+
+    };
+
+})();
+
+</script>

@@ -1,0 +1,387 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+14_Master.html
+Enterprise Edition v5.0
+==========================================================-->
+
+<div class="master-page">
+
+  <!--=========================================
+    PAGE HEADER
+  ==========================================-->
+
+  <div class="page-header">
+
+    <div>
+
+      <h2>
+
+        Master Data
+
+      </h2>
+
+      <span>
+
+        Enterprise Master Management
+
+      </span>
+
+    </div>
+
+    <div class="header-action">
+
+      <button
+        class="btn btn-primary"
+        onclick="Master.create()">
+
+        <i class="ri-add-line"></i>
+
+        New
+
+      </button>
+
+      <button
+        class="btn btn-success"
+        onclick="Master.refresh()">
+
+        <i class="ri-refresh-line"></i>
+
+        Refresh
+
+      </button>
+
+    </div>
+
+  </div>
+
+  <!--=========================================
+    TAB
+  ==========================================-->
+
+  <div class="master-tab">
+
+    <button onclick="Master.asset()">
+
+      Asset
+
+    </button>
+
+    <button onclick="Master.customer()">
+
+      Customer
+
+    </button>
+
+    <button onclick="Master.vendor()">
+
+      Vendor
+
+    </button>
+
+    <button onclick="Master.employee()">
+
+      Employee
+
+    </button>
+
+    <button onclick="Master.branch()">
+
+      Branch
+
+    </button>
+
+    <button onclick="Master.user()">
+
+      User
+
+    </button>
+
+  </div>
+
+  <!--=========================================
+    FILTER
+  ==========================================-->
+
+  <div class="page-filter">
+
+    <input
+
+      id="masterSearch"
+
+      type="text"
+
+      placeholder="Search..."
+
+      onkeyup="Master.search()">
+
+  </div>
+
+  <!--=========================================
+    GRID
+  ==========================================-->
+
+  <div id="masterGrid">
+
+  </div>
+
+</div>
+
+<script>
+
+const Master = (()=>{
+
+"use strict";
+
+let module = "ASSET";
+
+let rows = [];
+
+/*=======================================================
+LOAD
+=======================================================*/
+
+async function load(){
+
+    Loader.show();
+
+    rows = await API.post(
+
+        "MASTER.LOAD",
+
+        {
+
+            MODULE:module
+
+        }
+
+    );
+
+    render();
+
+    Loader.hide();
+
+}
+
+/*=======================================================
+RENDER
+=======================================================*/
+
+function render(){
+
+    masterGrid.innerHTML =
+
+        Grid.render(
+
+            rows,
+
+            {
+
+                edit:update,
+
+                remove:remove
+
+            }
+
+        );
+
+}
+
+/*=======================================================
+SEARCH
+=======================================================*/
+
+function search(){
+
+    const keyword =
+
+        masterSearch.value
+
+        .toLowerCase();
+
+    Grid.filter(
+
+        "masterGrid",
+
+        keyword
+
+    );
+
+}
+
+/*=======================================================
+CREATE
+=======================================================*/
+
+function create(){
+
+    Router.load(
+
+        "MASTER_FORM"
+
+    );
+
+}
+
+/*=======================================================
+UPDATE
+=======================================================*/
+
+function update(id){
+
+    Router.load(
+
+        "MASTER_FORM",
+
+        {
+
+            ID:id,
+
+            MODULE:module
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+DELETE
+=======================================================*/
+
+async function remove(id){
+
+    Modal.confirm(
+
+        "Delete",
+
+        "Delete selected data?",
+
+        async function(){
+
+            await API.post(
+
+                "MASTER.DELETE",
+
+                {
+
+                    MODULE:module,
+
+                    ID:id
+
+                }
+
+            );
+
+            Toast.success(
+
+                "Deleted"
+
+            );
+
+            load();
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+REFRESH
+=======================================================*/
+
+function refresh(){
+
+    load();
+
+}
+
+/*=======================================================
+MODULE
+=======================================================*/
+
+function asset(){
+
+    module="ASSET";
+
+    load();
+
+}
+
+function customer(){
+
+    module="CUSTOMER";
+
+    load();
+
+}
+
+function vendor(){
+
+    module="VENDOR";
+
+    load();
+
+}
+
+function employee(){
+
+    module="EMPLOYEE";
+
+    load();
+
+}
+
+function branch(){
+
+    module="BRANCH";
+
+    load();
+
+}
+
+function user(){
+
+    module="USER";
+
+    load();
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    load,
+
+    render,
+
+    search,
+
+    refresh,
+
+    create,
+
+    update,
+
+    remove,
+
+    asset,
+
+    customer,
+
+    vendor,
+
+    employee,
+
+    branch,
+
+    user
+
+};
+
+})();
+
+</script>

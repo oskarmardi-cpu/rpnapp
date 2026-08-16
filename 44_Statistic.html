@@ -1,0 +1,1779 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+44_Statistic.html
+Enterprise v1.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const Statistic = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    statistics:new Map(),
+
+    values:new Map(),
+
+    history:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    element
+
+){
+
+    state.statistics.set(
+
+        name,
+
+        element
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.statistics.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+VALUE
+=========================================================*/
+
+function value(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.values.get(
+
+            name
+
+        ) || 0;
+
+    }
+
+    state.values.set(
+
+        name,
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+HISTORY
+=========================================================*/
+
+function history(
+
+    name,
+
+    data
+
+){
+
+    if(arguments.length===1){
+
+        return state.history.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.history.set(
+
+        name,
+
+        data || []
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.statistics.delete(
+
+        name
+
+    );
+
+    state.values.delete(
+
+        name
+
+    );
+
+    state.history.delete(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    value,
+
+    history,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+44_Statistic.html
+Enterprise v1.0
+Part 2 - Render Engine
+==========================================================-->
+
+<script>
+
+const StatisticRender = (()=>{
+
+"use strict";
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(config){
+
+    const card =
+
+        document.createElement(
+
+            "div"
+
+        );
+
+    card.id =
+
+        config.id ||
+
+        config.name;
+
+    card.className =
+
+        config.className ||
+
+        "rpn-statistic";
+
+    card.innerHTML = `
+
+<div class="stat-header">
+
+<div class="stat-title"></div>
+
+<div class="stat-icon"></div>
+
+</div>
+
+<div class="stat-body">
+
+<div class="stat-value"></div>
+
+<div class="stat-label"></div>
+
+</div>
+
+<div class="stat-footer">
+
+<div class="stat-trend"></div>
+
+</div>
+
+`;
+
+    if(
+
+        config.container
+
+    ){
+
+        document
+
+        .getElementById(
+
+            config.container
+
+        )
+
+        .appendChild(
+
+            card
+
+        );
+
+    }
+
+    Statistic.register(
+
+        config.name,
+
+        card
+
+    );
+
+    return card;
+
+}
+
+/*=========================================================
+TITLE
+=========================================================*/
+
+function title(
+
+    name,
+
+    value
+
+){
+
+    const card =
+
+        Statistic.get(name);
+
+    if(card){
+
+        card.querySelector(
+
+            ".stat-title"
+
+        ).textContent =
+
+            value;
+
+    }
+
+}
+
+/*=========================================================
+LABEL
+=========================================================*/
+
+function label(
+
+    name,
+
+    value
+
+){
+
+    const card =
+
+        Statistic.get(name);
+
+    if(card){
+
+        card.querySelector(
+
+            ".stat-label"
+
+        ).textContent =
+
+            value;
+
+    }
+
+}
+
+/*=========================================================
+ICON
+=========================================================*/
+
+function icon(
+
+    name,
+
+    css
+
+){
+
+    const card =
+
+        Statistic.get(name);
+
+    if(card){
+
+        card.querySelector(
+
+            ".stat-icon"
+
+        ).innerHTML =
+
+        `<i class="${css}"></i>`;
+
+    }
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    const card =
+
+        Statistic.get(name);
+
+    if(
+
+        card &&
+
+        card.parentNode
+
+    ){
+
+        card.parentNode.removeChild(
+
+            card
+
+        );
+
+    }
+
+    Statistic.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    render,
+
+    title,
+
+    label,
+
+    icon,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+44_Statistic.html
+Enterprise v1.0
+Part 3 - Value Engine
+==========================================================-->
+
+<script>
+
+const StatisticValue = (()=>{
+
+"use strict";
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    name,
+
+    value
+
+){
+
+    Statistic.value(
+
+        name,
+
+        value
+
+    );
+
+    const card =
+
+        Statistic.get(name);
+
+    if(
+
+        !card
+
+    ){
+
+        return;
+
+    }
+
+    card.querySelector(
+
+        ".stat-value"
+
+    ).textContent =
+
+        format(value);
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return Statistic.value(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INCREMENT
+=========================================================*/
+
+function increment(
+
+    name,
+
+    step
+
+){
+
+    step =
+
+        step || 1;
+
+    set(
+
+        name,
+
+        get(name)
+
+        + step
+
+    );
+
+}
+
+/*=========================================================
+DECREMENT
+=========================================================*/
+
+function decrement(
+
+    name,
+
+    step
+
+){
+
+    step =
+
+        step || 1;
+
+    set(
+
+        name,
+
+        get(name)
+
+        - step
+
+    );
+
+}
+
+/*=========================================================
+FORMAT
+=========================================================*/
+
+function format(value){
+
+    if(
+
+        typeof value ===
+
+        "number"
+
+    ){
+
+        return value
+
+        .toLocaleString(
+
+            "id-ID"
+
+        );
+
+    }
+
+    return value;
+
+}
+
+/*=========================================================
+RESET
+=========================================================*/
+
+function reset(name){
+
+    set(
+
+        name,
+
+        0
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    get,
+
+    increment,
+
+    decrement,
+
+    format,
+
+    reset
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+44_Statistic.html
+Enterprise v1.0
+Part 4 - Calculation Engine
+==========================================================-->
+
+<script>
+
+const StatisticCalculation = (()=>{
+
+"use strict";
+
+/*=========================================================
+SUM
+=========================================================*/
+
+function sum(data,field){
+
+    return data.reduce(
+
+        function(total,row){
+
+            return total +
+
+            Number(
+
+                row[field] || 0
+
+            );
+
+        },
+
+        0
+
+    );
+
+}
+
+/*=========================================================
+AVERAGE
+=========================================================*/
+
+function average(data,field){
+
+    if(
+
+        data.length===0
+
+    ){
+
+        return 0;
+
+    }
+
+    return sum(
+
+        data,
+
+        field
+
+    ) / data.length;
+
+}
+
+/*=========================================================
+MIN
+=========================================================*/
+
+function min(data,field){
+
+    if(
+
+        data.length===0
+
+    ){
+
+        return 0;
+
+    }
+
+    return Math.min(
+
+        ...data.map(function(row){
+
+            return Number(
+
+                row[field] || 0
+
+            );
+
+        })
+
+    );
+
+}
+
+/*=========================================================
+MAX
+=========================================================*/
+
+function max(data,field){
+
+    if(
+
+        data.length===0
+
+    ){
+
+        return 0;
+
+    }
+
+    return Math.max(
+
+        ...data.map(function(row){
+
+            return Number(
+
+                row[field] || 0
+
+            );
+
+        })
+
+    );
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(data){
+
+    return data.length;
+
+}
+
+/*=========================================================
+PERCENT
+=========================================================*/
+
+function percent(
+
+    value,
+
+    total
+
+){
+
+    if(
+
+        total===0
+
+    ){
+
+        return 0;
+
+    }
+
+    return (
+
+        value/
+
+        total
+
+    )*100;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    sum,
+
+    average,
+
+    min,
+
+    max,
+
+    count,
+
+    percent
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+44_Statistic.html
+Enterprise v1.0
+Part 5 - Trend Engine
+==========================================================-->
+
+<script>
+
+const StatisticTrend = (()=>{
+
+"use strict";
+
+/*=========================================================
+UPDATE
+=========================================================*/
+
+function update(
+
+    name,
+
+    value
+
+){
+
+    const history =
+
+        Statistic.history(
+
+            name
+
+        );
+
+    history.push({
+
+        value,
+
+        date:new Date()
+
+    });
+
+    while(
+
+        history.length>30
+
+    ){
+
+        history.shift();
+
+    }
+
+    Statistic.history(
+
+        name,
+
+        history
+
+    );
+
+}
+
+/*=========================================================
+DIRECTION
+=========================================================*/
+
+function direction(name){
+
+    const history =
+
+        Statistic.history(
+
+            name
+
+        );
+
+    if(
+
+        history.length<2
+
+    ){
+
+        return "stable";
+
+    }
+
+    const current =
+
+        history[
+
+            history.length-1
+
+        ].value;
+
+    const previous =
+
+        history[
+
+            history.length-2
+
+        ].value;
+
+    if(
+
+        current>previous
+
+    ){
+
+        return "up";
+
+    }
+
+    if(
+
+        current<previous
+
+    ){
+
+        return "down";
+
+    }
+
+    return "stable";
+
+}
+
+/*=========================================================
+ICON
+=========================================================*/
+
+function icon(name){
+
+    switch(
+
+        direction(name)
+
+    ){
+
+        case "up":
+
+            return "▲";
+
+        case "down":
+
+            return "▼";
+
+        default:
+
+            return "■";
+
+    }
+
+}
+
+/*=========================================================
+CHANGE
+=========================================================*/
+
+function change(name){
+
+    const history =
+
+        Statistic.history(
+
+            name
+
+        );
+
+    if(
+
+        history.length<2
+
+    ){
+
+        return 0;
+
+    }
+
+    return
+
+        history[
+
+            history.length-1
+
+        ].value
+
+        -
+
+        history[
+
+            history.length-2
+
+        ].value;
+
+}
+
+/*=========================================================
+PERCENT
+=========================================================*/
+
+function percent(name){
+
+    const history =
+
+        Statistic.history(
+
+            name
+
+        );
+
+    if(
+
+        history.length<2
+
+    ){
+
+        return 0;
+
+    }
+
+    const current =
+
+        history[
+
+            history.length-1
+
+        ].value;
+
+    const previous =
+
+        history[
+
+            history.length-2
+
+        ].value;
+
+    if(
+
+        previous===0
+
+    ){
+
+        return 0;
+
+    }
+
+    return (
+
+        (
+
+            current-
+
+            previous
+
+        )
+
+        /
+
+        previous
+
+    )*100;
+
+}
+
+/*=========================================================
+RESET
+=========================================================*/
+
+function reset(name){
+
+    Statistic.history(
+
+        name,
+
+        []
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    update,
+
+    direction,
+
+    icon,
+
+    change,
+
+    percent,
+
+    reset
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+44_Statistic.html
+Enterprise v1.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const StatisticEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    name,
+
+    event,
+
+    callback
+
+){
+
+    const stat =
+
+        Statistic.get(name);
+
+    if(
+
+        !stat ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    stat.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        name + ":" + event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    name,
+
+    event
+
+){
+
+    const stat =
+
+        Statistic.get(name);
+
+    const key =
+
+        name + ":" + event;
+
+    const callback =
+
+        listeners.get(key);
+
+    if(
+
+        stat &&
+
+        callback
+
+    ){
+
+        stat.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    name,
+
+    event,
+
+    detail
+
+){
+
+    const stat =
+
+        Statistic.get(name);
+
+    if(
+
+        !stat
+
+    ){
+
+        return;
+
+    }
+
+    stat.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                name + ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(":")[1];
+
+            off(
+
+                name,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+44_Statistic.html
+Enterprise v1.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const StatisticTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-stat-default",
+
+    primary   : "rpn-stat-primary",
+
+    success   : "rpn-stat-success",
+
+    warning   : "rpn-stat-warning",
+
+    danger    : "rpn-stat-danger",
+
+    info      : "rpn-stat-info",
+
+    dark      : "rpn-stat-dark",
+
+    corporate : "rpn-stat-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    name,
+
+    theme
+
+){
+
+    if(
+
+        !themes[theme]
+
+    ){
+
+        return;
+
+    }
+
+    const stat =
+
+        Statistic.get(name);
+
+    if(
+
+        !stat
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(themes)
+
+    .forEach(function(css){
+
+        stat.classList.remove(css);
+
+    });
+
+    stat.classList.add(
+
+        themes[theme]
+
+    );
+
+}
+
+/*=========================================================
+SET DEFAULT
+=========================================================*/
+
+function setDefault(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current = theme;
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    Statistic.state.statistics
+
+    .forEach(function(
+
+        stat,
+
+        name
+
+    ){
+
+        set(
+
+            name,
+
+            current
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] = css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    setDefault,
+
+    get,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+44_Statistic.html
+Enterprise v1.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const StatisticProduction = (()=>{
+
+"use strict";
+
+const VERSION = "1.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config){
+
+    const stat =
+
+        StatisticRender.render(
+
+            config
+
+        );
+
+    StatisticTheme.set(
+
+        config.name,
+
+        config.theme ||
+
+        "default"
+
+    );
+
+    StatisticRender.title(
+
+        config.name,
+
+        config.title ||
+
+        ""
+
+    );
+
+    StatisticRender.label(
+
+        config.name,
+
+        config.label ||
+
+        ""
+
+    );
+
+    if(
+
+        config.icon
+
+    ){
+
+        StatisticRender.icon(
+
+            config.name,
+
+            config.icon
+
+        );
+
+    }
+
+    StatisticValue.set(
+
+        config.name,
+
+        config.value || 0
+
+    );
+
+    StatisticTrend.update(
+
+        config.name,
+
+        config.value || 0
+
+    );
+
+    return stat;
+
+}
+
+/*=========================================================
+UPDATE
+=========================================================*/
+
+function update(
+
+    name,
+
+    value
+
+){
+
+    StatisticValue.set(
+
+        name,
+
+        value
+
+    );
+
+    StatisticTrend.update(
+
+        name,
+
+        value
+
+    );
+
+    StatisticEvent.trigger(
+
+        name,
+
+        "update",
+
+        {
+
+            value,
+
+            trend :
+
+            StatisticTrend.direction(
+
+                name
+
+            ),
+
+            change :
+
+            StatisticTrend.change(
+
+                name
+
+            )
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(name){
+
+    StatisticEvent.trigger(
+
+        name,
+
+        "refresh",
+
+        {
+
+            value :
+
+            StatisticValue.get(
+
+                name
+
+            )
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+RESET
+=========================================================*/
+
+function reset(name){
+
+    StatisticValue.reset(
+
+        name
+
+    );
+
+    StatisticTrend.reset(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    StatisticEvent.clear(
+
+        name
+
+    );
+
+    StatisticRender.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "Statistic",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    update,
+
+    refresh,
+
+    reset,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

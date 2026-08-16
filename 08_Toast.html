@@ -1,0 +1,263 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+08_Toast.html
+Enterprise Edition v5.0
+==========================================================-->
+
+<div id="toastContainer" class="toast-container">
+
+</div>
+
+<script>
+
+const Toast = (()=>{
+
+"use strict";
+
+const TYPE={
+
+SUCCESS:"success",
+
+ERROR:"error",
+
+WARNING:"warning",
+
+INFO:"info"
+
+};
+
+function success(message,title){
+
+    show(
+
+        TYPE.SUCCESS,
+
+        title||"Success",
+
+        message
+
+    );
+
+}
+
+function error(message,title){
+
+    show(
+
+        TYPE.ERROR,
+
+        title||"Error",
+
+        message
+
+    );
+
+}
+
+function warning(message,title){
+
+    show(
+
+        TYPE.WARNING,
+
+        title||"Warning",
+
+        message
+
+    );
+
+}
+
+function info(message,title){
+
+    show(
+
+        TYPE.INFO,
+
+        title||"Information",
+
+        message
+
+    );
+
+}
+
+function show(
+
+    type,
+
+    title,
+
+    message,
+
+    duration
+
+){
+
+    duration = duration || 5000;
+
+    const toast = document.createElement("div");
+
+    toast.className =
+
+        "toast toast-"+type;
+
+    toast.innerHTML=`
+
+        <div class="toast-icon">
+
+            ${icon(type)}
+
+        </div>
+
+        <div class="toast-content">
+
+            <div class="toast-title">
+
+                ${title}
+
+            </div>
+
+            <div class="toast-message">
+
+                ${message}
+
+            </div>
+
+            <div class="toast-progress">
+
+                <div class="toast-progress-bar"></div>
+
+            </div>
+
+        </div>
+
+        <button class="toast-close">
+
+            ×
+
+        </button>
+
+    `;
+
+    toast
+
+    .querySelector(
+
+      ".toast-close"
+
+    )
+
+    .onclick=function(){
+
+        close(toast);
+
+    };
+
+    toastContainer.appendChild(
+
+        toast
+
+    );
+
+    const bar=
+
+    toast.querySelector(
+
+      ".toast-progress-bar"
+
+    );
+
+    bar.style.animationDuration=
+
+      duration+"ms";
+
+    setTimeout(function(){
+
+        close(toast);
+
+    },duration);
+
+}
+
+function close(toast){
+
+    if(!toast){
+
+        return;
+
+    }
+
+    toast.classList.add(
+
+        "toast-hide"
+
+    );
+
+    setTimeout(function(){
+
+        if(
+
+          toast.parentNode
+
+        ){
+
+          toast.remove();
+
+        }
+
+    },300);
+
+}
+
+function clear(){
+
+    toastContainer.innerHTML="";
+
+}
+
+function icon(type){
+
+    switch(type){
+
+        case TYPE.SUCCESS:
+
+            return '<i class="ri-checkbox-circle-fill"></i>';
+
+        case TYPE.ERROR:
+
+            return '<i class="ri-close-circle-fill"></i>';
+
+        case TYPE.WARNING:
+
+            return '<i class="ri-error-warning-fill"></i>';
+
+        default:
+
+            return '<i class="ri-information-fill"></i>';
+
+    }
+
+}
+
+return{
+
+    success,
+
+    error,
+
+    warning,
+
+    info,
+
+    show,
+
+    close,
+
+    clear
+
+};
+
+})();
+
+</script>

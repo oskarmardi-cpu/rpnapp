@@ -1,0 +1,516 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+12_App.html
+Enterprise Edition v5.1
+Application Controller
+==========================================================-->
+
+<script>
+
+const App = (() => {
+
+    "use strict";
+
+    let USER = null;
+    let READY = false;
+
+    /*=======================================================
+      INIT
+    =======================================================*/
+
+    async function init() {
+
+        Loader.show("Initializing...");
+
+        try {
+
+            const response = await API.session();
+
+            /*
+             * API.session() mengembalikan Response object:
+             *
+             * {
+             *   success: true,
+             *   data: {
+             *      USER: {...},
+             *      SESSION: {...}
+             *   }
+             * }
+             */
+
+            if (
+                !response ||
+                response.success !== true ||
+                !response.data ||
+                !response.data.USER
+            ) {
+
+                Loader.hide();
+
+                Router.login();
+
+                return;
+
+            }
+
+            USER = response.data.USER;
+
+            Session.set(response.data);
+
+            Header.load();
+            Sidebar.load();
+            Footer.load();
+            Theme.load();
+
+            await Router.dashboard();
+
+            READY = true;
+
+            Loader.hide();
+
+        }
+
+        catch (err) {
+
+            Loader.hide();
+
+            console.error(
+                "App.init:",
+                err
+            );
+
+            Toast.error(
+                err.message ||
+                "Gagal melakukan inisialisasi."
+            );
+
+            Router.login();
+
+        }
+
+    }
+
+    /*=======================================================
+      LOGIN
+    =======================================================*/
+
+    async function login() {
+
+        const usernameElement =
+            document.getElementById(
+                "loginUsername"
+            );
+
+        const passwordElement =
+            document.getElementById(
+                "loginPassword"
+            );
+
+        /*
+         * Support login HTML lama
+         * txtUsername / txtPassword
+         */
+
+        const username =
+            String(
+                (
+                    usernameElement ||
+                    document.getElementById(
+                        "txtUsername"
+                    )
+                )?.value || ""
+            ).trim();
+
+        const password =
+            String(
+                (
+                    passwordElement ||
+                    document.getElementById(
+                        "txtPassword"
+                    )
+                )?.value || ""
+            );
+
+        if (!username) {
+
+            Toast.error(
+                "Username wajib diisi."
+            );
+
+            return;
+
+        }
+
+        if (!password) {
+
+            Toast.error(
+                "Password wajib diisi."
+            );
+
+            return;
+
+        }
+
+        const button =
+            document.getElementById(
+                "btnLogin"
+            );
+
+        try {
+
+            if (button) {
+
+                button.disabled = true;
+
+            }
+
+            Loader.show(
+                "Login..."
+            );
+
+            /*
+             * Langsung menggunakan API.post.
+             * Tidak bergantung pada API.login().
+             */
+
+            const response =
+                await API.post(
+
+                    "AUTH.LOGIN",
+
+                    {
+
+                        USERNAME:
+                            username,
+
+                        PASSWORD:
+                            password
+
+                    },
+
+                    {
+
+                        retry: 1
+
+                    }
+
+                );
+
+            console.log(
+                "AUTH.LOGIN RESPONSE:",
+                response
+            );
+
+            /*=================================================
+              VALIDATE RESPONSE
+            =================================================*/
+
+            if (
+                !response ||
+                response.success !== true
+            ) {
+
+                throw new Error(
+
+                    response?.message ||
+                    "Login gagal."
+
+                );
+
+            }
+
+            if (
+                !response.data ||
+                !response.data.USER ||
+                !response.data.SESSION
+            ) {
+
+                throw new Error(
+
+                    "Response login tidak lengkap."
+
+                );
+
+            }
+
+            /*=================================================
+              SAVE SESSION
+            =================================================*/
+
+            USER =
+                response.data.USER;
+
+            Session.set(
+                response.data
+            );
+
+            /*=================================================
+              LOAD APPLICATION
+            =================================================*/
+
+            Header.load();
+
+            Sidebar.load();
+
+            Footer.load();
+
+            Theme.load();
+
+            READY = true;
+
+            Loader.hide();
+
+            /*=================================================
+              OPEN DASHBOARD
+            =================================================*/
+
+            await Router.dashboard();
+
+        }
+
+        catch (err) {
+
+            Loader.hide();
+
+            console.error(
+                "App.login:",
+                err
+            );
+
+            Toast.error(
+
+                err.message ||
+                "Login gagal."
+
+            );
+
+        }
+
+        finally {
+
+            if (button) {
+
+                button.disabled = false;
+
+            }
+
+        }
+
+    }
+
+    /*=======================================================
+      CHANGE BRANCH
+    =======================================================*/
+
+    async function changeBranch() {
+
+        const selector =
+            document.getElementById(
+                "branchSelector"
+            );
+
+        if (!selector) {
+
+            return;
+
+        }
+
+        Loader.show(
+            "Changing Branch..."
+        );
+
+        try {
+
+            await API.post(
+
+                "SYSTEM.CHANGE_BRANCH",
+
+                {
+
+                    BRANCH:
+                        selector.value
+
+                }
+
+            );
+
+            await refresh();
+
+        }
+
+        catch (err) {
+
+            Toast.error(
+                err.message ||
+                "Gagal mengganti branch."
+            );
+
+        }
+
+        finally {
+
+            Loader.hide();
+
+        }
+
+    }
+
+    /*=======================================================
+      REFRESH
+    =======================================================*/
+
+    async function refresh() {
+
+        Header.load();
+
+        Sidebar.load();
+
+        Footer.load();
+
+        if (
+            typeof Dashboard !==
+            "undefined" &&
+            Dashboard.refresh
+        ) {
+
+            await Dashboard.refresh();
+
+        }
+
+    }
+
+    /*=======================================================
+      FULLSCREEN
+    =======================================================*/
+
+    function fullscreen() {
+
+        if (
+            !document.fullscreenElement
+        ) {
+
+            document
+                .documentElement
+                .requestFullscreen();
+
+        }
+        else {
+
+            document.exitFullscreen();
+
+        }
+
+    }
+
+    /*=======================================================
+      LOGOUT
+    =======================================================*/
+
+    async function logout() {
+
+        Modal.confirm(
+
+            "Logout",
+
+            "Are you sure?",
+
+            async function() {
+
+                Loader.show(
+                    "Logout..."
+                );
+
+                try {
+
+                    await API.logout();
+
+                    Session.clear();
+
+                    USER = null;
+
+                    READY = false;
+
+                    location.reload();
+
+                }
+
+                catch (err) {
+
+                    Loader.hide();
+
+                    Toast.error(
+                        err.message ||
+                        "Logout gagal."
+                    );
+
+                }
+
+            }
+
+        );
+
+    }
+
+    /*=======================================================
+      READY
+    =======================================================*/
+
+    function ready() {
+
+        return READY;
+
+    }
+
+    /*=======================================================
+      USER
+    =======================================================*/
+
+    function user() {
+
+        return USER;
+
+    }
+
+    /*=======================================================
+      PUBLIC
+    =======================================================*/
+
+    return {
+
+        init,
+
+        login,
+
+        refresh,
+
+        logout,
+
+        fullscreen,
+
+        changeBranch,
+
+        ready,
+
+        user
+
+    };
+
+})();
+
+/*=========================================================
+ AUTO START
+=========================================================*/
+
+window.addEventListener(
+
+    "load",
+
+    function() {
+
+        App.init();
+
+    }
+
+);
+
+</script>

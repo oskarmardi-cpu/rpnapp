@@ -1,0 +1,1419 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+56_API_Service.html
+Enterprise v2.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const APIService = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    baseURL:"",
+
+    headers:{},
+
+    timeout:30000,
+
+    retry:3,
+
+    interceptors:[],
+
+    token:null
+
+};
+
+/*=========================================================
+BASE URL
+=========================================================*/
+
+function baseURL(url){
+
+    if(arguments.length===0){
+
+        return state.baseURL;
+
+    }
+
+    state.baseURL=url;
+
+}
+
+/*=========================================================
+HEADER
+=========================================================*/
+
+function header(key,value){
+
+    if(arguments.length===1){
+
+        return state.headers[key];
+
+    }
+
+    state.headers[key]=value;
+
+}
+
+/*=========================================================
+HEADERS
+=========================================================*/
+
+function headers(obj){
+
+    state.headers={
+
+        ...state.headers,
+
+        ...obj
+
+    };
+
+}
+
+/*=========================================================
+TOKEN
+=========================================================*/
+
+function token(value){
+
+    if(arguments.length===0){
+
+        return state.token;
+
+    }
+
+    state.token=value;
+
+}
+
+/*=========================================================
+TIMEOUT
+=========================================================*/
+
+function timeout(value){
+
+    if(arguments.length===0){
+
+        return state.timeout;
+
+    }
+
+    state.timeout=value;
+
+}
+
+/*=========================================================
+RETRY
+=========================================================*/
+
+function retry(value){
+
+    if(arguments.length===0){
+
+        return state.retry;
+
+    }
+
+    state.retry=value;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    baseURL,
+
+    header,
+
+    headers,
+
+    token,
+
+    timeout,
+
+    retry
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+56_API_Service.html
+Enterprise v2.0
+Part 2 - Request Engine
+==========================================================-->
+
+<script>
+
+const APIRequest = (()=>{
+
+"use strict";
+
+/*=========================================================
+BUILD URL
+=========================================================*/
+
+function url(endpoint){
+
+    return APIService.baseURL()
+
+        + endpoint;
+
+}
+
+/*=========================================================
+OPTIONS
+=========================================================*/
+
+function options(
+
+    method,
+
+    body
+
+){
+
+    const headers = {
+
+        ...APIService.state.headers
+
+    };
+
+    if(
+
+        APIService.token()
+
+    ){
+
+        headers.Authorization =
+
+            "Bearer " +
+
+            APIService.token();
+
+    }
+
+    return{
+
+        method,
+
+        headers,
+
+        body:
+
+        body
+
+        ? JSON.stringify(
+
+            body
+
+          )
+
+        : undefined,
+
+        signal:
+
+        AbortSignal.timeout(
+
+            APIService.timeout()
+
+        )
+
+    };
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+async function get(
+
+    endpoint
+
+){
+
+    return fetch(
+
+        url(endpoint),
+
+        options(
+
+            "GET"
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+POST
+=========================================================*/
+
+async function post(
+
+    endpoint,
+
+    data
+
+){
+
+    return fetch(
+
+        url(endpoint),
+
+        options(
+
+            "POST",
+
+            data
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+PUT
+=========================================================*/
+
+async function put(
+
+    endpoint,
+
+    data
+
+){
+
+    return fetch(
+
+        url(endpoint),
+
+        options(
+
+            "PUT",
+
+            data
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+DELETE
+=========================================================*/
+
+async function remove(
+
+    endpoint
+
+){
+
+    return fetch(
+
+        url(endpoint),
+
+        options(
+
+            "DELETE"
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    get,
+
+    post,
+
+    put,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+56_API_Service.html
+Enterprise v2.0
+Part 3 - Response Engine
+==========================================================-->
+
+<script>
+
+const APIResponse = (()=>{
+
+"use strict";
+
+/*=========================================================
+PARSE
+=========================================================*/
+
+async function parse(
+
+    response
+
+){
+
+    const type =
+
+        response.headers.get(
+
+            "content-type"
+
+        ) || "";
+
+    if(
+
+        type.includes(
+
+            "application/json"
+
+        )
+
+    ){
+
+        return response.json();
+
+    }
+
+    if(
+
+        type.includes(
+
+            "text/"
+
+        )
+
+    ){
+
+        return response.text();
+
+    }
+
+    return response.blob();
+
+}
+
+/*=========================================================
+SUCCESS
+=========================================================*/
+
+function success(
+
+    response
+
+){
+
+    return response.ok;
+
+}
+
+/*=========================================================
+STATUS
+=========================================================*/
+
+function status(
+
+    response
+
+){
+
+    return{
+
+        code :
+
+        response.status,
+
+        text :
+
+        response.statusText
+
+    };
+
+}
+
+/*=========================================================
+HANDLE
+=========================================================*/
+
+async function handle(
+
+    response
+
+){
+
+    const data =
+
+        await parse(
+
+            response
+
+        );
+
+    return{
+
+        success :
+
+        success(
+
+            response
+
+        ),
+
+        status :
+
+        status(
+
+            response
+
+        ),
+
+        data
+
+    };
+
+}
+
+/*=========================================================
+ERROR
+=========================================================*/
+
+function error(
+
+    err
+
+){
+
+    return{
+
+        success:false,
+
+        status:{
+
+            code:0,
+
+            text:
+
+            err.message
+
+        },
+
+        data:null
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    parse,
+
+    success,
+
+    status,
+
+    handle,
+
+    error
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+56_API_Service.html
+Enterprise v2.0
+Part 4 - Upload Engine
+==========================================================-->
+
+<script>
+
+const APIUpload = (()=>{
+
+"use strict";
+
+/*=========================================================
+UPLOAD
+=========================================================*/
+
+async function upload(
+
+    endpoint,
+
+    formData
+
+){
+
+    const headers = {
+
+        ...APIService.state.headers
+
+    };
+
+    delete headers[
+
+        "Content-Type"
+
+    ];
+
+    if(
+
+        APIService.token()
+
+    ){
+
+        headers.Authorization =
+
+            "Bearer " +
+
+            APIService.token();
+
+    }
+
+    const response =
+
+        await fetch(
+
+            APIService.baseURL()
+
+            + endpoint,
+
+            {
+
+                method :
+
+                "POST",
+
+                headers,
+
+                body :
+
+                formData,
+
+                signal :
+
+                AbortSignal.timeout(
+
+                    APIService.timeout()
+
+                )
+
+            }
+
+        );
+
+    return APIResponse.handle(
+
+        response
+
+    );
+
+}
+
+/*=========================================================
+MULTIPLE
+=========================================================*/
+
+async function multiple(
+
+    endpoint,
+
+    files
+
+){
+
+    const formData =
+
+        new FormData();
+
+    Array.from(
+
+        files
+
+    ).forEach(function(file){
+
+        formData.append(
+
+            "files",
+
+            file
+
+        );
+
+    });
+
+    return upload(
+
+        endpoint,
+
+        formData
+
+    );
+
+}
+
+/*=========================================================
+SINGLE
+=========================================================*/
+
+async function single(
+
+    endpoint,
+
+    file,
+
+    field="file"
+
+){
+
+    const formData =
+
+        new FormData();
+
+    formData.append(
+
+        field,
+
+        file
+
+    );
+
+    return upload(
+
+        endpoint,
+
+        formData
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    upload,
+
+    multiple,
+
+    single
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+56_API_Service.html
+Enterprise v2.0
+Part 5 - Download Engine
+==========================================================-->
+
+<script>
+
+const APIDownload = (()=>{
+
+"use strict";
+
+/*=========================================================
+DOWNLOAD
+=========================================================*/
+
+async function download(
+
+    endpoint,
+
+    filename
+
+){
+
+    const response =
+
+        await fetch(
+
+            APIService.baseURL()
+
+            + endpoint,
+
+            {
+
+                method :
+
+                "GET",
+
+                headers :
+
+                {
+
+                    ...APIService.state.headers,
+
+                    Authorization :
+
+                    APIService.token()
+
+                    ? "Bearer " +
+
+                      APIService.token()
+
+                    : ""
+
+                },
+
+                signal :
+
+                AbortSignal.timeout(
+
+                    APIService.timeout()
+
+                )
+
+            }
+
+        );
+
+    const blob =
+
+        await response.blob();
+
+    save(
+
+        blob,
+
+        filename
+
+    );
+
+    return blob;
+
+}
+
+/*=========================================================
+SAVE
+=========================================================*/
+
+function save(
+
+    blob,
+
+    filename
+
+){
+
+    const url =
+
+        URL.createObjectURL(
+
+            blob
+
+        );
+
+    const link =
+
+        document.createElement(
+
+            "a"
+
+        );
+
+    link.href =
+
+        url;
+
+    link.download =
+
+        filename ||
+
+        "download";
+
+    document.body.appendChild(
+
+        link
+
+    );
+
+    link.click();
+
+    document.body.removeChild(
+
+        link );
+
+    URL.revokeObjectURL(
+
+        url
+
+    );
+
+}
+
+/*=========================================================
+OPEN
+=========================================================*/
+
+async function open(endpoint){
+
+    const blob =
+
+        await download(
+
+            endpoint,
+
+            ""
+
+        );
+
+    const url =
+
+        URL.createObjectURL(
+
+            blob
+
+        );
+
+    window.open(
+
+        url,
+
+        "_blank"
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    download,
+
+    save,
+
+    open
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+56_API_Service.html
+Enterprise v2.0
+Part 6 - Interceptor Engine
+==========================================================-->
+
+<script>
+
+const APIInterceptor = (()=>{
+
+"use strict";
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function use(
+
+    interceptor
+
+){
+
+    if(
+
+        typeof interceptor !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    APIService.state.interceptors.push(
+
+        interceptor
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(index){
+
+    if(
+
+        index < 0 ||
+
+        index >=
+
+        APIService.state.interceptors.length
+
+    ){
+
+        return;
+
+    }
+
+    APIService.state.interceptors.splice(
+
+        index,
+
+        1
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(){
+
+    APIService.state.interceptors = [];
+
+}
+
+/*=========================================================
+EXECUTE
+=========================================================*/
+
+async function execute(context){
+
+    let result =
+
+        context;
+
+    for(
+
+        const interceptor of
+
+        APIService.state.interceptors
+
+    ){
+
+        result =
+
+            await interceptor(
+
+                result
+
+            ) || result;
+
+    }
+
+    return result;
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(){
+
+    return APIService.state
+
+        .interceptors
+
+        .length;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    use,
+
+    remove,
+
+    clear,
+
+    execute,
+
+    count
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+56_API_Service.html
+Enterprise v2.0
+Part 7 - Security Engine
+==========================================================-->
+
+<script>
+
+const APISecurity = (()=>{
+
+"use strict";
+
+/*=========================================================
+BEARER TOKEN
+=========================================================*/
+
+function bearer(token){
+
+    APIService.token(
+
+        token
+
+    );
+
+    APIService.header(
+
+        "Authorization",
+
+        "Bearer " +
+
+        token
+
+    );
+
+}
+
+/*=========================================================
+API KEY
+=========================================================*/
+
+function apiKey(
+
+    key,
+
+    header="X-API-KEY"
+
+){
+
+    APIService.header(
+
+        header,
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+BASIC AUTH
+=========================================================*/
+
+function basic(
+
+    username,
+
+    password
+
+){
+
+    const credential =
+
+        btoa(
+
+            username +
+
+            ":" +
+
+            password
+
+        );
+
+    APIService.header(
+
+        "Authorization",
+
+        "Basic " +
+
+        credential
+
+    );
+
+}
+
+/*=========================================================
+REMOVE AUTH
+=========================================================*/
+
+function clear(){
+
+    APIService.token(
+
+        null
+
+    );
+
+    delete APIService.state.headers.Authorization;
+
+}
+
+/*=========================================================
+CSRF TOKEN
+=========================================================*/
+
+function csrf(token){
+
+    APIService.header(
+
+        "X-CSRF-Token",
+
+        token
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    bearer,
+
+    apiKey,
+
+    basic,
+
+    clear,
+
+    csrf
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+56_API_Service.html
+Enterprise v2.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const APIProduction = (()=>{
+
+"use strict";
+
+const VERSION = "2.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config={}){
+
+    APIService.baseURL(
+
+        config.baseURL || ""
+
+    );
+
+    APIService.headers(
+
+        config.headers || {}
+
+    );
+
+    APIService.timeout(
+
+        config.timeout || 30000
+
+    );
+
+    APIService.retry(
+
+        config.retry || 3
+
+    );
+
+    if(
+
+        config.token
+
+    ){
+
+        APISecurity.bearer(
+
+            config.token
+
+        );
+
+    }
+
+    return info();
+
+}
+
+/*=========================================================
+REQUEST
+=========================================================*/
+
+async function request(
+
+    method,
+
+    endpoint,
+
+    payload
+
+){
+
+    try{
+
+        const context =
+
+            await APIInterceptor.execute({
+
+                method,
+
+                endpoint,
+
+                payload
+
+            });
+
+        const response =
+
+            await APIRequest[
+
+                method.toLowerCase()
+
+            ](
+
+                context.endpoint,
+
+                context.payload
+
+            );
+
+        return await APIResponse.handle(
+
+            response
+
+        );
+
+    }catch(error){
+
+        return APIResponse.error(
+
+            error
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+RESET
+=========================================================*/
+
+function reset(){
+
+    APIService.baseURL("");
+
+    APIService.headers({});
+
+    APIService.token(null);
+
+    APIService.timeout(30000);
+
+    APIService.retry(3);
+
+    APIInterceptor.clear();
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "API_Service",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    request,
+
+    reset,
+
+    info
+
+};
+
+})();
+
+</script>

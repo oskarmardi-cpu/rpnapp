@@ -1,0 +1,1855 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+51_Document.html
+Enterprise v1.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const Document = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    documents:new Map(),
+
+    datasource:new Map(),
+
+    metadata:new Map(),
+
+    content:new Map(),
+
+    permissions:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    element
+
+){
+
+    state.documents.set(
+
+        name,
+
+        element
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.documents.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+DATASOURCE
+=========================================================*/
+
+function datasource(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.datasource.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.datasource.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+METADATA
+=========================================================*/
+
+function metadata(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.metadata.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.metadata.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+CONTENT
+=========================================================*/
+
+function content(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.content.get(
+
+            name
+
+        ) || "";
+
+    }
+
+    state.content.set(
+
+        name,
+
+        value || ""
+
+    );
+
+}
+
+/*=========================================================
+PERMISSION
+=========================================================*/
+
+function permission(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.permissions.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.permissions.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.documents.delete(
+
+        name
+
+    );
+
+    state.datasource.delete(
+
+        name
+
+    );
+
+    state.metadata.delete(
+
+        name
+
+    );
+
+    state.content.delete(
+
+        name
+
+    );
+
+    state.permissions.delete(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    datasource,
+
+    metadata,
+
+    content,
+
+    permission,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+51_Document.html
+Enterprise v1.0
+Part 2 - Render Engine
+==========================================================-->
+
+<script>
+
+const DocumentRender = (()=>{
+
+"use strict";
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(config){
+
+    const documentView =
+
+        document.createElement(
+
+            "div"
+
+        );
+
+    documentView.id =
+
+        config.id ||
+
+        config.name;
+
+    documentView.className =
+
+        config.className ||
+
+        "rpn-document";
+
+    documentView.innerHTML = `
+
+<div class="document-header"></div>
+
+<div class="document-toolbar"></div>
+
+<div class="document-content"></div>
+
+<div class="document-footer"></div>
+
+`;
+
+    if(
+
+        config.container
+
+    ){
+
+        document
+
+        .getElementById(
+
+            config.container
+
+        )
+
+        .appendChild(
+
+            documentView
+
+        );
+
+    }
+
+    Document.register(
+
+        config.name,
+
+        documentView
+
+    );
+
+    return documentView;
+
+}
+
+/*=========================================================
+HEADER
+=========================================================*/
+
+function header(name){
+
+    const doc =
+
+        Document.get(name);
+
+    return doc
+
+        ? doc.querySelector(
+
+            ".document-header"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+TOOLBAR
+=========================================================*/
+
+function toolbar(name){
+
+    const doc =
+
+        Document.get(name);
+
+    return doc
+
+        ? doc.querySelector(
+
+            ".document-toolbar"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+CONTENT
+=========================================================*/
+
+function content(name){
+
+    const doc =
+
+        Document.get(name);
+
+    return doc
+
+        ? doc.querySelector(
+
+            ".document-content"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+FOOTER
+=========================================================*/
+
+function footer(name){
+
+    const doc =
+
+        Document.get(name);
+
+    return doc
+
+        ? doc.querySelector(
+
+            ".document-footer"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    const doc =
+
+        Document.get(name);
+
+    if(
+
+        doc &&
+
+        doc.parentNode
+
+    ){
+
+        doc.parentNode.removeChild(
+
+            doc
+
+        );
+
+    }
+
+    Document.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    render,
+
+    header,
+
+    toolbar,
+
+    content,
+
+    footer,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+51_Document.html
+Enterprise v1.0
+Part 3 - Content Engine
+==========================================================-->
+
+<script>
+
+const DocumentContent = (()=>{
+
+"use strict";
+
+/*=========================================================
+LOAD
+=========================================================*/
+
+async function load(name){
+
+    const source =
+
+        Document.datasource(
+
+            name
+
+        );
+
+    if(
+
+        !source.endpoint
+
+    ){
+
+        return "";
+
+    }
+
+    const result =
+
+        await API.post(
+
+            source.endpoint,
+
+            source.parameter || {}
+
+        );
+
+    const content =
+
+        result.content ||
+
+        "";
+
+    Document.content(
+
+        name,
+
+        content
+
+    );
+
+    render(
+
+        name
+
+    );
+
+    return content;
+
+}
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    name,
+
+    value
+
+){
+
+    Document.content(
+
+        name,
+
+        value || ""
+
+    );
+
+    render(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return Document.content(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+APPEND
+=========================================================*/
+
+function append(
+
+    name,
+
+    value
+
+){
+
+    set(
+
+        name,
+
+        get(name) +
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    set(
+
+        name,
+
+        ""
+
+    );
+
+}
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(name){
+
+    const container =
+
+        DocumentRender.content(
+
+            name
+
+        );
+
+    if(
+
+        container
+
+    ){
+
+        container.innerHTML =
+
+            get(name);
+
+    }
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    load,
+
+    set,
+
+    get,
+
+    append,
+
+    clear,
+
+    render
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+51_Document.html
+Enterprise v1.0
+Part 4 - Version Engine
+==========================================================-->
+
+<script>
+
+const DocumentVersion = (()=>{
+
+"use strict";
+
+const versions = new Map();
+
+/*=========================================================
+SAVE
+=========================================================*/
+
+function save(name){
+
+    const history =
+
+        versions.get(
+
+            name
+
+        ) || [];
+
+    history.push({
+
+        version :
+
+        history.length + 1,
+
+        content :
+
+        Document.content(
+
+            name
+
+        ),
+
+        metadata :
+
+        Document.metadata(
+
+            name
+
+        ),
+
+        timestamp :
+
+        new Date()
+
+    });
+
+    versions.set(
+
+        name,
+
+        history
+
+    );
+
+}
+
+/*=========================================================
+LIST
+=========================================================*/
+
+function list(name){
+
+    return versions.get(
+
+        name
+
+    ) || [];
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(
+
+    name,
+
+    version
+
+){
+
+    return list(
+
+        name
+
+    ).find(function(item){
+
+        return item.version ===
+
+            version;
+
+    });
+
+}
+
+/*=========================================================
+RESTORE
+=========================================================*/
+
+function restore(
+
+    name,
+
+    version
+
+){
+
+    const item =
+
+        get(
+
+            name,
+
+            version
+
+        );
+
+    if(
+
+        !item
+
+    ){
+
+        return false;
+
+    }
+
+    Document.content(
+
+        name,
+
+        item.content
+
+    );
+
+    Document.metadata(
+
+        name,
+
+        item.metadata
+
+    );
+
+    DocumentContent.render(
+
+        name
+
+    );
+
+    return true;
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    versions.delete(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(name){
+
+    return list(
+
+        name
+
+    ).length;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    save,
+
+    list,
+
+    get,
+
+    restore,
+
+    clear,
+
+    count
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+51_Document.html
+Enterprise v1.0
+Part 5 - Export Engine
+==========================================================-->
+
+<script>
+
+const DocumentExport = (()=>{
+
+"use strict";
+
+/*=========================================================
+HTML
+=========================================================*/
+
+function html(name){
+
+    download(
+
+        Document.content(
+
+            name
+
+        ),
+
+        "text/html",
+
+        name + ".html"
+
+    );
+
+}
+
+/*=========================================================
+TEXT
+=========================================================*/
+
+function text(name){
+
+    download(
+
+        stripHtml(
+
+            Document.content(
+
+                name
+
+            )
+
+        ),
+
+        "text/plain",
+
+        name + ".txt"
+
+    );
+
+}
+
+/*=========================================================
+JSON
+=========================================================*/
+
+function json(name){
+
+    const data = {
+
+        metadata :
+
+        Document.metadata(
+
+            name
+
+        ),
+
+        content :
+
+        Document.content(
+
+            name
+
+        )
+
+    };
+
+    download(
+
+        JSON.stringify(
+
+            data,
+
+            null,
+
+            2
+
+        ),
+
+        "application/json",
+
+        name + ".json"
+
+    );
+
+}
+
+/*=========================================================
+PRINT
+=========================================================*/
+
+function print(name){
+
+    const popup =
+
+        window.open(
+
+            "",
+
+            "_blank"
+
+        );
+
+    popup.document.write(
+
+        Document.content(
+
+            name
+
+        )
+
+    );
+
+    popup.document.close();
+
+    popup.print();
+
+    popup.close();
+
+}
+
+/*=========================================================
+DOWNLOAD
+=========================================================*/
+
+function download(
+
+    data,
+
+    type,
+
+    filename
+
+){
+
+    const blob =
+
+        new Blob(
+
+            [data],
+
+            {
+
+                type
+
+            }
+
+        );
+
+    const url =
+
+        URL.createObjectURL(
+
+            blob
+
+        );
+
+    const link =
+
+        document.createElement(
+
+            "a"
+
+        );
+
+    link.href =
+
+        url;
+
+    link.download =
+
+        filename;
+
+    link.click();
+
+    URL.revokeObjectURL(
+
+        url
+
+    );
+
+}
+
+/*=========================================================
+STRIP HTML
+=========================================================*/
+
+function stripHtml(html){
+
+    const div =
+
+        document.createElement(
+
+            "div"
+
+        );
+
+    div.innerHTML =
+
+        html;
+
+    return div.textContent ||
+
+           div.innerText ||
+
+           "";
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    html,
+
+    text,
+
+    json,
+
+    print
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+51_Document.html
+Enterprise v1.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const DocumentEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    document,
+
+    event,
+
+    callback
+
+){
+
+    const element =
+
+        Document.get(
+
+            document
+
+        );
+
+    if(
+
+        !element ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    element.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        document +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    document,
+
+    event
+
+){
+
+    const element =
+
+        Document.get(
+
+            document
+
+        );
+
+    const key =
+
+        document +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        element &&
+
+        callback
+
+    ){
+
+        element.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    document,
+
+    event,
+
+    detail
+
+){
+
+    const element =
+
+        Document.get(
+
+            document
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(
+
+    document
+
+){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                document +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                document,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+51_Document.html
+Enterprise v1.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const DocumentTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-document-default",
+
+    light     : "rpn-document-light",
+
+    dark      : "rpn-document-dark",
+
+    primary   : "rpn-document-primary",
+
+    success   : "rpn-document-success",
+
+    warning   : "rpn-document-warning",
+
+    danger    : "rpn-document-danger",
+
+    corporate : "rpn-document-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    document,
+
+    theme
+
+){
+
+    if(
+
+        !themes[theme]
+
+    ){
+
+        return;
+
+    }
+
+    const element =
+
+        Document.get(
+
+            document
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(
+
+        themes
+
+    )
+
+    .forEach(function(css){
+
+        element.classList.remove(
+
+            css
+
+        );
+
+    });
+
+    element.classList.add(
+
+        themes[theme]
+
+    );
+
+}
+
+/*=========================================================
+SET DEFAULT
+=========================================================*/
+
+function setDefault(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current = theme;
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    Document.state.documents
+
+    .forEach(function(
+
+        document,
+
+        name
+
+    ){
+
+        set(
+
+            name,
+
+            current
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] = css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    setDefault,
+
+    get,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+51_Document.html
+Enterprise v1.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const DocumentProduction = (()=>{
+
+"use strict";
+
+const VERSION = "1.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+async function boot(config){
+
+    const documentView =
+
+        DocumentRender.render(
+
+            config
+
+        );
+
+    DocumentTheme.set(
+
+        config.name,
+
+        config.theme ||
+
+        "default"
+
+    );
+
+    Document.datasource(
+
+        config.name,
+
+        config.datasource ||
+
+        {}
+
+    );
+
+    Document.metadata(
+
+        config.name,
+
+        config.metadata ||
+
+        {}
+
+    );
+
+    Document.permission(
+
+        config.name,
+
+        config.permission ||
+
+        {}
+
+    );
+
+    if(
+
+        config.content
+
+    ){
+
+        DocumentContent.set(
+
+            config.name,
+
+            config.content
+
+        );
+
+    }else{
+
+        await DocumentContent.load(
+
+            config.name
+
+        );
+
+    }
+
+    DocumentVersion.save(
+
+        config.name
+
+    );
+
+    DocumentEvent.trigger(
+
+        config.name,
+
+        "ready",
+
+        {
+
+            version :
+
+            DocumentVersion.count(
+
+                config.name
+
+            )
+
+        }
+
+    );
+
+    return documentView;
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+async function refresh(name){
+
+    await DocumentContent.load(
+
+        name
+
+    );
+
+    DocumentEvent.trigger(
+
+        name,
+
+        "refresh",
+
+        {}
+
+    );
+
+}
+
+/*=========================================================
+SAVE
+=========================================================*/
+
+function save(name){
+
+    DocumentVersion.save(
+
+        name
+
+    );
+
+    DocumentEvent.trigger(
+
+        name,
+
+        "save",
+
+        {
+
+            version :
+
+            DocumentVersion.count(
+
+                name
+
+            )
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    DocumentEvent.clear(
+
+        name
+
+    );
+
+    DocumentVersion.clear(
+
+        name
+
+    );
+
+    DocumentRender.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "Document",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    refresh,
+
+    save,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

@@ -1,0 +1,6704 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Enterprise Edition v3.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const Grid = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    id:null,
+
+    container:null,
+
+    columns:[],
+
+    data:[],
+
+    filteredData:[],
+
+    selected:new Set(),
+
+    sort:[],
+
+    filter:{},
+
+    search:"",
+
+    page:1,
+
+    pageSize:25,
+
+    totalRow:0,
+
+    loading:false,
+
+    option:{}
+
+};
+
+/*=========================================================
+INITIALIZE
+=========================================================*/
+
+function create(config){
+
+    state.id=config.id;
+
+    state.container=
+
+        document.getElementById(
+
+            config.id
+
+        );
+
+    state.columns=
+
+        config.columns||[];
+
+    state.option=
+
+        config;
+
+    state.pageSize=
+
+        config.pageSize||25;
+
+    state.data=[];
+
+    state.filteredData=[];
+
+    state.selected.clear();
+
+    renderSkeleton();
+
+}
+
+/*=========================================================
+LOAD
+=========================================================*/
+
+async function load(parameter){
+
+    state.loading=true;
+
+    renderLoading();
+
+    const result=
+
+    await API.post(
+
+        state.option.api,
+
+        parameter||{}
+
+    );
+
+    state.data=result.data||[];
+
+    state.filteredData=[
+
+        ...state.data
+
+    ];
+
+    state.totalRow=
+
+        result.total||
+
+        state.data.length;
+
+    state.loading=false;
+
+    refresh();
+
+}
+
+/*=========================================================
+SET DATA
+=========================================================*/
+
+function setData(data){
+
+    state.data=data;
+
+    state.filteredData=[
+
+        ...data
+
+    ];
+
+    state.totalRow=data.length;
+
+    refresh();
+
+}
+
+/*=========================================================
+GET DATA
+=========================================================*/
+
+function getData(){
+
+    return state.filteredData;
+
+}
+
+/*=========================================================
+GET SELECTED
+=========================================================*/
+
+function getSelected(){
+
+    return [...state.selected];
+
+}
+
+/*=========================================================
+SELECT
+=========================================================*/
+
+function select(id){
+
+    state.selected.add(id);
+
+}
+
+/*=========================================================
+UNSELECT
+=========================================================*/
+
+function unselect(id){
+
+    state.selected.delete(id);
+
+}
+
+/*=========================================================
+CLEAR SELECT
+=========================================================*/
+
+function clearSelection(){
+
+    state.selected.clear();
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(){
+
+    renderHeader();
+
+    renderBody();
+
+    renderFooter();
+
+}
+
+/*=========================================================
+RENDER SKELETON
+=========================================================*/
+
+function renderSkeleton(){
+
+    state.container.innerHTML=`
+
+<div class="grid-wrapper">
+
+<div class="grid-toolbar"></div>
+
+<div class="grid-header"></div>
+
+<div class="grid-body"></div>
+
+<div class="grid-footer"></div>
+
+</div>
+
+`;
+
+}
+
+/*=========================================================
+RENDER LOADING
+=========================================================*/
+
+function renderLoading(){
+
+    state.container
+
+    .querySelector(
+
+        ".grid-body"
+
+    ).innerHTML=
+
+    `
+
+<div class="grid-loading">
+
+Loading...
+
+</div>
+
+`;
+
+}
+
+/*=========================================================
+HEADER
+=========================================================*/
+
+function renderHeader(){
+
+    GridColumn.render();
+
+}
+
+/*=========================================================
+BODY
+=========================================================*/
+
+function renderBody(){
+
+    GridRender.render();
+
+}
+
+/*=========================================================
+FOOTER
+=========================================================*/
+
+function renderFooter(){
+
+    GridPagination.render();
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(){
+
+    state.container.innerHTML="";
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    create,
+
+    destroy,
+
+    load,
+
+    refresh,
+
+    setData,
+
+    getData,
+
+    getSelected,
+
+    select,
+
+    unselect,
+
+    clearSelection,
+
+    state
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Enterprise Edition v3.0
+Part 2 - Render Engine
+==========================================================-->
+
+<script>
+
+const GridRender = (()=>{
+
+"use strict";
+
+/*=======================================================
+RENDER
+=======================================================*/
+
+function render(){
+
+    const state = Grid.state;
+
+    const body =
+
+        state.container.querySelector(
+
+            ".grid-body"
+
+        );
+
+    if(
+
+        state.filteredData.length===0
+
+    ){
+
+        body.innerHTML = empty();
+
+        return;
+
+    }
+
+    let html="";
+
+    html+='<table class="rpn-grid">';
+
+    html+=header();
+
+    html+=bodyRender();
+
+    html+='</table>';
+
+    body.innerHTML=html;
+
+}
+
+/*=======================================================
+HEADER
+=======================================================*/
+
+function header(){
+
+    const state = Grid.state;
+
+    let html="";
+
+    html+='<thead>';
+
+    html+='<tr>';
+
+    html+='<th class="grid-checkbox">';
+
+    html+='<input type="checkbox"';
+
+    html+=' onclick="GridSelection.selectAll(this)">';
+
+    html+='</th>';
+
+    html+='<th class="grid-no">No</th>';
+
+    state.columns.forEach(function(col){
+
+        html+=`
+
+<th
+
+style="width:${col.width||150}px"
+
+class="grid-column">
+
+${col.title}
+
+</th>
+
+`;
+
+    });
+
+    html+='<th class="grid-action">Action</th>';
+
+    html+='</tr>';
+
+    html+='</thead>';
+
+    return html;
+
+}
+
+/*=======================================================
+BODY
+=======================================================*/
+
+function bodyRender(){
+
+    const state = Grid.state;
+
+    let html="";
+
+    html+='<tbody>';
+
+    state.filteredData.forEach(
+
+        function(row,index){
+
+        html+=rowRender(
+
+            row,
+
+            index
+
+        );
+
+    });
+
+    html+='</tbody>';
+
+    return html;
+
+}
+
+/*=======================================================
+ROW
+=======================================================*/
+
+function rowRender(
+
+    row,
+
+    index
+
+){
+
+    const state = Grid.state;
+
+    let html="";
+
+    html+='<tr';
+
+    html+=' data-id="'+row.ID+'"';
+
+    html+=' ondblclick="GridEvent.doubleClick(\''
+
+    +row.ID+
+
+    '\')"';
+
+    html+='>';
+
+    html+='<td>';
+
+    html+=`
+
+<input
+
+type="checkbox"
+
+onclick="GridSelection.toggle('${row.ID}')">
+
+`;
+
+    html+='</td>';
+
+    html+='<td>';
+
+    html+=index+1;
+
+    html+='</td>';
+
+    state.columns.forEach(
+
+        function(col){
+
+            html+=cell(
+
+                row,
+
+                col
+
+            );
+
+        }
+
+    );
+
+    html+='<td>';
+
+    html+=GridAction.render(
+
+        row
+
+    );
+
+    html+='</td>';
+
+    html+='</tr>';
+
+    return html;
+
+}
+
+/*=======================================================
+CELL
+=======================================================*/
+
+function cell(
+
+    row,
+
+    column
+
+){
+
+    const value=
+
+    Formatter.format(
+
+        row[column.field],
+
+        column.type
+
+    );
+
+    return `
+
+<td>
+
+${value}
+
+</td>
+
+`;
+
+}
+
+/*=======================================================
+EMPTY
+=======================================================*/
+
+function empty(){
+
+return`
+
+<div class="grid-empty">
+
+<i class="ri-inbox-line"></i>
+
+<h3>
+
+No Data Found
+
+</h3>
+
+<p>
+
+There is no data to display.
+
+</p>
+
+</div>
+
+`;
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    render
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Enterprise Edition v3.0
+Part 3 - Column Engine
+==========================================================-->
+
+<script>
+
+const GridColumn = (()=>{
+
+"use strict";
+
+/*=======================================================
+NORMALIZE
+=======================================================*/
+
+function normalize(columns){
+
+    return columns.map(function(col){
+
+        return Object.assign({
+
+            title      : "",
+
+            field      : "",
+
+            width      : 150,
+
+            minWidth   : 80,
+
+            maxWidth   : 600,
+
+            align      : "left",
+
+            type       : "text",
+
+            sortable   : true,
+
+            filterable : true,
+
+            resizable  : true,
+
+            visible    : true,
+
+            frozen     : false,
+
+            editable   : false,
+
+            renderer   : null,
+
+            formatter  : null,
+
+            className  : ""
+
+        },col);
+
+    });
+
+}
+
+/*=======================================================
+VISIBLE
+=======================================================*/
+
+function visible(){
+
+    return Grid.state.columns.filter(
+
+        c=>c.visible
+
+    );
+
+}
+
+/*=======================================================
+GET
+=======================================================*/
+
+function get(field){
+
+    return Grid.state.columns.find(
+
+        c=>c.field===field
+
+    );
+
+}
+
+/*=======================================================
+SHOW
+=======================================================*/
+
+function show(field){
+
+    const col=get(field);
+
+    if(col){
+
+        col.visible=true;
+
+        Grid.refresh();
+
+    }
+
+}
+
+/*=======================================================
+HIDE
+=======================================================*/
+
+function hide(field){
+
+    const col=get(field);
+
+    if(col){
+
+        col.visible=false;
+
+        Grid.refresh();
+
+    }
+
+}
+
+/*=======================================================
+TOGGLE
+=======================================================*/
+
+function toggle(field){
+
+    const col=get(field);
+
+    if(col){
+
+        col.visible=!col.visible;
+
+        Grid.refresh();
+
+    }
+
+}
+
+/*=======================================================
+RESIZE
+=======================================================*/
+
+function resize(
+
+    field,
+
+    width
+
+){
+
+    const col=get(field);
+
+    if(!col){
+
+        return;
+
+    }
+
+    width=Math.max(
+
+        col.minWidth,
+
+        width
+
+    );
+
+    width=Math.min(
+
+        col.maxWidth,
+
+        width
+
+    );
+
+    col.width=width;
+
+}
+
+/*=======================================================
+MOVE
+=======================================================*/
+
+function move(
+
+    from,
+
+    to
+
+){
+
+    const list=
+
+        Grid.state.columns;
+
+    const item=
+
+        list.splice(
+
+            from,
+
+            1
+
+        )[0];
+
+    list.splice(
+
+        to,
+
+        0,
+
+        item
+
+    );
+
+    Grid.refresh();
+
+}
+
+/*=======================================================
+HEADER HTML
+=======================================================*/
+
+function headerHtml(){
+
+    let html="";
+
+    visible().forEach(function(col){
+
+        html+=`
+
+<th
+
+class="grid-column ${col.className}"
+
+style="
+
+width:${col.width}px;
+
+text-align:${col.align};
+
+">
+
+<div class="grid-header-title">
+
+<span>
+
+${col.title}
+
+</span>
+
+${sortIcon(col)}
+
+</div>
+
+</th>
+
+`;
+
+    });
+
+    return html;
+
+}
+
+/*=======================================================
+SORT ICON
+=======================================================*/
+
+function sortIcon(col){
+
+    if(!col.sortable){
+
+        return "";
+
+    }
+
+    return `
+
+<i
+
+class="ri-expand-up-down-line
+
+grid-sort"
+
+onclick="GridSort.toggle(
+
+'${col.field}'
+
+)">
+
+</i>
+
+`;
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    normalize,
+
+    visible,
+
+    get,
+
+    show,
+
+    hide,
+
+    toggle,
+
+    resize,
+
+    move,
+
+    headerHtml
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Enterprise Edition v3.0
+Part 4 - Formatter Engine
+==========================================================-->
+
+<script>
+
+const Formatter = (()=>{
+
+"use strict";
+
+/*=======================================================
+FORMAT
+=======================================================*/
+
+function format(
+
+    value,
+
+    type,
+
+    column,
+
+    row
+
+){
+
+    if(
+
+        column &&
+
+        typeof column.renderer==="function"
+
+    ){
+
+        return column.renderer(
+
+            value,
+
+            row,
+
+            column
+
+        );
+
+    }
+
+    switch(type){
+
+        case "currency":
+
+            return currency(value);
+
+        case "number":
+
+            return number(value);
+
+        case "date":
+
+            return date(value);
+
+        case "datetime":
+
+            return datetime(value);
+
+        case "badge":
+
+            return badge(value);
+
+        case "boolean":
+
+            return boolean(value);
+
+        case "progress":
+
+            return progress(value);
+
+        case "image":
+
+            return image(value);
+
+        case "link":
+
+            return link(value);
+
+        case "email":
+
+            return email(value);
+
+        case "phone":
+
+            return phone(value);
+
+        default:
+
+            return text(value);
+
+    }
+
+}
+
+/*=======================================================
+TEXT
+=======================================================*/
+
+function text(value){
+
+    if(
+
+        value===null ||
+
+        value===undefined
+
+    ){
+
+        return "";
+
+    }
+
+    return escape(value);
+
+}
+
+/*=======================================================
+NUMBER
+=======================================================*/
+
+function number(value){
+
+    return Number(
+
+        value||0
+
+    ).toLocaleString();
+
+}
+
+/*=======================================================
+CURRENCY
+=======================================================*/
+
+function currency(value){
+
+    return "Rp " +
+
+    Number(
+
+        value||0
+
+    ).toLocaleString(
+
+        "id-ID"
+
+    );
+
+}
+
+/*=======================================================
+DATE
+=======================================================*/
+
+function date(value){
+
+    if(!value){
+
+        return "";
+
+    }
+
+    return new Date(value)
+
+    .toLocaleDateString(
+
+        "id-ID"
+
+    );
+
+}
+
+/*=======================================================
+DATETIME
+=======================================================*/
+
+function datetime(value){
+
+    if(!value){
+
+        return "";
+
+    }
+
+    return new Date(value)
+
+    .toLocaleString(
+
+        "id-ID"
+
+    );
+
+}
+
+/*=======================================================
+BOOLEAN
+=======================================================*/
+
+function boolean(value){
+
+    return value
+
+        ? '<span class="yes">✔</span>'
+
+        : '<span class="no">✖</span>';
+
+}
+
+/*=======================================================
+BADGE
+=======================================================*/
+
+function badge(value){
+
+    const css=
+
+    String(value)
+
+    .toLowerCase()
+
+    .replace(/\s+/g,"-");
+
+    return `
+
+<span class="badge ${css}">
+
+${value}
+
+</span>
+
+`;
+
+}
+
+/*=======================================================
+PROGRESS
+=======================================================*/
+
+function progress(value){
+
+    value=Number(value||0);
+
+    return `
+
+<div class="progress">
+
+<div
+
+class="progress-bar"
+
+style="width:${value}%">
+
+</div>
+
+<span>
+
+${value}%
+
+</span>
+
+</div>
+
+`;
+
+}
+
+/*=======================================================
+IMAGE
+=======================================================*/
+
+function image(url){
+
+    if(!url){
+
+        return "";
+
+    }
+
+    return `
+
+<img
+
+src="${url}"
+
+class="grid-image">
+
+`;
+
+}
+
+/*=======================================================
+LINK
+=======================================================*/
+
+function link(value){
+
+    return `
+
+<a
+
+href="${value}"
+
+target="_blank">
+
+${value}
+
+</a>
+
+`;
+
+}
+
+/*=======================================================
+EMAIL
+=======================================================*/
+
+function email(value){
+
+    return `
+
+<a
+
+href="mailto:${value}">
+
+${value}
+
+</a>
+
+`;
+
+}
+
+/*=======================================================
+PHONE
+=======================================================*/
+
+function phone(value){
+
+    return `
+
+<a
+
+href="tel:${value}">
+
+${value}
+
+</a>
+
+`;
+
+}
+
+/*=======================================================
+ESCAPE HTML
+=======================================================*/
+
+function escape(text){
+
+    return String(text)
+
+    .replace(/&/g,"&amp;")
+
+    .replace(/</g,"&lt;")
+
+    .replace(/>/g,"&gt;")
+
+    .replace(/"/g,"&quot;")
+
+    .replace(/'/g,"&#39;");
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    format,
+
+    text,
+
+    number,
+
+    currency,
+
+    date,
+
+    datetime,
+
+    boolean,
+
+    badge,
+
+    progress,
+
+    image,
+
+    link,
+
+    email,
+
+    phone
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Enterprise Edition v3.0
+Part 5 - Selection Engine
+==========================================================-->
+
+<script>
+
+const GridSelection = (()=>{
+
+"use strict";
+
+/*=======================================================
+SELECT
+=======================================================*/
+
+function select(id){
+
+    Grid.state.selected.add(id);
+
+    refreshToolbar();
+
+}
+
+/*=======================================================
+UNSELECT
+=======================================================*/
+
+function unselect(id){
+
+    Grid.state.selected.delete(id);
+
+    refreshToolbar();
+
+}
+
+/*=======================================================
+TOGGLE
+=======================================================*/
+
+function toggle(id){
+
+    if(
+
+        Grid.state.selected.has(id)
+
+    ){
+
+        unselect(id);
+
+    }else{
+
+        select(id);
+
+    }
+
+}
+
+/*=======================================================
+SELECT ALL
+=======================================================*/
+
+function selectAll(
+
+    checkbox
+
+){
+
+    Grid.clearSelection();
+
+    if(
+
+        checkbox.checked
+
+    ){
+
+        Grid
+
+        .getData()
+
+        .forEach(function(row){
+
+            Grid.select(
+
+                row.ID
+
+            );
+
+        });
+
+    }
+
+    updateCheckbox();
+
+    refreshToolbar();
+
+}
+
+/*=======================================================
+CLEAR
+=======================================================*/
+
+function clear(){
+
+    Grid.clearSelection();
+
+    updateCheckbox();
+
+    refreshToolbar();
+
+}
+
+/*=======================================================
+COUNT
+=======================================================*/
+
+function count(){
+
+    return Grid
+
+    .getSelected()
+
+    .length;
+
+}
+
+/*=======================================================
+IS SELECTED
+=======================================================*/
+
+function isSelected(id){
+
+    return Grid
+
+    .state
+
+    .selected
+
+    .has(id);
+
+}
+
+/*=======================================================
+GET ROW
+=======================================================*/
+
+function getRows(){
+
+    const ids=
+
+    Grid.getSelected();
+
+    return Grid
+
+    .getData()
+
+    .filter(
+
+        row=>
+
+        ids.includes(
+
+            row.ID
+
+        )
+
+    );
+
+}
+
+/*=======================================================
+UPDATE CHECKBOX
+=======================================================*/
+
+function updateCheckbox(){
+
+    document
+
+    .querySelectorAll(
+
+        ".grid-checkbox-row"
+
+    )
+
+    .forEach(function(box){
+
+        const id=
+
+        box.dataset.id;
+
+        box.checked=
+
+        isSelected(id);
+
+    });
+
+}
+
+/*=======================================================
+TOOLBAR
+=======================================================*/
+
+function refreshToolbar(){
+
+    if(
+
+        typeof GridToolbar
+
+        !=="undefined"
+
+    ){
+
+        GridToolbar
+
+        .refresh(
+
+            count()
+
+        );
+
+    }
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    select,
+
+    unselect,
+
+    toggle,
+
+    selectAll,
+
+    clear,
+
+    count,
+
+    isSelected,
+
+    getRows
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Enterprise Edition v3.0
+Part 6 - Search Engine
+==========================================================-->
+
+<script>
+
+const GridSearch = (()=>{
+
+"use strict";
+
+/*=======================================================
+SEARCH
+=======================================================*/
+
+function search(keyword){
+
+    const state = Grid.state;
+
+    state.search =
+
+        String(keyword || "")
+
+        .toLowerCase()
+
+        .trim();
+
+    apply();
+
+}
+
+/*=======================================================
+CLEAR
+=======================================================*/
+
+function clear(){
+
+    Grid.state.search = "";
+
+    apply();
+
+}
+
+/*=======================================================
+APPLY
+=======================================================*/
+
+function apply(){
+
+    const state = Grid.state;
+
+    if(
+
+        !state.search
+
+    ){
+
+        state.filteredData=[
+
+            ...state.data
+
+        ];
+
+    }
+
+    else{
+
+        state.filteredData=
+
+        state.data.filter(
+
+            function(row){
+
+                return match(row);
+
+            }
+
+        );
+
+    }
+
+    Grid.refresh();
+
+}
+
+/*=======================================================
+MATCH
+=======================================================*/
+
+function match(row){
+
+    const keyword=
+
+        Grid.state.search;
+
+    const columns=
+
+        GridColumn.visible();
+
+    for(
+
+        let i=0;
+
+        i<columns.length;
+
+        i++
+
+    ){
+
+        const field=
+
+            columns[i].field;
+
+        const value=
+
+            row[field];
+
+        if(
+
+            value===null ||
+
+            value===undefined
+
+        ){
+
+            continue;
+
+        }
+
+        if(
+
+            String(value)
+
+            .toLowerCase()
+
+            .includes(keyword)
+
+        ){
+
+            return true;
+
+        }
+
+    }
+
+    return false;
+
+}
+
+/*=======================================================
+SERVER SIDE
+=======================================================*/
+
+async function server(keyword){
+
+    Grid.state.search=keyword;
+
+    await Grid.load({
+
+        keyword:keyword,
+
+        page:1
+
+    });
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    search,
+
+    clear,
+
+    apply,
+
+    server
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Enterprise Edition v3.0
+Part 7 - Filter Engine
+==========================================================-->
+
+<script>
+
+const GridFilter = (()=>{
+
+"use strict";
+
+/*=======================================================
+SET FILTER
+=======================================================*/
+
+function set(
+
+    field,
+
+    value
+
+){
+
+    Grid.state.filter[field]=value;
+
+    apply();
+
+}
+
+/*=======================================================
+REMOVE FILTER
+=======================================================*/
+
+function remove(field){
+
+    delete Grid.state.filter[field];
+
+    apply();
+
+}
+
+/*=======================================================
+CLEAR
+=======================================================*/
+
+function clear(){
+
+    Grid.state.filter={};
+
+    apply();
+
+}
+
+/*=======================================================
+APPLY
+=======================================================*/
+
+function apply(){
+
+    const state = Grid.state;
+
+    const filter = state.filter;
+
+    state.filteredData =
+
+    state.data.filter(function(row){
+
+        return match(
+
+            row,
+
+            filter
+
+        );
+
+    });
+
+    if(
+
+        state.search
+
+    ){
+
+        GridSearch.apply();
+
+        return;
+
+    }
+
+    Grid.refresh();
+
+}
+
+/*=======================================================
+MATCH
+=======================================================*/
+
+function match(
+
+    row,
+
+    filter
+
+){
+
+    for(
+
+        const field
+
+        in
+
+        filter
+
+    ){
+
+        const value=
+
+            filter[field];
+
+        if(
+
+            value===null ||
+
+            value===""
+
+        ){
+
+            continue;
+
+        }
+
+        if(
+
+            Array.isArray(value)
+
+        ){
+
+            if(
+
+                !value.includes(
+
+                    row[field]
+
+                )
+
+            ){
+
+                return false;
+
+            }
+
+            continue;
+
+        }
+
+        if(
+
+            String(
+
+                row[field]
+
+            )!==
+
+            String(value)
+
+        ){
+
+            return false;
+
+        }
+
+    }
+
+    return true;
+
+}
+
+/*=======================================================
+CUSTOM
+=======================================================*/
+
+function custom(
+
+    callback
+
+){
+
+    Grid.state.filteredData=
+
+    Grid.state.data.filter(
+
+        callback
+
+    );
+
+    Grid.refresh();
+
+}
+
+/*=======================================================
+SERVER
+=======================================================*/
+
+async function server(){
+
+    await Grid.load({
+
+        filter:
+
+        Grid.state.filter,
+
+        page:1
+
+    });
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    set,
+
+    remove,
+
+    clear,
+
+    apply,
+
+    custom,
+
+    server
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Enterprise Edition v3.0
+Part 8 - Sort Engine
+==========================================================-->
+
+<script>
+
+const GridSort = (()=>{
+
+"use strict";
+
+/*=======================================================
+TOGGLE SORT
+=======================================================*/
+
+function toggle(field){
+
+    const state = Grid.state;
+
+    const index = state.sort.findIndex(
+
+        s => s.field===field
+
+    );
+
+    if(index===-1){
+
+        state.sort.push({
+
+            field:field,
+
+            order:"ASC"
+
+        });
+
+    }
+
+    else if(
+
+        state.sort[index].order==="ASC"
+
+    ){
+
+        state.sort[index].order="DESC";
+
+    }
+
+    else{
+
+        state.sort.splice(
+
+            index,
+
+            1
+
+        );
+
+    }
+
+    apply();
+
+}
+
+/*=======================================================
+SET SORT
+=======================================================*/
+
+function set(
+
+    field,
+
+    order
+
+){
+
+    Grid.state.sort=[{
+
+        field:field,
+
+        order:order
+
+    }];
+
+    apply();
+
+}
+
+/*=======================================================
+CLEAR
+=======================================================*/
+
+function clear(){
+
+    Grid.state.sort=[];
+
+    apply();
+
+}
+
+/*=======================================================
+APPLY
+=======================================================*/
+
+function apply(){
+
+    const state = Grid.state;
+
+    if(
+
+        state.sort.length===0
+
+    ){
+
+        Grid.refresh();
+
+        return;
+
+    }
+
+    state.filteredData.sort(compare);
+
+    Grid.refresh();
+
+}
+
+/*=======================================================
+COMPARE
+=======================================================*/
+
+function compare(a,b){
+
+    const sort=
+
+        Grid.state.sort;
+
+    for(
+
+        let i=0;
+
+        i<sort.length;
+
+        i++
+
+    ){
+
+        const s=sort[i];
+
+        const av=a[s.field];
+
+        const bv=b[s.field];
+
+        if(av>bv){
+
+            return
+
+            s.order==="ASC"
+
+            ?1
+
+            :-1;
+
+        }
+
+        if(av<bv){
+
+            return
+
+            s.order==="ASC"
+
+            ?-1
+
+            :1;
+
+        }
+
+    }
+
+    return 0;
+
+}
+
+/*=======================================================
+SERVER
+=======================================================*/
+
+async function server(){
+
+    await Grid.load({
+
+        sort:
+
+        Grid.state.sort,
+
+        page:
+
+        Grid.state.page
+
+    });
+
+}
+
+/*=======================================================
+ICON
+=======================================================*/
+
+function icon(field){
+
+    const s=
+
+    Grid.state.sort.find(
+
+        x=>x.field===field
+
+    );
+
+    if(!s){
+
+        return
+
+        "ri-expand-up-down-line";
+
+    }
+
+    return s.order==="ASC"
+
+    ?"ri-sort-asc"
+
+    :"ri-sort-desc";
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    toggle,
+
+    set,
+
+    clear,
+
+    apply,
+
+    server,
+
+    icon
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Enterprise Edition v3.0
+Part 9 - Pagination Engine
+==========================================================-->
+
+<script>
+
+const GridPagination = (()=>{
+
+"use strict";
+
+/*=======================================================
+GET PAGE
+=======================================================*/
+
+function page(){
+
+    return Grid.state.page;
+
+}
+
+/*=======================================================
+PAGE SIZE
+=======================================================*/
+
+function pageSize(){
+
+    return Grid.state.pageSize;
+
+}
+
+/*=======================================================
+TOTAL ROW
+=======================================================*/
+
+function totalRow(){
+
+    return Grid.state.totalRow;
+
+}
+
+/*=======================================================
+TOTAL PAGE
+=======================================================*/
+
+function totalPage(){
+
+    return Math.max(
+
+        1,
+
+        Math.ceil(
+
+            totalRow() /
+
+            pageSize()
+
+        )
+
+    );
+
+}
+
+/*=======================================================
+NEXT
+=======================================================*/
+
+function next(){
+
+    if(
+
+        page()<totalPage()
+
+    ){
+
+        Grid.state.page++;
+
+        refresh();
+
+    }
+
+}
+
+/*=======================================================
+PREVIOUS
+=======================================================*/
+
+function previous(){
+
+    if(
+
+        page()>1
+
+    ){
+
+        Grid.state.page--;
+
+        refresh();
+
+    }
+
+}
+
+/*=======================================================
+FIRST
+=======================================================*/
+
+function first(){
+
+    Grid.state.page=1;
+
+    refresh();
+
+}
+
+/*=======================================================
+LAST
+=======================================================*/
+
+function last(){
+
+    Grid.state.page=
+
+        totalPage();
+
+    refresh();
+
+}
+
+/*=======================================================
+GO TO
+=======================================================*/
+
+function go(number){
+
+    if(
+
+        number<1 ||
+
+        number>totalPage()
+
+    ){
+
+        return;
+
+    }
+
+    Grid.state.page=
+
+        number;
+
+    refresh();
+
+}
+
+/*=======================================================
+SET PAGE SIZE
+=======================================================*/
+
+function setPageSize(size){
+
+    Grid.state.pageSize=
+
+        Number(size);
+
+    Grid.state.page=1;
+
+    refresh();
+
+}
+
+/*=======================================================
+VISIBLE ROW
+=======================================================*/
+
+function rows(){
+
+    const start=
+
+        (page()-1)*pageSize();
+
+    const end=
+
+        start+pageSize();
+
+    return Grid
+
+        .state
+
+        .filteredData
+
+        .slice(
+
+            start,
+
+            end
+
+        );
+
+}
+
+/*=======================================================
+REFRESH
+=======================================================*/
+
+function refresh(){
+
+    if(
+
+        Grid.state.option
+
+        .serverSide
+
+    ){
+
+        server();
+
+        return;
+
+    }
+
+    Grid.refresh();
+
+}
+
+/*=======================================================
+SERVER
+=======================================================*/
+
+async function server(){
+
+    await Grid.load({
+
+        page:
+
+            page(),
+
+        limit:
+
+            pageSize(),
+
+        keyword:
+
+            Grid.state.search,
+
+        filter:
+
+            Grid.state.filter,
+
+        sort:
+
+            Grid.state.sort
+
+    });
+
+}
+
+/*=======================================================
+RENDER
+=======================================================*/
+
+function render(){
+
+    const footer=
+
+    Grid.state.container
+
+    .querySelector(
+
+        ".grid-footer"
+
+    );
+
+    footer.innerHTML=`
+
+<div class="grid-pagination">
+
+<div>
+
+Showing
+
+${rows().length}
+
+of
+
+${totalRow()}
+
+Rows
+
+</div>
+
+<div>
+
+<button
+
+onclick="GridPagination.first()">
+
+«
+
+</button>
+
+<button
+
+onclick="GridPagination.previous()">
+
+‹
+
+</button>
+
+<span>
+
+${page()}
+
+/
+
+${totalPage()}
+
+</span>
+
+<button
+
+onclick="GridPagination.next()">
+
+›
+
+</button>
+
+<button
+
+onclick="GridPagination.last()">
+
+»
+
+</button>
+
+<select
+
+onchange="GridPagination.setPageSize(this.value)">
+
+<option>25</option>
+
+<option>50</option>
+
+<option>100</option>
+
+<option>250</option>
+
+</select>
+
+</div>
+
+</div>
+
+`;
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    page,
+
+    pageSize,
+
+    totalRow,
+
+    totalPage,
+
+    next,
+
+    previous,
+
+    first,
+
+    last,
+
+    go,
+
+    setPageSize,
+
+    rows,
+
+    refresh,
+
+    render
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Enterprise Edition v3.0
+Part 10 - Export Engine
+==========================================================-->
+
+<script>
+
+const GridExport = (()=>{
+
+"use strict";
+
+/*=======================================================
+EXPORT CSV
+=======================================================*/
+
+function csv(fileName){
+
+    const data = getExportData();
+
+    if(data.length===0){
+
+        Toast.warning(
+
+            "No data."
+
+        );
+
+        return;
+
+    }
+
+    const header=
+
+        Object.keys(data[0]);
+
+    const csv=[
+
+        header.join(",")
+
+    ];
+
+    data.forEach(function(row){
+
+        csv.push(
+
+            header.map(function(key){
+
+                return '"' +
+
+                String(
+
+                    row[key]??""
+
+                ).replace(/"/g,'""') +
+
+                '"';
+
+            }).join(",")
+
+        );
+
+    });
+
+    download(
+
+        fileName||"Export",
+
+        csv.join("\n"),
+
+        "text/csv",
+
+        ".csv"
+
+    );
+
+}
+
+/*=======================================================
+EXPORT JSON
+=======================================================*/
+
+function json(fileName){
+
+    download(
+
+        fileName||"Export",
+
+        JSON.stringify(
+
+            getExportData(),
+
+            null,
+
+            2
+
+        ),
+
+        "application/json",
+
+        ".json"
+
+    );
+
+}
+
+/*=======================================================
+EXPORT EXCEL
+=======================================================*/
+
+async function excel(){
+
+    Loader.show(
+
+        "Generating Excel..."
+
+    );
+
+    try{
+
+        const result=
+
+        await API.post(
+
+            "GRID.EXPORT.EXCEL",
+
+            {
+
+                columns:
+
+                Grid.state.columns,
+
+                rows:
+
+                getExportData()
+
+            }
+
+        );
+
+        window.open(
+
+            result.url,
+
+            "_blank"
+
+        );
+
+    }
+
+    finally{
+
+        Loader.hide();
+
+    }
+
+}
+
+/*=======================================================
+EXPORT PDF
+=======================================================*/
+
+async function pdf(){
+
+    Loader.show(
+
+        "Generating PDF..."
+
+    );
+
+    try{
+
+        const result=
+
+        await API.post(
+
+            "GRID.EXPORT.PDF",
+
+            {
+
+                columns:
+
+                Grid.state.columns,
+
+                rows:
+
+                getExportData()
+
+            }
+
+        );
+
+        window.open(
+
+            result.url,
+
+            "_blank"
+
+        );
+
+    }
+
+    finally{
+
+        Loader.hide();
+
+    }
+
+}
+
+/*=======================================================
+EXPORT DATA
+=======================================================*/
+
+function getExportData(){
+
+    const selected=
+
+        GridSelection.getRows();
+
+    return
+
+        selected.length>0
+
+        ? selected
+
+        : Grid.state.filteredData;
+
+}
+
+/*=======================================================
+DOWNLOAD
+=======================================================*/
+
+function download(
+
+    file,
+
+    content,
+
+    type,
+
+    ext
+
+){
+
+    const blob=
+
+        new Blob(
+
+            [content],
+
+            {
+
+                type:type
+
+            }
+
+        );
+
+    const url=
+
+        URL.createObjectURL(
+
+            blob
+
+        );
+
+    const a=
+
+        document.createElement("a");
+
+    a.href=url;
+
+    a.download=
+
+        file+ext;
+
+    a.click();
+
+    URL.revokeObjectURL(
+
+        url
+
+    );
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    csv,
+
+    json,
+
+    excel,
+
+    pdf
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Enterprise Edition v3.0
+Part 11 - Virtual Scroll Engine
+==========================================================-->
+
+<script>
+
+const GridVirtual = (()=>{
+
+"use strict";
+
+const DEFAULT_ROW_HEIGHT = 40;
+
+let rowHeight = DEFAULT_ROW_HEIGHT;
+
+let startIndex = 0;
+
+let endIndex = 0;
+
+/*=======================================================
+INIT
+=======================================================*/
+
+function init(){
+
+    const body = getBody();
+
+    if(!body){
+
+        return;
+
+    }
+
+    body.addEventListener(
+
+        "scroll",
+
+        onScroll
+
+    );
+
+}
+
+/*=======================================================
+SCROLL
+=======================================================*/
+
+function onScroll(){
+
+    calculate();
+
+    GridRender.render();
+
+}
+
+/*=======================================================
+CALCULATE
+=======================================================*/
+
+function calculate(){
+
+    const body = getBody();
+
+    if(!body){
+
+        return;
+
+    }
+
+    const scrollTop = body.scrollTop;
+
+    const height = body.clientHeight;
+
+    const total = GridPagination.rows();
+
+    startIndex = Math.floor(
+
+        scrollTop / rowHeight
+
+    );
+
+    endIndex =
+
+        startIndex +
+
+        Math.ceil(
+
+            height / rowHeight
+
+        ) + 5;
+
+    if(endIndex > total.length){
+
+        endIndex = total.length;
+
+    }
+
+}
+
+/*=======================================================
+VISIBLE ROWS
+=======================================================*/
+
+function rows(){
+
+    const pageRows =
+
+        GridPagination.rows();
+
+    return pageRows.slice(
+
+        startIndex,
+
+        endIndex
+
+    );
+
+}
+
+/*=======================================================
+TOP SPACE
+=======================================================*/
+
+function topPadding(){
+
+    return startIndex * rowHeight;
+
+}
+
+/*=======================================================
+BOTTOM SPACE
+=======================================================*/
+
+function bottomPadding(){
+
+    const total =
+
+        GridPagination.rows().length;
+
+    return Math.max(
+
+        0,
+
+        (total-endIndex)
+
+        * rowHeight
+
+    );
+
+}
+
+/*=======================================================
+ROW HEIGHT
+=======================================================*/
+
+function setRowHeight(value){
+
+    rowHeight = value;
+
+}
+
+/*=======================================================
+BODY
+=======================================================*/
+
+function getBody(){
+
+    return Grid
+
+        .state
+
+        .container
+
+        .querySelector(
+
+            ".grid-body"
+
+        );
+
+}
+
+/*=======================================================
+RESET
+=======================================================*/
+
+function reset(){
+
+    startIndex = 0;
+
+    endIndex = 0;
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    init,
+
+    reset,
+
+    rows,
+
+    calculate,
+
+    topPadding,
+
+    bottomPadding,
+
+    setRowHeight
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Enterprise Edition v3.0
+Part 12 - Keyboard Engine
+==========================================================-->
+
+<script>
+
+const GridKeyboard = (()=>{
+
+"use strict";
+
+let currentRow = 0;
+
+/*=======================================================
+INIT
+=======================================================*/
+
+function init(){
+
+    document.addEventListener(
+
+        "keydown",
+
+        keydown
+
+    );
+
+}
+
+/*=======================================================
+KEYDOWN
+=======================================================*/
+
+function keydown(e){
+
+    if(
+
+        !Grid.state.container
+
+    ){
+
+        return;
+
+    }
+
+    switch(e.key){
+
+        case "ArrowDown":
+
+            e.preventDefault();
+
+            down();
+
+            break;
+
+        case "ArrowUp":
+
+            e.preventDefault();
+
+            up();
+
+            break;
+
+        case "Home":
+
+            e.preventDefault();
+
+            first();
+
+            break;
+
+        case "End":
+
+            e.preventDefault();
+
+            last();
+
+            break;
+
+        case "Enter":
+
+            e.preventDefault();
+
+            open();
+
+            break;
+
+        case " ":
+
+            e.preventDefault();
+
+            select();
+
+            break;
+
+        case "Delete":
+
+            remove();
+
+            break;
+
+    }
+
+    if(
+
+        e.ctrlKey &&
+
+        e.key==="a"
+
+    ){
+
+        e.preventDefault();
+
+        selectAll();
+
+    }
+
+    if(
+
+        e.ctrlKey &&
+
+        e.key==="f"
+
+    ){
+
+        e.preventDefault();
+
+        focusSearch();
+
+    }
+
+}
+
+/*=======================================================
+DOWN
+=======================================================*/
+
+function down(){
+
+    const total=
+
+        GridVirtual.rows()
+
+        .length;
+
+    currentRow=
+
+        Math.min(
+
+            total-1,
+
+            currentRow+1
+
+        );
+
+    highlight();
+
+}
+
+/*=======================================================
+UP
+=======================================================*/
+
+function up(){
+
+    currentRow=
+
+        Math.max(
+
+            0,
+
+            currentRow-1
+
+        );
+
+    highlight();
+
+}
+
+/*=======================================================
+FIRST
+=======================================================*/
+
+function first(){
+
+    currentRow=0;
+
+    highlight();
+
+}
+
+/*=======================================================
+LAST
+=======================================================*/
+
+function last(){
+
+    currentRow=
+
+        GridVirtual
+
+        .rows()
+
+        .length-1;
+
+    highlight();
+
+}
+
+/*=======================================================
+HIGHLIGHT
+=======================================================*/
+
+function highlight(){
+
+    document
+
+    .querySelectorAll(
+
+        ".rpn-grid tbody tr"
+
+    )
+
+    .forEach(function(tr){
+
+        tr.classList.remove(
+
+            "active"
+
+        );
+
+    });
+
+    const rows=
+
+    document.querySelectorAll(
+
+        ".rpn-grid tbody tr"
+
+    );
+
+    if(
+
+        rows[currentRow]
+
+    ){
+
+        rows[currentRow]
+
+        .classList.add(
+
+            "active"
+
+        );
+
+        rows[currentRow]
+
+        .scrollIntoView({
+
+            block:"nearest"
+
+        });
+
+    }
+
+}
+
+/*=======================================================
+OPEN
+=======================================================*/
+
+function open(){
+
+    const row=
+
+        GridVirtual
+
+        .rows()[currentRow];
+
+    if(
+
+        row &&
+
+        Grid.state.option.view
+
+    ){
+
+        Grid.state.option.view(
+
+            row.ID
+
+        );
+
+    }
+
+}
+
+/*=======================================================
+SELECT
+=======================================================*/
+
+function select(){
+
+    const row=
+
+        GridVirtual
+
+        .rows()[currentRow];
+
+    if(row){
+
+        GridSelection.toggle(
+
+            row.ID
+
+        );
+
+    }
+
+}
+
+/*=======================================================
+DELETE
+=======================================================*/
+
+function remove(){
+
+    const row=
+
+        GridVirtual
+
+        .rows()[currentRow];
+
+    if(
+
+        row &&
+
+        Grid.state.option.remove
+
+    ){
+
+        Grid.state.option.remove(
+
+            row.ID
+
+        );
+
+    }
+
+}
+
+/*=======================================================
+CTRL+A
+=======================================================*/
+
+function selectAll(){
+
+    GridPagination
+
+    .rows()
+
+    .forEach(function(r){
+
+        GridSelection.select(
+
+            r.ID
+
+        );
+
+    });
+
+}
+
+/*=======================================================
+CTRL+F
+=======================================================*/
+
+function focusSearch(){
+
+    const input=
+
+    document.querySelector(
+
+        ".grid-search"
+
+    );
+
+    if(input){
+
+        input.focus();
+
+    }
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    init,
+
+    first,
+
+    last,
+
+    up,
+
+    down,
+
+    open,
+
+    select
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Enterprise Edition v3.0
+Part 13 - Context Menu Engine
+==========================================================-->
+
+<script>
+
+const GridContextMenu = (()=>{
+
+"use strict";
+
+let menu = null;
+
+let currentRow = null;
+
+/*=======================================================
+INIT
+=======================================================*/
+
+function init(){
+
+    create();
+
+    document.addEventListener(
+
+        "click",
+
+        hide
+
+    );
+
+}
+
+/*=======================================================
+CREATE
+=======================================================*/
+
+function create(){
+
+    menu = document.createElement(
+
+        "div"
+
+    );
+
+    menu.id = "grid-context-menu";
+
+    menu.className =
+
+        "grid-context-menu";
+
+    menu.style.display = "none";
+
+    document.body.appendChild(
+
+        menu
+
+    );
+
+}
+
+/*=======================================================
+OPEN
+=======================================================*/
+
+function open(
+
+    event,
+
+    row
+
+){
+
+    event.preventDefault();
+
+    currentRow = row;
+
+    build();
+
+    menu.style.left =
+
+        event.pageX + "px";
+
+    menu.style.top =
+
+        event.pageY + "px";
+
+    menu.style.display =
+
+        "block";
+
+}
+
+/*=======================================================
+BUILD
+=======================================================*/
+
+function build(){
+
+    const actions =
+
+        Grid.state.option.actions || [];
+
+    let html = "";
+
+    actions.forEach(function(action){
+
+        html += `
+
+<div
+
+class="grid-context-item"
+
+onclick="GridContextMenu.execute('${action.name}')">
+
+<i class="${action.icon}"></i>
+
+<span>${action.title}</span>
+
+</div>
+
+`;
+
+    });
+
+    menu.innerHTML = html;
+
+}
+
+/*=======================================================
+EXECUTE
+=======================================================*/
+
+function execute(name){
+
+    const actions =
+
+        Grid.state.option.actions || [];
+
+    const action =
+
+        actions.find(
+
+            a => a.name===name
+
+        );
+
+    if(
+
+        action &&
+
+        typeof action.click==="function"
+
+    ){
+
+        action.click(
+
+            currentRow
+
+        );
+
+    }
+
+    hide();
+
+}
+
+/*=======================================================
+HIDE
+=======================================================*/
+
+function hide(){
+
+    if(menu){
+
+        menu.style.display="none";
+
+    }
+
+}
+
+/*=======================================================
+ROW BIND
+=======================================================*/
+
+function bind(tr,row){
+
+    tr.addEventListener(
+
+        "contextmenu",
+
+        function(e){
+
+            open(
+
+                e,
+
+                row
+
+            );
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    init,
+
+    open,
+
+    hide,
+
+    bind,
+
+    execute
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Enterprise Edition v3.0
+Part 14 - Responsive Engine
+==========================================================-->
+
+<script>
+
+const GridResponsive = (()=>{
+
+"use strict";
+
+let mode = "desktop";
+
+/*=======================================================
+INIT
+=======================================================*/
+
+function init(){
+
+    detect();
+
+    window.addEventListener(
+
+        "resize",
+
+        detect
+
+    );
+
+}
+
+/*=======================================================
+DETECT
+=======================================================*/
+
+function detect(){
+
+    const width=
+
+        window.innerWidth;
+
+    if(width>=1400){
+
+        mode="desktop";
+
+    }
+
+    else if(width>=992){
+
+        mode="laptop";
+
+    }
+
+    else if(width>=768){
+
+        mode="tablet";
+
+    }
+
+    else{
+
+        mode="mobile";
+
+    }
+
+    apply();
+
+}
+
+/*=======================================================
+APPLY
+=======================================================*/
+
+function apply(){
+
+    switch(mode){
+
+        case "desktop":
+
+            desktop();
+
+            break;
+
+        case "laptop":
+
+            laptop();
+
+            break;
+
+        case "tablet":
+
+            tablet();
+
+            break;
+
+        default:
+
+            mobile();
+
+    }
+
+}
+
+/*=======================================================
+DESKTOP
+=======================================================*/
+
+function desktop(){
+
+    document.body
+
+    .classList.remove(
+
+        "grid-mobile",
+
+        "grid-tablet"
+
+    );
+
+}
+
+/*=======================================================
+LAPTOP
+=======================================================*/
+
+function laptop(){
+
+    desktop();
+
+}
+
+/*=======================================================
+TABLET
+=======================================================*/
+
+function tablet(){
+
+    document.body
+
+    .classList.add(
+
+        "grid-tablet"
+
+    );
+
+    document.body
+
+    .classList.remove(
+
+        "grid-mobile"
+
+    );
+
+}
+
+/*=======================================================
+MOBILE
+=======================================================*/
+
+function mobile(){
+
+    document.body
+
+    .classList.add(
+
+        "grid-mobile"
+
+    );
+
+    GridRender.renderCard();
+
+}
+
+/*=======================================================
+MODE
+=======================================================*/
+
+function current(){
+
+    return mode;
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    init,
+
+    current
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Enterprise Edition v3.0
+Part 15 - Enterprise Final Integration
+==========================================================-->
+
+<script>
+
+const GridManager = (()=>{
+
+"use strict";
+
+/*=========================================================
+INSTANCE
+=========================================================*/
+
+const instances = new Map();
+
+/*=========================================================
+CREATE
+=========================================================*/
+
+function create(config){
+
+    if(
+
+        !config ||
+
+        !config.id
+
+    ){
+
+        throw new Error(
+
+            "Grid ID required."
+
+        );
+
+    }
+
+    if(
+
+        instances.has(
+
+            config.id
+
+        )
+
+    ){
+
+        return instances.get(
+
+            config.id
+
+        );
+
+    }
+
+    const grid = new GridInstance(
+
+        config
+
+    );
+
+    instances.set(
+
+        config.id,
+
+        grid
+
+    );
+
+    return grid;
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(id){
+
+    return instances.get(id);
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(id){
+
+    const grid=
+
+        instances.get(id);
+
+    if(
+
+        grid
+
+    ){
+
+        grid.destroy();
+
+        instances.delete(id);
+
+    }
+
+}
+
+/*=========================================================
+DESTROY ALL
+=========================================================*/
+
+function destroy(){
+
+    instances.forEach(
+
+        g=>g.destroy()
+
+    );
+
+    instances.clear();
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    create,
+
+    get,
+
+    remove,
+
+    destroy
+
+};
+
+})();
+
+
+
+/*=========================================================
+GRID INSTANCE
+=========================================================*/
+
+class GridInstance{
+
+constructor(config){
+
+    this.config=config;
+
+    this.state={
+
+        data:[],
+
+        filtered:[],
+
+        selected:new Set(),
+
+        page:1,
+
+        pageSize:
+
+            config.pageSize||25,
+
+        sort:[],
+
+        filter:{},
+
+        search:""
+
+    };
+
+    this.bus=
+
+        new GridEventBus();
+
+    this.plugin=
+
+        new GridPluginManager(
+
+            this
+
+        );
+
+    this.init();
+
+}
+
+/*=======================================================
+INIT
+=======================================================*/
+
+init(){
+
+    this.registerPlugins();
+
+    this.plugin.init();
+
+}
+
+/*=======================================================
+PLUGIN
+=======================================================*/
+
+registerPlugins(){
+
+    this.plugin.register(
+
+        GridColumn
+
+    );
+
+    this.plugin.register(
+
+        Formatter
+
+    );
+
+    this.plugin.register(
+
+        GridSearch
+
+    );
+
+    this.plugin.register(
+
+        GridFilter
+
+    );
+
+    this.plugin.register(
+
+        GridSort
+
+    );
+
+    this.plugin.register(
+
+        GridPagination
+
+    );
+
+    this.plugin.register(
+
+        GridSelection
+
+    );
+
+    this.plugin.register(
+
+        GridExport
+
+    );
+
+    this.plugin.register(
+
+        GridVirtual
+
+    );
+
+    this.plugin.register(
+
+        GridKeyboard
+
+    );
+
+    this.plugin.register(
+
+        GridContextMenu
+
+    );
+
+    this.plugin.register(
+
+        GridResponsive
+
+    );
+
+    this.plugin.register(
+
+        GridRender
+
+    );
+
+}
+
+/*=======================================================
+LOAD
+=======================================================*/
+
+async load(parameter){
+
+    this.bus.emit(
+
+        "beforeLoad",
+
+        parameter
+
+    );
+
+    const result=
+
+    await API.post(
+
+        this.config.api,
+
+        parameter||{}
+
+    );
+
+    this.state.data=
+
+        result.data||[];
+
+    this.state.filtered=[
+
+        ...this.state.data
+
+    ];
+
+    this.bus.emit(
+
+        "afterLoad",
+
+        result
+
+    );
+
+    this.refresh();
+
+}
+
+/*=======================================================
+REFRESH
+=======================================================*/
+
+refresh(){
+
+    this.bus.emit(
+
+        "beforeRefresh"
+
+    );
+
+    this.plugin.execute(
+
+        "pipeline"
+
+    );
+
+    this.bus.emit(
+
+        "afterRefresh"
+
+    );
+
+}
+
+/*=======================================================
+DESTROY
+=======================================================*/
+
+destroy(){
+
+    this.plugin.destroy();
+
+    this.bus.clear();
+
+}
+
+}
+
+
+
+/*=========================================================
+PLUGIN MANAGER
+=========================================================*/
+
+class GridPluginManager{
+
+constructor(grid){
+
+    this.grid=grid;
+
+    this.plugins=[];
+
+}
+
+register(plugin){
+
+    this.plugins.push(
+
+        plugin
+
+    );
+
+}
+
+init(){
+
+    this.plugins.forEach(
+
+        p=>{
+
+            if(
+
+                p.init
+
+            ){
+
+                p.init(
+
+                    this.grid
+
+                );
+
+            }
+
+        }
+
+    );
+
+}
+
+execute(method){
+
+    this.plugins.forEach(
+
+        p=>{
+
+            if(
+
+                typeof p[method]
+
+                ==="function"
+
+            ){
+
+                p[method](
+
+                    this.grid
+
+                );
+
+            }
+
+        }
+
+    );
+
+}
+
+destroy(){
+
+    this.plugins.forEach(
+
+        p=>{
+
+            if(
+
+                p.destroy
+
+            ){
+
+                p.destroy();
+
+            }
+
+        }
+
+    );
+
+}
+
+}
+
+
+
+/*=========================================================
+EVENT BUS
+=========================================================*/
+
+class GridEventBus{
+
+constructor(){
+
+    this.events={};
+
+}
+
+on(
+
+    name,
+
+    callback
+
+){
+
+    if(
+
+        !this.events[name]
+
+    ){
+
+        this.events[name]=[];
+
+    }
+
+    this.events[name].push(
+
+        callback
+
+    );
+
+}
+
+emit(
+
+    name,
+
+    payload
+
+){
+
+    (
+
+        this.events[name]||
+
+        []
+
+    ).forEach(
+
+        fn=>fn(payload)
+
+    );
+
+}
+
+clear(){
+
+    this.events={};
+
+}
+
+}
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Production v4
+Part 16 - GridFactory
+==========================================================-->
+
+<script>
+
+const GridFactory = (()=>{
+
+"use strict";
+
+const registry = new Map();
+
+/*=========================================================
+CREATE
+=========================================================*/
+
+function create(config){
+
+    validate(config);
+
+    if(registry.has(config.id)){
+
+        throw new Error(
+
+            "Grid already exists : " +
+
+            config.id
+
+        );
+
+    }
+
+    const grid = {
+
+        id : config.id,
+
+        container :
+
+            getContainer(
+
+                config.container
+
+            ),
+
+        config : Object.assign({
+
+            pageSize : 25,
+
+            serverSide : false,
+
+            virtualScroll : false,
+
+            responsive : true,
+
+            keyboard : true,
+
+            selectable : true,
+
+            sortable : true,
+
+            searchable : true,
+
+            filterable : true
+
+        },config),
+
+        state : {
+
+            rows : [],
+
+            filteredRows : [],
+
+            selected : new Set(),
+
+            page : 1,
+
+            total : 0,
+
+            search : "",
+
+            filter : {},
+
+            sort : []
+
+        },
+
+        plugins : [],
+
+        hooks : {},
+
+        destroyed : false
+
+    };
+
+    registry.set(
+
+        config.id,
+
+        grid
+
+    );
+
+    return grid;
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(id){
+
+    return registry.get(id);
+
+}
+
+/*=========================================================
+EXISTS
+=========================================================*/
+
+function exists(id){
+
+    return registry.has(id);
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(id){
+
+    const grid = registry.get(id);
+
+    if(!grid){
+
+        return;
+
+    }
+
+    grid.destroyed = true;
+
+    registry.delete(id);
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(){
+
+    registry.forEach(function(grid){
+
+        grid.destroyed = true;
+
+    });
+
+    registry.clear();
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(){
+
+    return registry.size;
+
+}
+
+/*=========================================================
+ALL
+=========================================================*/
+
+function all(){
+
+    return Array.from(
+
+        registry.values()
+
+    );
+
+}
+
+/*=========================================================
+CONTAINER
+=========================================================*/
+
+function getContainer(container){
+
+    if(
+
+        typeof container ===
+
+        "string"
+
+    ){
+
+        const el =
+
+        document.getElementById(
+
+            container
+
+        );
+
+        if(!el){
+
+            throw new Error(
+
+                "Container not found : "+
+
+                container
+
+            );
+
+        }
+
+        return el;
+
+    }
+
+    return container;
+
+}
+
+/*=========================================================
+VALIDATE
+=========================================================*/
+
+function validate(config){
+
+    if(!config){
+
+        throw new Error(
+
+            "Grid configuration required."
+
+        );
+
+    }
+
+    if(!config.id){
+
+        throw new Error(
+
+            "Grid id required."
+
+        );
+
+    }
+
+    if(!config.container){
+
+        throw new Error(
+
+            "Grid container required."
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    create,
+
+    get,
+
+    exists,
+
+    remove,
+
+    clear,
+
+    count,
+
+    all
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Production v4
+Part 17 - Lifecycle Manager
+==========================================================-->
+
+<script>
+
+const GridLifecycle = (()=>{
+
+"use strict";
+
+const events = {
+
+    beforeCreate : [],
+
+    created : [],
+
+    beforeLoad : [],
+
+    loaded : [],
+
+    beforeRender : [],
+
+    rendered : [],
+
+    beforeDestroy : [],
+
+    destroyed : []
+
+};
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    event,
+
+    callback
+
+){
+
+    if(
+
+        events[event]
+
+    ){
+
+        events[event].push(
+
+            callback
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+EMIT
+=========================================================*/
+
+function emit(
+
+    event,
+
+    payload
+
+){
+
+    if(
+
+        !events[event]
+
+    ){
+
+        return;
+
+    }
+
+    events[event].forEach(
+
+        function(fn){
+
+            try{
+
+                fn(payload);
+
+            }
+
+            catch(e){
+
+                console.error(e);
+
+            }
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    event,
+
+    callback
+
+){
+
+    if(
+
+        !events[event]
+
+    ){
+
+        return;
+
+    }
+
+    events[event] =
+
+        events[event].filter(
+
+            fn => fn !== callback
+
+        );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(){
+
+    Object.keys(events)
+
+    .forEach(function(key){
+
+        events[key]=[];
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    emit,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Production v4
+Part 18 - Hook Manager
+==========================================================-->
+
+<script>
+
+const GridHook = (()=>{
+
+"use strict";
+
+const hooks = {};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function add(
+
+    name,
+
+    callback
+
+){
+
+    if(
+
+        !hooks[name]
+
+    ){
+
+        hooks[name]=[];
+
+    }
+
+    hooks[name].push(
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+EXECUTE
+=========================================================*/
+
+function run(
+
+    name,
+
+    payload
+
+){
+
+    if(
+
+        !hooks[name]
+
+    ){
+
+        return payload;
+
+    }
+
+    let result = payload;
+
+    hooks[name].forEach(function(fn){
+
+        const value = fn(result);
+
+        if(
+
+            value !== undefined
+
+        ){
+
+            result = value;
+
+        }
+
+    });
+
+    return result;
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(
+
+    name,
+
+    callback
+
+){
+
+    if(
+
+        !hooks[name]
+
+    ){
+
+        return;
+
+    }
+
+    hooks[name] =
+
+        hooks[name].filter(
+
+            fn => fn !== callback
+
+        );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(){
+
+    Object.keys(hooks)
+
+    .forEach(function(key){
+
+        delete hooks[key];
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    add,
+
+    run,
+
+    remove,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Production v4
+Part 19 - Theme Engine
+==========================================================-->
+
+<script>
+
+const GridTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default : "grid-theme-default",
+
+    dark : "grid-theme-dark",
+
+    light : "grid-theme-light",
+
+    corporate : "grid-theme-corporate"
+
+};
+
+/*=========================================================
+SET THEME
+=========================================================*/
+
+function set(name){
+
+    if(
+
+        !themes[name]
+
+    ){
+
+        return;
+
+    }
+
+    current = name;
+
+    apply();
+
+}
+
+/*=========================================================
+GET THEME
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY
+=========================================================*/
+
+function apply(){
+
+    document
+
+    .querySelectorAll(
+
+        ".grid-wrapper"
+
+    )
+
+    .forEach(function(el){
+
+        Object.values(themes)
+
+        .forEach(function(css){
+
+            el.classList.remove(css);
+
+        });
+
+        el.classList.add(
+
+            themes[current]
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    get,
+
+    apply
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Production v4
+Part 20 - Validator Engine
+==========================================================-->
+
+<script>
+
+const GridValidator = (()=>{
+
+"use strict";
+
+/*=========================================================
+VALIDATE CONFIG
+=========================================================*/
+
+function config(config){
+
+    if(!config){
+
+        throw new Error(
+
+            "Grid configuration is required."
+
+        );
+
+    }
+
+    required(
+
+        config,
+
+        "id"
+
+    );
+
+    required(
+
+        config,
+
+        "container"
+
+    );
+
+    required(
+
+        config,
+
+        "columns"
+
+    );
+
+    if(
+
+        !Array.isArray(
+
+            config.columns
+
+        )
+
+    ){
+
+        throw new Error(
+
+            "Columns must be Array."
+
+        );
+
+    }
+
+    config.columns.forEach(
+
+        column
+
+    );
+
+    return true;
+
+}
+
+/*=========================================================
+VALIDATE COLUMN
+=========================================================*/
+
+function column(col,index){
+
+    required(
+
+        col,
+
+        "field",
+
+        index
+
+    );
+
+    required(
+
+        col,
+
+        "title",
+
+        index
+
+    );
+
+    if(
+
+        col.width &&
+
+        isNaN(col.width)
+
+    ){
+
+        throw new Error(
+
+            "Column width must be Number : "
+
+            + col.field
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+REQUIRED
+=========================================================*/
+
+function required(
+
+    obj,
+
+    key,
+
+    index
+
+){
+
+    if(
+
+        obj[key]===undefined ||
+
+        obj[key]===null ||
+
+        obj[key]===""
+
+    ){
+
+        let msg =
+
+        "Required property : "
+
+        + key;
+
+        if(
+
+            index!==undefined
+
+        ){
+
+            msg +=
+
+            " (column "
+
+            + index +
+
+            ")";
+
+        }
+
+        throw new Error(msg);
+
+    }
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    config,
+
+    column
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Production v4
+Part 21 - Logger Engine
+==========================================================-->
+
+<script>
+
+const GridLogger = (()=>{
+
+"use strict";
+
+let enabled = true;
+
+const logs = [];
+
+const MAX_LOG = 1000;
+
+/*=========================================================
+ENABLE
+=========================================================*/
+
+function enable(){
+
+    enabled = true;
+
+}
+
+/*=========================================================
+DISABLE
+=========================================================*/
+
+function disable(){
+
+    enabled = false;
+
+}
+
+/*=========================================================
+WRITE
+=========================================================*/
+
+function write(
+
+    level,
+
+    action,
+
+    message,
+
+    data
+
+){
+
+    if(
+
+        !enabled
+
+    ){
+
+        return;
+
+    }
+
+    const log = {
+
+        time : new Date(),
+
+        level : level,
+
+        action : action,
+
+        message : message,
+
+        data : data || null
+
+    };
+
+    logs.push(log);
+
+    if(
+
+        logs.length > MAX_LOG
+
+    ){
+
+        logs.shift();
+
+    }
+
+    switch(level){
+
+        case "INFO":
+
+            console.info(log);
+
+            break;
+
+        case "WARN":
+
+            console.warn(log);
+
+            break;
+
+        case "ERROR":
+
+            console.error(log);
+
+            break;
+
+        default:
+
+            console.log(log);
+
+    }
+
+}
+
+/*=========================================================
+SHORTCUT
+=========================================================*/
+
+function info(
+
+    action,
+
+    message,
+
+    data
+
+){
+
+    write(
+
+        "INFO",
+
+        action,
+
+        message,
+
+        data
+
+    );
+
+}
+
+function warn(
+
+    action,
+
+    message,
+
+    data
+
+){
+
+    write(
+
+        "WARN",
+
+        action,
+
+        message,
+
+        data
+
+    );
+
+}
+
+function error(
+
+    action,
+
+    message,
+
+    data
+
+){
+
+    write(
+
+        "ERROR",
+
+        action,
+
+        message,
+
+        data
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return [...logs];
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(){
+
+    logs.length = 0;
+
+}
+
+/*=========================================================
+EXPORT
+=========================================================*/
+
+function exportJson(){
+
+    return JSON.stringify(
+
+        logs,
+
+        null,
+
+        2
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    enable,
+
+    disable,
+
+    write,
+
+    info,
+
+    warn,
+
+    error,
+
+    get,
+
+    clear,
+
+    exportJson
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Production v4
+Part 22 - Performance Monitor
+==========================================================-->
+
+<script>
+
+const GridPerformance = (()=>{
+
+"use strict";
+
+const metrics = {
+
+    load : 0,
+
+    render : 0,
+
+    search : 0,
+
+    filter : 0,
+
+    sort : 0,
+
+    export : 0
+
+};
+
+/*=========================================================
+START
+=========================================================*/
+
+function start(name){
+
+    metrics[name] = {
+
+        start :
+
+        performance.now(),
+
+        end : 0,
+
+        duration : 0
+
+    };
+
+}
+
+/*=========================================================
+END
+=========================================================*/
+
+function end(name){
+
+    if(
+
+        !metrics[name] ||
+
+        !metrics[name].start
+
+    ){
+
+        return;
+
+    }
+
+    metrics[name].end =
+
+        performance.now();
+
+    metrics[name].duration =
+
+        Number(
+
+            (
+
+                metrics[name].end -
+
+                metrics[name].start
+
+            ).toFixed(2)
+
+        );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return metrics[name] || null;
+
+}
+
+/*=========================================================
+GET ALL
+=========================================================*/
+
+function all(){
+
+    return metrics;
+
+}
+
+/*=========================================================
+RESET
+=========================================================*/
+
+function reset(){
+
+    Object.keys(metrics)
+
+    .forEach(function(key){
+
+        metrics[key] = 0;
+
+    });
+
+}
+
+/*=========================================================
+REPORT
+=========================================================*/
+
+function report(){
+
+    console.table(
+
+        Object.keys(metrics)
+
+        .map(function(key){
+
+            return{
+
+                Process : key,
+
+                Duration :
+
+                metrics[key].duration || 0
+
+            };
+
+        })
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    start,
+
+    end,
+
+    get,
+
+    all,
+
+    reset,
+
+    report
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Production v4
+Part 23 - Error Boundary
+==========================================================-->
+
+<script>
+
+const GridError = (()=>{
+
+"use strict";
+
+let handler = defaultHandler;
+
+/*=========================================================
+TRY
+=========================================================*/
+
+function run(
+
+    action,
+
+    callback,
+
+    fallback
+
+){
+
+    try{
+
+        return callback();
+
+    }
+
+    catch(error){
+
+        handler(
+
+            error,
+
+            action
+
+        );
+
+        if(
+
+            typeof fallback ===
+
+            "function"
+
+        ){
+
+            return fallback(error);
+
+        }
+
+        return null;
+
+    }
+
+}
+
+/*=========================================================
+ASYNC
+=========================================================*/
+
+async function runAsync(
+
+    action,
+
+    callback,
+
+    fallback
+
+){
+
+    try{
+
+        return await callback();
+
+    }
+
+    catch(error){
+
+        handler(
+
+            error,
+
+            action
+
+        );
+
+        if(
+
+            typeof fallback ===
+
+            "function"
+
+        ){
+
+            return fallback(error);
+
+        }
+
+        return null;
+
+    }
+
+}
+
+/*=========================================================
+DEFAULT HANDLER
+=========================================================*/
+
+function defaultHandler(
+
+    error,
+
+    action
+
+){
+
+    GridLogger.error(
+
+        action,
+
+        error.message,
+
+        error
+
+    );
+
+    console.error(
+
+        "[GRID]",
+
+        action,
+
+        error
+
+    );
+
+}
+
+/*=========================================================
+SET HANDLER
+=========================================================*/
+
+function setHandler(fn){
+
+    if(
+
+        typeof fn ===
+
+        "function"
+
+    ){
+
+        handler = fn;
+
+    }
+
+}
+
+/*=========================================================
+RESET
+=========================================================*/
+
+function reset(){
+
+    handler = defaultHandler;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    run,
+
+    runAsync,
+
+    setHandler,
+
+    reset
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Production v4
+Part 24 - Accessibility
+==========================================================-->
+
+<script>
+
+const GridAccessibility = (()=>{
+
+"use strict";
+
+/*=========================================================
+INIT
+=========================================================*/
+
+function init(grid){
+
+    if(
+
+        !grid ||
+
+        !grid.container
+
+    ){
+
+        return;
+
+    }
+
+    applyGrid(
+
+        grid.container
+
+    );
+
+    applyHeader(
+
+        grid.container
+
+    );
+
+    applyBody(
+
+        grid.container
+
+    );
+
+}
+
+/*=========================================================
+GRID
+=========================================================*/
+
+function applyGrid(container){
+
+    container.setAttribute(
+
+        "role",
+
+        "grid"
+
+    );
+
+    container.setAttribute(
+
+        "tabindex",
+
+        "0"
+
+    );
+
+    container.setAttribute(
+
+        "aria-label",
+
+        "RPN Enterprise Grid"
+
+    );
+
+}
+
+/*=========================================================
+HEADER
+=========================================================*/
+
+function applyHeader(container){
+
+    container
+
+    .querySelectorAll("thead tr")
+
+    .forEach(function(row){
+
+        row.setAttribute(
+
+            "role",
+
+            "row"
+
+        );
+
+    });
+
+    container
+
+    .querySelectorAll("thead th")
+
+    .forEach(function(cell){
+
+        cell.setAttribute(
+
+            "role",
+
+            "columnheader"
+
+        );
+
+        cell.setAttribute(
+
+            "scope",
+
+            "col"
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+BODY
+=========================================================*/
+
+function applyBody(container){
+
+    container
+
+    .querySelectorAll("tbody tr")
+
+    .forEach(function(row){
+
+        row.setAttribute(
+
+            "role",
+
+            "row"
+
+        );
+
+        row.setAttribute(
+
+            "tabindex",
+
+            "-1"
+
+        );
+
+    });
+
+    container
+
+    .querySelectorAll("tbody td")
+
+    .forEach(function(cell){
+
+        cell.setAttribute(
+
+            "role",
+
+            "gridcell"
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+SELECTED
+=========================================================*/
+
+function selected(row,flag){
+
+    if(row){
+
+        row.setAttribute(
+
+            "aria-selected",
+
+            flag
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+SORT
+=========================================================*/
+
+function sort(header,order){
+
+    if(header){
+
+        header.setAttribute(
+
+            "aria-sort",
+
+            order ||
+
+            "none"
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    init,
+
+    selected,
+
+    sort
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+31_Grid.html
+Production v4
+Part 25 - Production Final
+==========================================================-->
+
+<script>
+
+const GridProduction = (()=>{
+
+"use strict";
+
+/*=========================================================
+VERSION
+=========================================================*/
+
+const VERSION = "4.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(grid){
+
+    GridValidator.config(
+
+        grid.config
+
+    );
+
+    GridLifecycle.emit(
+
+        "beforeCreate",
+
+        grid
+
+    );
+
+    GridTheme.apply();
+
+    GridAccessibility.init(
+
+        grid
+
+    );
+
+    GridPlugin.init();
+
+    GridLifecycle.emit(
+
+        "created",
+
+        grid
+
+    );
+
+    GridLogger.info(
+
+        "BOOT",
+
+        "Grid Ready",
+
+        {
+
+            id:grid.id,
+
+            version:VERSION
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+LOAD
+=========================================================*/
+
+async function load(
+
+    grid,
+
+    parameter
+
+){
+
+    return GridError.runAsync(
+
+        "LOAD",
+
+        async()=>{
+
+            GridPerformance.start(
+
+                "load"
+
+            );
+
+            GridLifecycle.emit(
+
+                "beforeLoad",
+
+                grid
+
+            );
+
+            await grid.load(
+
+                parameter
+
+            );
+
+            GridLifecycle.emit(
+
+                "loaded",
+
+                grid
+
+            );
+
+            GridPerformance.end(
+
+                "load"
+
+            );
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(grid){
+
+    GridError.run(
+
+        "RENDER",
+
+        ()=>{
+
+            GridPerformance.start(
+
+                "render"
+
+            );
+
+            GridLifecycle.emit(
+
+                "beforeRender",
+
+                grid
+
+            );
+
+            GridRender.render(
+
+                grid
+
+            );
+
+            GridLifecycle.emit(
+
+                "rendered",
+
+                grid
+
+            );
+
+            GridPerformance.end(
+
+                "render"
+
+            );
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(grid){
+
+    render(grid);
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(grid){
+
+    GridLifecycle.emit(
+
+        "beforeDestroy",
+
+        grid
+
+    );
+
+    GridPlugin.destroy();
+
+    GridHook.clear();
+
+    GridLifecycle.emit(
+
+        "destroyed",
+
+        grid
+
+    );
+
+    GridLogger.info(
+
+        "DESTROY",
+
+        "Grid Destroyed",
+
+        {
+
+            id:grid.id
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        name :
+
+        "RPN Enterprise Grid",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Production",
+
+        status :
+
+        "Stable"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    load,
+
+    render,
+
+    refresh,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

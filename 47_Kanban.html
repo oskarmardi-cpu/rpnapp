@@ -1,0 +1,1853 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+47_Kanban.html
+Enterprise v1.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const Kanban = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    boards:new Map(),
+
+    columns:new Map(),
+
+    cards:new Map(),
+
+    datasource:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    board
+
+){
+
+    state.boards.set(
+
+        name,
+
+        board
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.boards.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+COLUMNS
+=========================================================*/
+
+function columns(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.columns.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.columns.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+CARDS
+=========================================================*/
+
+function cards(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.cards.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.cards.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+DATASOURCE
+=========================================================*/
+
+function datasource(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.datasource.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.datasource.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.boards.delete(
+
+        name
+
+    );
+
+    state.columns.delete(
+
+        name
+
+    );
+
+    state.cards.delete(
+
+        name
+
+    );
+
+    state.datasource.delete(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    columns,
+
+    cards,
+
+    datasource,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+47_Kanban.html
+Enterprise v1.0
+Part 2 - Render Engine
+==========================================================-->
+
+<script>
+
+const KanbanRender = (()=>{
+
+"use strict";
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(config){
+
+    const board =
+
+        document.createElement(
+
+            "div"
+
+        );
+
+    board.id =
+
+        config.id ||
+
+        config.name;
+
+    board.className =
+
+        config.className ||
+
+        "rpn-kanban";
+
+    board.innerHTML = `
+
+<div class="kanban-header"></div>
+
+<div class="kanban-toolbar"></div>
+
+<div class="kanban-board"></div>
+
+<div class="kanban-footer"></div>
+
+`;
+
+    if(
+
+        config.container
+
+    ){
+
+        document
+
+        .getElementById(
+
+            config.container
+
+        )
+
+        .appendChild(
+
+            board
+
+        );
+
+    }
+
+    Kanban.register(
+
+        config.name,
+
+        board
+
+    );
+
+    return board;
+
+}
+
+/*=========================================================
+HEADER
+=========================================================*/
+
+function header(name){
+
+    const board =
+
+        Kanban.get(name);
+
+    return board
+
+        ? board.querySelector(
+
+            ".kanban-header"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+TOOLBAR
+=========================================================*/
+
+function toolbar(name){
+
+    const board =
+
+        Kanban.get(name);
+
+    return board
+
+        ? board.querySelector(
+
+            ".kanban-toolbar"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+BOARD
+=========================================================*/
+
+function board(name){
+
+    const element =
+
+        Kanban.get(name);
+
+    return element
+
+        ? element.querySelector(
+
+            ".kanban-board"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+FOOTER
+=========================================================*/
+
+function footer(name){
+
+    const board =
+
+        Kanban.get(name);
+
+    return board
+
+        ? board.querySelector(
+
+            ".kanban-footer"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    const board =
+
+        Kanban.get(name);
+
+    if(
+
+        board &&
+
+        board.parentNode
+
+    ){
+
+        board.parentNode.removeChild(
+
+            board
+
+        );
+
+    }
+
+    Kanban.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    render,
+
+    header,
+
+    toolbar,
+
+    board,
+
+    footer,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+47_Kanban.html
+Enterprise v1.0
+Part 3 - Column Engine
+==========================================================-->
+
+<script>
+
+const KanbanColumn = (()=>{
+
+"use strict";
+
+/*=========================================================
+ADD
+=========================================================*/
+
+function add(
+
+    board,
+
+    column
+
+){
+
+    const columns =
+
+        Kanban.columns(
+
+            board
+
+        );
+
+    columns.push(
+
+        column
+
+    );
+
+    Kanban.columns(
+
+        board,
+
+        columns
+
+    );
+
+    refresh(
+
+        board
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(
+
+    board,
+
+    id
+
+){
+
+    const columns =
+
+        Kanban.columns(
+
+            board
+
+        ).filter(function(col){
+
+            return col.id !== id;
+
+        });
+
+    Kanban.columns(
+
+        board,
+
+        columns
+
+    );
+
+    refresh(
+
+        board
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(
+
+    board,
+
+    id
+
+){
+
+    return Kanban.columns(
+
+        board
+
+    ).find(function(col){
+
+        return col.id === id;
+
+    });
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(board){
+
+    const container =
+
+        KanbanRender.board(
+
+            board
+
+        );
+
+    if(
+
+        !container
+
+    ){
+
+        return;
+
+    }
+
+    let html = "";
+
+    Kanban.columns(
+
+        board
+
+    ).forEach(function(col){
+
+        html += render(
+
+            col
+
+        );
+
+    });
+
+    container.innerHTML =
+
+        html;
+
+}
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(column){
+
+    return `
+
+<div
+class="kanban-column"
+data-id="${column.id}">
+
+<div
+class="kanban-column-header">
+
+${column.title || ""}
+
+</div>
+
+<div
+class="kanban-column-body">
+
+</div>
+
+<div
+class="kanban-column-footer">
+
+${column.footer || ""}
+
+</div>
+
+</div>
+
+`;
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(board){
+
+    Kanban.columns(
+
+        board,
+
+        []
+
+    );
+
+    refresh(
+
+        board
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    add,
+
+    remove,
+
+    get,
+
+    refresh,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+47_Kanban.html
+Enterprise v1.0
+Part 4 - Card Engine
+==========================================================-->
+
+<script>
+
+const KanbanCard = (()=>{
+
+"use strict";
+
+/*=========================================================
+ADD
+=========================================================*/
+
+function add(
+
+    board,
+
+    card
+
+){
+
+    const cards =
+
+        Kanban.cards(
+
+            board
+
+        );
+
+    cards.push(
+
+        card
+
+    );
+
+    Kanban.cards(
+
+        board,
+
+        cards
+
+    );
+
+    refresh(
+
+        board
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(
+
+    board,
+
+    id
+
+){
+
+    const cards =
+
+        Kanban.cards(
+
+            board
+
+        ).filter(function(card){
+
+            return card.id !== id;
+
+        });
+
+    Kanban.cards(
+
+        board,
+
+        cards
+
+    );
+
+    refresh(
+
+        board
+
+    );
+
+}
+
+/*=========================================================
+MOVE
+=========================================================*/
+
+function move(
+
+    board,
+
+    cardId,
+
+    columnId
+
+){
+
+    const cards =
+
+        Kanban.cards(
+
+            board
+
+        );
+
+    const card =
+
+        cards.find(function(item){
+
+            return item.id === cardId;
+
+        });
+
+    if(
+
+        card
+
+    ){
+
+        card.column =
+
+            columnId;
+
+    }
+
+    refresh(
+
+        board
+
+    );
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(board){
+
+    const cards =
+
+        Kanban.cards(
+
+            board
+
+        );
+
+    const columns =
+
+        document.querySelectorAll(
+
+            "#" +
+
+            board +
+
+            " .kanban-column-body"
+
+        );
+
+    columns.forEach(function(col){
+
+        col.innerHTML = "";
+
+    });
+
+    cards.forEach(function(card){
+
+        const column =
+
+            document.querySelector(
+
+                "#" +
+
+                board +
+
+                ' .kanban-column[data-id="' +
+
+                card.column +
+
+                '"] .kanban-column-body'
+
+            );
+
+        if(
+
+            column
+
+        ){
+
+            column.insertAdjacentHTML(
+
+                "beforeend",
+
+                render(card)
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(card){
+
+    return `
+
+<div
+class="kanban-card"
+draggable="true"
+data-id="${card.id}">
+
+<div class="kanban-card-title">
+
+${card.title || ""}
+
+</div>
+
+<div class="kanban-card-content">
+
+${card.content || ""}
+
+</div>
+
+</div>
+
+`;
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(board){
+
+    Kanban.cards(
+
+        board,
+
+        []
+
+    );
+
+    refresh(
+
+        board
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    add,
+
+    remove,
+
+    move,
+
+    refresh,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+47_Kanban.html
+Enterprise v1.0
+Part 5 - DragDrop Engine
+==========================================================-->
+
+<script>
+
+const KanbanDragDrop = (()=>{
+
+"use strict";
+
+let currentCard = null;
+
+/*=========================================================
+INIT
+=========================================================*/
+
+function init(board){
+
+    bindCards(board);
+
+    bindColumns(board);
+
+}
+
+/*=========================================================
+BIND CARDS
+=========================================================*/
+
+function bindCards(board){
+
+    document
+
+    .querySelectorAll(
+
+        "#" +
+
+        board +
+
+        " .kanban-card"
+
+    )
+
+    .forEach(function(card){
+
+        card.addEventListener(
+
+            "dragstart",
+
+            dragStart
+
+        );
+
+        card.addEventListener(
+
+            "dragend",
+
+            dragEnd
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+BIND COLUMNS
+=========================================================*/
+
+function bindColumns(board){
+
+    document
+
+    .querySelectorAll(
+
+        "#" +
+
+        board +
+
+        " .kanban-column-body"
+
+    )
+
+    .forEach(function(column){
+
+        column.addEventListener(
+
+            "dragover",
+
+            dragOver
+
+        );
+
+        column.addEventListener(
+
+            "drop",
+
+            drop
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+DRAG START
+=========================================================*/
+
+function dragStart(event){
+
+    currentCard =
+
+        event.target;
+
+    event.dataTransfer.effectAllowed =
+
+        "move";
+
+}
+
+/*=========================================================
+DRAG END
+=========================================================*/
+
+function dragEnd(){
+
+    currentCard = null;
+
+}
+
+/*=========================================================
+DRAG OVER
+=========================================================*/
+
+function dragOver(event){
+
+    event.preventDefault();
+
+}
+
+/*=========================================================
+DROP
+=========================================================*/
+
+function drop(event){
+
+    event.preventDefault();
+
+    if(
+
+        !currentCard
+
+    ){
+
+        return;
+
+    }
+
+    event.currentTarget.appendChild(
+
+        currentCard
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    init,
+
+    bindCards,
+
+    bindColumns
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+47_Kanban.html
+Enterprise v1.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const KanbanEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    board,
+
+    event,
+
+    callback
+
+){
+
+    const element =
+
+        Kanban.get(board);
+
+    if(
+
+        !element ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    element.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        board +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    board,
+
+    event
+
+){
+
+    const element =
+
+        Kanban.get(board);
+
+    const key =
+
+        board +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        element &&
+
+        callback
+
+    ){
+
+        element.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    board,
+
+    event,
+
+    detail
+
+){
+
+    const element =
+
+        Kanban.get(board);
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(board){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                board +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                board,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+47_Kanban.html
+Enterprise v1.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const KanbanTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-kanban-default",
+
+    light     : "rpn-kanban-light",
+
+    dark      : "rpn-kanban-dark",
+
+    primary   : "rpn-kanban-primary",
+
+    success   : "rpn-kanban-success",
+
+    warning   : "rpn-kanban-warning",
+
+    danger    : "rpn-kanban-danger",
+
+    corporate : "rpn-kanban-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    board,
+
+    theme
+
+){
+
+    if(
+
+        !themes[theme]
+
+    ){
+
+        return;
+
+    }
+
+    const element =
+
+        Kanban.get(
+
+            board
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(
+
+        themes
+
+    )
+
+    .forEach(function(css){
+
+        element.classList.remove(
+
+            css
+
+        );
+
+    });
+
+    element.classList.add(
+
+        themes[theme]
+
+    );
+
+}
+
+/*=========================================================
+SET DEFAULT
+=========================================================*/
+
+function setDefault(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current = theme;
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    Kanban.state.boards
+
+    .forEach(function(
+
+        board,
+
+        name
+
+    ){
+
+        set(
+
+            name,
+
+            current
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] = css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    setDefault,
+
+    get,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+47_Kanban.html
+Enterprise v1.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const KanbanProduction = (()=>{
+
+"use strict";
+
+const VERSION = "1.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config){
+
+    const board =
+
+        KanbanRender.render(
+
+            config
+
+        );
+
+    KanbanTheme.set(
+
+        config.name,
+
+        config.theme ||
+
+        "default"
+
+    );
+
+    Kanban.datasource(
+
+        config.name,
+
+        config.datasource ||
+
+        {}
+
+    );
+
+    Kanban.columns(
+
+        config.name,
+
+        config.columns ||
+
+        []
+
+    );
+
+    Kanban.cards(
+
+        config.name,
+
+        config.cards ||
+
+        []
+
+    );
+
+    KanbanColumn.refresh(
+
+        config.name
+
+    );
+
+    KanbanCard.refresh(
+
+        config.name
+
+    );
+
+    KanbanDragDrop.init(
+
+        config.name
+
+    );
+
+    return board;
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(name){
+
+    KanbanColumn.refresh(
+
+        name
+
+    );
+
+    KanbanCard.refresh(
+
+        name
+
+    );
+
+    KanbanDragDrop.init(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+RELOAD
+=========================================================*/
+
+async function reload(name){
+
+    const source =
+
+        Kanban.datasource(
+
+            name
+
+        );
+
+    if(
+
+        !source.endpoint
+
+    ){
+
+        refresh(name);
+
+        return;
+
+    }
+
+    const result =
+
+        await API.post(
+
+            source.endpoint,
+
+            source.parameter || {}
+
+        );
+
+    Kanban.cards(
+
+        name,
+
+        result.data || []
+
+    );
+
+    refresh(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    KanbanColumn.clear(
+
+        name
+
+    );
+
+    KanbanCard.clear(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    KanbanEvent.clear(
+
+        name
+
+    );
+
+    KanbanRender.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "Kanban",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    refresh,
+
+    reload,
+
+    clear,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

@@ -1,0 +1,1459 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+33_Form.html
+Enterprise v1.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const Form = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    id:null,
+
+    container:null,
+
+    fields:[],
+
+    data:{},
+
+    mode:"create"
+
+};
+
+/*=========================================================
+CREATE
+=========================================================*/
+
+function create(config){
+
+    state.id=config.id;
+
+    state.container=
+
+        document.getElementById(
+
+            config.id
+
+        );
+
+    state.fields=
+
+        config.fields||[];
+
+    render();
+
+}
+
+/*=========================================================
+SET DATA
+=========================================================*/
+
+function setData(data){
+
+    state.data=data||{};
+
+    FormRender.fill();
+
+}
+
+/*=========================================================
+GET DATA
+=========================================================*/
+
+function getData(){
+
+    return state.data;
+
+}
+
+/*=========================================================
+SET MODE
+=========================================================*/
+
+function setMode(mode){
+
+    state.mode=mode;
+
+}
+
+/*=========================================================
+GET MODE
+=========================================================*/
+
+function getMode(){
+
+    return state.mode;
+
+}
+
+/*=========================================================
+RESET
+=========================================================*/
+
+function reset(){
+
+    state.data={};
+
+    FormRender.fill();
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(){
+
+    FormRender.render();
+
+}
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(){
+
+    state.container.innerHTML=
+
+        '<form class="rpn-form"></form>';
+
+    refresh();
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    create,
+
+    setData,
+
+    getData,
+
+    setMode,
+
+    getMode,
+
+    reset,
+
+    refresh
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+33_Form.html
+Enterprise v1.0
+Part 2 - Render Engine
+==========================================================-->
+
+<script>
+
+const FormRender = (()=>{
+
+"use strict";
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(){
+
+    const form =
+
+        Form.state.container
+
+        .querySelector(
+
+            ".rpn-form"
+
+        );
+
+    let html="";
+
+    Form.state.fields.forEach(
+
+        function(field){
+
+            html+=renderField(field);
+
+        }
+
+    );
+
+    form.innerHTML=html;
+
+    fill();
+
+}
+
+/*=========================================================
+FIELD
+=========================================================*/
+
+function renderField(field){
+
+    return `
+
+<div class="form-group">
+
+<label>
+
+${field.label}
+
+</label>
+
+<input
+
+type="${field.type||'text'}"
+
+name="${field.name}"
+
+class="rpn-input"
+
+placeholder="${field.placeholder||''}">
+
+</div>
+
+`;
+
+}
+
+/*=========================================================
+FILL
+=========================================================*/
+
+function fill(){
+
+    const data=
+
+        Form.state.data;
+
+    Object.keys(data)
+
+    .forEach(function(key){
+
+        const el=
+
+        Form.state.container
+
+        .querySelector(
+
+            '[name="'+key+'"]'
+
+        );
+
+        if(el){
+
+            el.value=
+
+                data[key] ?? "";
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+READ
+=========================================================*/
+
+function read(){
+
+    const data={};
+
+    Form.state.fields.forEach(
+
+        function(field){
+
+            const el=
+
+            Form.state.container
+
+            .querySelector(
+
+                '[name="'+
+
+                field.name+
+
+                '"]'
+
+            );
+
+            if(el){
+
+                data[field.name]=
+
+                    el.value;
+
+            }
+
+        }
+
+    );
+
+    Form.state.data=data;
+
+    return data;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    render,
+
+    fill,
+
+    read
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+33_Form.html
+Enterprise v1.0
+Part 3 - Field Engine
+==========================================================-->
+
+<script>
+
+const FormField = (()=>{
+
+"use strict";
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return Form.state.container
+
+    .querySelector(
+
+        '[name="'+name+'"]'
+
+    );
+
+}
+
+/*=========================================================
+VALUE
+=========================================================*/
+
+function value(
+
+    name,
+
+    value
+
+){
+
+    const field = get(name);
+
+    if(!field){
+
+        return;
+
+    }
+
+    if(arguments.length===1){
+
+        return field.value;
+
+    }
+
+    field.value = value;
+
+}
+
+/*=========================================================
+ENABLE
+=========================================================*/
+
+function enable(name){
+
+    const field = get(name);
+
+    if(field){
+
+        field.disabled = false;
+
+    }
+
+}
+
+/*=========================================================
+DISABLE
+=========================================================*/
+
+function disable(name){
+
+    const field = get(name);
+
+    if(field){
+
+        field.disabled = true;
+
+    }
+
+}
+
+/*=========================================================
+SHOW
+=========================================================*/
+
+function show(name){
+
+    const field = get(name);
+
+    if(field){
+
+        field.closest(
+
+            ".form-group"
+
+        ).style.display="";
+
+    }
+
+}
+
+/*=========================================================
+HIDE
+=========================================================*/
+
+function hide(name){
+
+    const field = get(name);
+
+    if(field){
+
+        field.closest(
+
+            ".form-group"
+
+        ).style.display="none";
+
+    }
+
+}
+
+/*=========================================================
+READONLY
+=========================================================*/
+
+function readonly(
+
+    name,
+
+    status=true
+
+){
+
+    const field = get(name);
+
+    if(field){
+
+        field.readOnly=status;
+
+    }
+
+}
+
+/*=========================================================
+FOCUS
+=========================================================*/
+
+function focus(name){
+
+    const field=get(name);
+
+    if(field){
+
+        field.focus();
+
+    }
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    value(
+
+        name,
+
+        ""
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    get,
+
+    value,
+
+    enable,
+
+    disable,
+
+    show,
+
+    hide,
+
+    readonly,
+
+    focus,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+33_Form.html
+Enterprise v1.0
+Part 4 - Validation Engine
+==========================================================-->
+
+<script>
+
+const FormValidation = (()=>{
+
+"use strict";
+
+const errors = {};
+
+/*=========================================================
+VALIDATE
+=========================================================*/
+
+function validate(){
+
+    clear();
+
+    let valid = true;
+
+    Form.state.fields.forEach(function(field){
+
+        const value = FormField.value(
+
+            field.name
+
+        );
+
+        if(
+
+            field.required &&
+
+            !required(value)
+
+        ){
+
+            add(
+
+                field.name,
+
+                field.label +
+
+                " is required."
+
+            );
+
+            valid = false;
+
+        }
+
+        if(
+
+            field.type==="email" &&
+
+            value &&
+
+            !email(value)
+
+        ){
+
+            add(
+
+                field.name,
+
+                "Invalid email."
+
+            );
+
+            valid = false;
+
+        }
+
+        if(
+
+            field.type==="number" &&
+
+            value &&
+
+            isNaN(value)
+
+        ){
+
+            add(
+
+                field.name,
+
+                "Must be numeric."
+
+            );
+
+            valid = false;
+
+        }
+
+    });
+
+    return valid;
+
+}
+
+/*=========================================================
+REQUIRED
+=========================================================*/
+
+function required(value){
+
+    return String(
+
+        value ?? ""
+
+    ).trim() !== "";
+
+}
+
+/*=========================================================
+EMAIL
+=========================================================*/
+
+function email(value){
+
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+        .test(value);
+
+}
+
+/*=========================================================
+ADD ERROR
+=========================================================*/
+
+function add(
+
+    field,
+
+    message
+
+){
+
+    errors[field]=message;
+
+    const input =
+
+        FormField.get(field);
+
+    if(input){
+
+        input.classList.add(
+
+            "is-invalid"
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(){
+
+    Object.keys(errors)
+
+    .forEach(function(key){
+
+        delete errors[key];
+
+    });
+
+    Form.state.container
+
+    .querySelectorAll(
+
+        ".is-invalid"
+
+    )
+
+    .forEach(function(el){
+
+        el.classList.remove(
+
+            "is-invalid"
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+ERRORS
+=========================================================*/
+
+function getErrors(){
+
+    return errors;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    validate,
+
+    clear,
+
+    getErrors
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+33_Form.html
+Enterprise v1.0
+Part 5 - Data Binding
+==========================================================-->
+
+<script>
+
+const FormBinding = (()=>{
+
+"use strict";
+
+/*=========================================================
+BIND
+=========================================================*/
+
+function bind(){
+
+    Form.state.fields.forEach(function(field){
+
+        const input =
+
+            FormField.get(
+
+                field.name
+
+            );
+
+        if(!input){
+
+            return;
+
+        }
+
+        input.addEventListener(
+
+            "input",
+
+            function(){
+
+                Form.state.data[
+
+                    field.name
+
+                ] = input.value;
+
+            }
+
+        );
+
+        input.addEventListener(
+
+            "change",
+
+            function(){
+
+                Form.state.data[
+
+                    field.name
+
+                ] = input.value;
+
+            }
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+SYNC
+=========================================================*/
+
+function sync(){
+
+    Form.state.fields.forEach(function(field){
+
+        Form.state.data[
+
+            field.name
+
+        ] = FormField.value(
+
+            field.name
+
+        );
+
+    });
+
+    return Form.state.data;
+
+}
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    name,
+
+    value
+
+){
+
+    Form.state.data[
+
+        name
+
+    ] = value;
+
+    FormField.value(
+
+        name,
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return Form.state.data[
+
+        name
+
+    ];
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    bind,
+
+    sync,
+
+    set,
+
+    get
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+33_Form.html
+Enterprise v1.0
+Part 6 - Submit Engine
+==========================================================-->
+
+<script>
+
+const FormSubmit = (()=>{
+
+"use strict";
+
+/*=========================================================
+SUBMIT
+=========================================================*/
+
+async function submit(
+
+    api,
+
+    callback
+
+){
+
+    if(
+
+        !FormValidation.validate()
+
+    ){
+
+        return false;
+
+    }
+
+    const data =
+
+        FormBinding.sync();
+
+    try{
+
+        Loader.show();
+
+        const result =
+
+            await API.post(
+
+                api,
+
+                data
+
+            );
+
+        if(
+
+            typeof callback===
+
+            "function"
+
+        ){
+
+            callback(result);
+
+        }
+
+        return result;
+
+    }
+
+    finally{
+
+        Loader.hide();
+
+    }
+
+}
+
+/*=========================================================
+SAVE
+=========================================================*/
+
+function save(
+
+    api,
+
+    callback
+
+){
+
+    return submit(
+
+        api,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+UPDATE
+=========================================================*/
+
+function update(
+
+    api,
+
+    callback
+
+){
+
+    return submit(
+
+        api,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+DELETE
+=========================================================*/
+
+async function remove(
+
+    api,
+
+    data,
+
+    callback
+
+){
+
+    try{
+
+        Loader.show();
+
+        const result =
+
+            await API.post(
+
+                api,
+
+                data
+
+            );
+
+        if(
+
+            typeof callback===
+
+            "function"
+
+        ){
+
+            callback(result);
+
+        }
+
+        return result;
+
+    }
+
+    finally{
+
+        Loader.hide();
+
+    }
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    submit,
+
+    save,
+
+    update,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+33_Form.html
+Enterprise v1.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const FormTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "form-theme-default",
+
+    light     : "form-theme-light",
+
+    dark      : "form-theme-dark",
+
+    corporate : "form-theme-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(name){
+
+    if(
+
+        !themes[name]
+
+    ){
+
+        return;
+
+    }
+
+    current = name;
+
+    apply();
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY
+=========================================================*/
+
+function apply(){
+
+    const form =
+
+        Form.state.container
+
+        .querySelector(
+
+            ".rpn-form"
+
+        );
+
+    if(
+
+        !form
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(themes)
+
+    .forEach(function(css){
+
+        form.classList.remove(css);
+
+    });
+
+    form.classList.add(
+
+        themes[current]
+
+    );
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    cssClass
+
+){
+
+    themes[name] = cssClass;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    get,
+
+    apply,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+33_Form.html
+Enterprise v1.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const FormProduction = (()=>{
+
+"use strict";
+
+const VERSION = "1.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config){
+
+    Form.create(config);
+
+    FormTheme.apply();
+
+    FormBinding.bind();
+
+}
+
+/*=========================================================
+LOAD
+=========================================================*/
+
+function load(data){
+
+    Form.setData(data);
+
+}
+
+/*=========================================================
+SAVE
+=========================================================*/
+
+async function save(
+
+    api,
+
+    callback
+
+){
+
+    return await FormSubmit.save(
+
+        api,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+UPDATE
+=========================================================*/
+
+async function update(
+
+    api,
+
+    callback
+
+){
+
+    return await FormSubmit.update(
+
+        api,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+DELETE
+=========================================================*/
+
+async function remove(
+
+    api,
+
+    data,
+
+    callback
+
+){
+
+    return await FormSubmit.remove(
+
+        api,
+
+        data,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+VALIDATE
+=========================================================*/
+
+function validate(){
+
+    return FormValidation.validate();
+
+}
+
+/*=========================================================
+RESET
+=========================================================*/
+
+function reset(){
+
+    Form.reset();
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(){
+
+    Form.refresh();
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(){
+
+    Form.clear();
+
+    Form.state.container.innerHTML="";
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "Form",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    load,
+
+    save,
+
+    update,
+
+    remove,
+
+    validate,
+
+    reset,
+
+    refresh,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

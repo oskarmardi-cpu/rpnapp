@@ -1,0 +1,469 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+17_Inventory.html
+Enterprise Edition v5.0
+==========================================================-->
+
+<div class="inventory-page">
+
+  <!--=========================================
+    PAGE HEADER
+  ==========================================-->
+
+  <div class="page-header">
+
+    <div>
+
+      <h2>
+
+        Inventory Management
+
+      </h2>
+
+      <span>
+
+        Goods Receipt • Goods Issue • Transfer • Stock Control
+
+      </span>
+
+    </div>
+
+    <div class="header-action">
+
+      <button
+        class="btn btn-primary"
+        onclick="Inventory.goodsReceipt()">
+
+        <i class="ri-download-2-line"></i>
+
+        Goods Receipt
+
+      </button>
+
+      <button
+        class="btn btn-warning"
+        onclick="Inventory.goodsIssue()">
+
+        <i class="ri-upload-2-line"></i>
+
+        Goods Issue
+
+      </button>
+
+      <button
+        class="btn btn-success"
+        onclick="Inventory.transfer()">
+
+        <i class="ri-arrow-left-right-line"></i>
+
+        Transfer
+
+      </button>
+
+      <button
+        class="btn btn-secondary"
+        onclick="Inventory.stockOpname()">
+
+        <i class="ri-clipboard-line"></i>
+
+        Stock Opname
+
+      </button>
+
+    </div>
+
+  </div>
+
+  <!--=========================================
+    KPI
+  ==========================================-->
+
+  <div class="dashboard-kpi">
+
+    <div id="stockTotal"></div>
+
+    <div id="stockAvailable"></div>
+
+    <div id="stockReserved"></div>
+
+    <div id="stockMinimum"></div>
+
+    <div id="stockTransfer"></div>
+
+    <div id="stockAdjustment"></div>
+
+  </div>
+
+  <!--=========================================
+    FILTER
+  ==========================================-->
+
+  <div class="page-filter">
+
+    <input
+
+      id="inventoryKeyword"
+
+      type="text"
+
+      placeholder="Search Part No / Description / Serial Number"
+
+      onkeyup="Inventory.search()">
+
+    <select
+
+      id="warehouseFilter"
+
+      onchange="Inventory.filterWarehouse()">
+
+      <option value="">All Warehouse</option>
+
+    </select>
+
+    <select
+
+      id="inventoryStatus"
+
+      onchange="Inventory.filterStatus()">
+
+      <option value="">All Status</option>
+
+      <option>AVAILABLE</option>
+
+      <option>RESERVED</option>
+
+      <option>LOW STOCK</option>
+
+      <option>OUT OF STOCK</option>
+
+    </select>
+
+  </div>
+
+  <!--=========================================
+    GRID
+  ==========================================-->
+
+  <div id="inventoryGrid"></div>
+
+</div>
+
+<script>
+
+const Inventory = (()=>{
+
+"use strict";
+
+let rows=[];
+
+/*=======================================================
+LOAD
+=======================================================*/
+
+async function load(){
+
+    Loader.show(
+
+        "Loading Inventory..."
+
+    );
+
+    rows = await API.post(
+
+        "INVENTORY.LOAD",
+
+        {}
+
+    );
+
+    render();
+
+    Loader.hide();
+
+}
+
+/*=======================================================
+RENDER
+=======================================================*/
+
+function render(){
+
+    inventoryGrid.innerHTML =
+
+        Grid.render(
+
+            rows,
+
+            {
+
+                view:view,
+
+                edit:edit,
+
+                movement:movement,
+
+                stockCard:stockCard,
+
+                barcode:barcode
+
+            }
+
+        );
+
+}
+
+/*=======================================================
+SEARCH
+=======================================================*/
+
+function search(){
+
+    Grid.filter(
+
+        "inventoryGrid",
+
+        inventoryKeyword.value
+
+    );
+
+}
+
+/*=======================================================
+FILTER
+=======================================================*/
+
+function filterWarehouse(){
+
+    Grid.filterColumn(
+
+        "inventoryGrid",
+
+        "WAREHOUSE",
+
+        warehouseFilter.value
+
+    );
+
+}
+
+function filterStatus(){
+
+    Grid.filterColumn(
+
+        "inventoryGrid",
+
+        "STATUS",
+
+        inventoryStatus.value
+
+    );
+
+}
+
+/*=======================================================
+GOODS RECEIPT
+=======================================================*/
+
+function goodsReceipt(){
+
+    Router.load(
+
+        "17A_GoodsReceipt"
+
+    );
+
+}
+
+/*=======================================================
+GOODS ISSUE
+=======================================================*/
+
+function goodsIssue(){
+
+    Router.load(
+
+        "17B_GoodsIssue"
+
+    );
+
+}
+
+/*=======================================================
+TRANSFER
+=======================================================*/
+
+function transfer(){
+
+    Router.load(
+
+        "17C_Transfer"
+
+    );
+
+}
+
+/*=======================================================
+STOCK OPNAME
+=======================================================*/
+
+function stockOpname(){
+
+    Router.load(
+
+        "17D_StockOpname"
+
+    );
+
+}
+
+/*=======================================================
+VIEW
+=======================================================*/
+
+function view(id){
+
+    Router.load(
+
+        "17E_InventoryDetail",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+EDIT
+=======================================================*/
+
+function edit(id){
+
+    Router.load(
+
+        "17F_InventoryEdit",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+MOVEMENT HISTORY
+=======================================================*/
+
+function movement(id){
+
+    Router.load(
+
+        "17G_MovementHistory",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+STOCK CARD
+=======================================================*/
+
+function stockCard(id){
+
+    Router.load(
+
+        "17H_StockCard",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+BARCODE / QR
+=======================================================*/
+
+function barcode(id){
+
+    Router.load(
+
+        "17I_Barcode",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+REFRESH
+=======================================================*/
+
+function refresh(){
+
+    load();
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    load,
+
+    render,
+
+    refresh,
+
+    search,
+
+    filterWarehouse,
+
+    filterStatus,
+
+    goodsReceipt,
+
+    goodsIssue,
+
+    transfer,
+
+    stockOpname,
+
+    view,
+
+    edit,
+
+    movement,
+
+    stockCard,
+
+    barcode
+
+};
+
+})();
+
+</script>

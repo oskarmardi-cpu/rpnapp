@@ -1,0 +1,233 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+06_Footer.html
+Enterprise Edition v5.0
+==========================================================-->
+
+<footer class="app-footer">
+
+  <!--=========================================
+    LEFT
+  ==========================================-->
+
+  <div class="footer-left">
+
+    <span class="footer-title">
+
+      © <?= new Date().getFullYear() ?>
+
+      <?= CONFIG.APP.COMPANY ?>
+
+    </span>
+
+    <span class="footer-divider">
+
+      |
+
+    </span>
+
+    <span>
+
+      <?= CONFIG.APP.NAME ?>
+
+    </span>
+
+    <span class="footer-divider">
+
+      |
+
+    </span>
+
+    <span>
+
+      Version
+
+      <?= CONFIG.VERSION.SYSTEM ?>
+
+    </span>
+
+    <span class="footer-divider">
+
+      |
+
+    </span>
+
+    <span>
+
+      Build
+
+      <?= CONFIG.VERSION.BUILD ?>
+
+    </span>
+
+  </div>
+
+  <!--=========================================
+    CENTER
+  ==========================================-->
+
+  <div class="footer-center">
+
+    <div class="status-item">
+
+      <span
+
+        id="dbIndicator"
+
+        class="status-dot online">
+
+      </span>
+
+      <span>
+
+        Database
+
+      </span>
+
+    </div>
+
+    <div class="status-item">
+
+      <span
+
+        id="serverIndicator"
+
+        class="status-dot online">
+
+      </span>
+
+      <span>
+
+        Server
+
+      </span>
+
+    </div>
+
+    <div class="status-item">
+
+      <span
+
+        id="apiIndicator"
+
+        class="status-dot online">
+
+      </span>
+
+      <span>
+
+        API
+
+      </span>
+
+    </div>
+
+  </div>
+
+  <!--=========================================
+    RIGHT
+  ==========================================-->
+
+  <div class="footer-right">
+
+    <span>
+
+      Login :
+
+      <strong id="footerUser">
+
+      </strong>
+
+    </span>
+
+    <span class="footer-divider">
+
+      |
+
+    </span>
+
+    <span>
+
+      Last Sync :
+
+      <strong id="footerSync">
+
+      </strong>
+
+    </span>
+
+  </div>
+
+</footer>
+
+<script>
+
+const Footer = (()=>{
+
+"use strict";
+
+function load(){
+
+    const user = Session.user();
+
+    if(user){
+
+        footerUser.innerHTML =
+
+            user.FULLNAME;
+
+    }
+
+    footerSync.innerHTML =
+
+        new Date()
+
+        .toLocaleString();
+
+}
+
+function database(status){
+
+    dbIndicator.className =
+
+        "status-dot " +
+
+        (status ? "online" : "offline");
+
+}
+
+function server(status){
+
+    serverIndicator.className =
+
+        "status-dot " +
+
+        (status ? "online" : "offline");
+
+}
+
+function api(status){
+
+    apiIndicator.className =
+
+        "status-dot " +
+
+        (status ? "online" : "offline");
+
+}
+
+return{
+
+    load,
+
+    database,
+
+    server,
+
+    api
+
+};
+
+})();
+
+</script>

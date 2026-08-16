@@ -1,0 +1,1519 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+37_Lookup.html
+Enterprise v1.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const Lookup = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    elements:new Map(),
+
+    data:new Map(),
+
+    selected:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    element
+
+){
+
+    state.elements.set(
+
+        name,
+
+        element
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.elements.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+SET DATA
+=========================================================*/
+
+function setData(
+
+    name,
+
+    data
+
+){
+
+    state.data.set(
+
+        name,
+
+        data || []
+
+    );
+
+}
+
+/*=========================================================
+GET DATA
+=========================================================*/
+
+function getData(name){
+
+    return state.data.get(
+
+        name
+
+    ) || [];
+
+}
+
+/*=========================================================
+SELECT
+=========================================================*/
+
+function select(
+
+    name,
+
+    row
+
+){
+
+    state.selected.set(
+
+        name,
+
+        row
+
+    );
+
+}
+
+/*=========================================================
+GET SELECTED
+=========================================================*/
+
+function selected(name){
+
+    return state.selected.get(
+
+        name
+
+    ) || null;
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    state.selected.delete(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    setData,
+
+    getData,
+
+    select,
+
+    selected,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+37_Lookup.html
+Enterprise v1.0
+Part 2 - Render Engine
+==========================================================-->
+
+<script>
+
+const LookupRender = (()=>{
+
+"use strict";
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(config){
+
+    const wrapper =
+
+        document.createElement(
+
+            "div"
+
+        );
+
+    wrapper.className =
+
+        "rpn-lookup";
+
+    wrapper.innerHTML = `
+
+<div class="lookup-group">
+
+<input
+
+type="text"
+
+class="lookup-input"
+
+placeholder="${config.placeholder || 'Search...'}"
+
+readonly>
+
+<button
+
+type="button"
+
+class="lookup-button">
+
+🔍
+
+</button>
+
+</div>
+
+`;
+
+    if(
+
+        config.container
+
+    ){
+
+        document
+
+        .getElementById(
+
+            config.container
+
+        )
+
+        .appendChild(
+
+            wrapper
+
+        );
+
+    }
+
+    Lookup.register(
+
+        config.name,
+
+        wrapper
+
+    );
+
+    return wrapper;
+
+}
+
+/*=========================================================
+INPUT
+=========================================================*/
+
+function input(name){
+
+    const lookup =
+
+        Lookup.get(name);
+
+    return lookup
+
+    ? lookup.querySelector(
+
+        ".lookup-input"
+
+      )
+
+    : null;
+
+}
+
+/*=========================================================
+BUTTON
+=========================================================*/
+
+function button(name){
+
+    const lookup =
+
+        Lookup.get(name);
+
+    return lookup
+
+    ? lookup.querySelector(
+
+        ".lookup-button"
+
+      )
+
+    : null;
+
+}
+
+/*=========================================================
+VALUE
+=========================================================*/
+
+function value(
+
+    name,
+
+    text
+
+){
+
+    const el =
+
+        input(name);
+
+    if(
+
+        !el
+
+    ){
+
+        return;
+
+    }
+
+    el.value =
+
+        text || "";
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    const lookup =
+
+        Lookup.get(name);
+
+    if(
+
+        lookup &&
+
+        lookup.parentNode
+
+    ){
+
+        lookup.parentNode.removeChild(
+
+            lookup
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    render,
+
+    input,
+
+    button,
+
+    value,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+37_Lookup.html
+Enterprise v1.0
+Part 3 - Search Engine
+==========================================================-->
+
+<script>
+
+const LookupSearch = (()=>{
+
+"use strict";
+
+/*=========================================================
+SEARCH
+=========================================================*/
+
+function search(
+
+    name,
+
+    keyword
+
+){
+
+    keyword =
+
+        String(
+
+            keyword || ""
+
+        )
+
+        .toLowerCase()
+
+        .trim();
+
+    const data =
+
+        Lookup.getData(
+
+            name
+
+        );
+
+    if(
+
+        keyword===""
+
+    ){
+
+        return data;
+
+    }
+
+    return data.filter(function(row){
+
+        return Object.values(row)
+
+        .join(" ")
+
+        .toLowerCase()
+
+        .includes(keyword);
+
+    });
+
+}
+
+/*=========================================================
+FIRST
+=========================================================*/
+
+function first(name){
+
+    const data =
+
+        Lookup.getData(name);
+
+    return data.length
+
+        ? data[0]
+
+        : null;
+
+}
+
+/*=========================================================
+FIND
+=========================================================*/
+
+function find(
+
+    name,
+
+    field,
+
+    value
+
+){
+
+    return Lookup
+
+    .getData(name)
+
+    .find(function(row){
+
+        return row[field]
+
+            == value;
+
+    }) || null;
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(name){
+
+    return Lookup
+
+    .getData(name)
+
+    .length;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    search,
+
+    first,
+
+    find,
+
+    count
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+37_Lookup.html
+Enterprise v1.0
+Part 4 - Popup Engine
+==========================================================-->
+
+<script>
+
+const LookupPopup = (()=>{
+
+"use strict";
+
+/*=========================================================
+OPEN
+=========================================================*/
+
+function open(name){
+
+    const popup =
+
+        getPopup(name);
+
+    if(
+
+        popup
+
+    ){
+
+        popup.style.display =
+
+            "block";
+
+    }
+
+}
+
+/*=========================================================
+CLOSE
+=========================================================*/
+
+function close(name){
+
+    const popup =
+
+        getPopup(name);
+
+    if(
+
+        popup
+
+    ){
+
+        popup.style.display =
+
+            "none";
+
+    }
+
+}
+
+/*=========================================================
+CREATE
+=========================================================*/
+
+function create(name){
+
+    const lookup =
+
+        Lookup.get(name);
+
+    if(
+
+        !lookup
+
+    ){
+
+        return null;
+
+    }
+
+    let popup =
+
+        lookup.querySelector(
+
+            ".lookup-popup"
+
+        );
+
+    if(
+
+        popup
+
+    ){
+
+        return popup;
+
+    }
+
+    popup =
+
+        document.createElement(
+
+            "div"
+
+        );
+
+    popup.className =
+
+        "lookup-popup";
+
+    popup.style.display =
+
+        "none";
+
+    lookup.appendChild(
+
+        popup
+
+    );
+
+    return popup;
+
+}
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(
+
+    name,
+
+    rows
+
+){
+
+    const popup =
+
+        create(name);
+
+    let html = "";
+
+    rows.forEach(function(row,index){
+
+        html += `
+
+<div
+
+class="lookup-item"
+
+data-index="${index}">
+
+${Object.values(row).join(" | ")}
+
+</div>
+
+`;
+
+    });
+
+    popup.innerHTML =
+
+        html;
+
+}
+
+/*=========================================================
+GET POPUP
+=========================================================*/
+
+function getPopup(name){
+
+    const lookup =
+
+        Lookup.get(name);
+
+    if(
+
+        !lookup
+
+    ){
+
+        return null;
+
+    }
+
+    return lookup.querySelector(
+
+        ".lookup-popup"
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    open,
+
+    close,
+
+    create,
+
+    render,
+
+    getPopup
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+37_Lookup.html
+Enterprise v1.0
+Part 5 - Selection Engine
+==========================================================-->
+
+<script>
+
+const LookupSelection = (()=>{
+
+"use strict";
+
+/*=========================================================
+INIT
+=========================================================*/
+
+function init(name){
+
+    const popup =
+
+        LookupPopup.getPopup(
+
+            name
+
+        );
+
+    if(
+
+        !popup
+
+    ){
+
+        return;
+
+    }
+
+    popup.addEventListener(
+
+        "click",
+
+        function(event){
+
+            const item =
+
+                event.target.closest(
+
+                    ".lookup-item"
+
+                );
+
+            if(
+
+                !item
+
+            ){
+
+                return;
+
+            }
+
+            select(
+
+                name,
+
+                Number(
+
+                    item.dataset.index
+
+                )
+
+            );
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+SELECT
+=========================================================*/
+
+function select(
+
+    name,
+
+    index
+
+){
+
+    const data =
+
+        Lookup.getData(name);
+
+    const row =
+
+        data[index];
+
+    if(
+
+        !row
+
+    ){
+
+        return;
+
+    }
+
+    Lookup.select(
+
+        name,
+
+        row
+
+    );
+
+    LookupRender.value(
+
+        name,
+
+        Object.values(row)[0]
+
+    );
+
+    LookupPopup.close(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return Lookup.selected(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    Lookup.clear(
+
+        name
+
+    );
+
+    LookupRender.value(
+
+        name,
+
+        ""
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    init,
+
+    select,
+
+    get,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+37_Lookup.html
+Enterprise v1.0
+Part 6 - API Engine
+==========================================================-->
+
+<script>
+
+const LookupApi = (()=>{
+
+"use strict";
+
+/*=========================================================
+LOAD
+=========================================================*/
+
+async function load(
+
+    name,
+
+    endpoint,
+
+    parameter
+
+){
+
+    const result =
+
+        await API.post(
+
+            endpoint,
+
+            parameter || {}
+
+        );
+
+    const data =
+
+        result.data || [];
+
+    Lookup.setData(
+
+        name,
+
+        data
+
+    );
+
+    LookupPopup.render(
+
+        name,
+
+        data
+
+    );
+
+    LookupSelection.init(
+
+        name
+
+    );
+
+    return data;
+
+}
+
+/*=========================================================
+RELOAD
+=========================================================*/
+
+async function reload(
+
+    name,
+
+    endpoint
+
+){
+
+    return await load(
+
+        name,
+
+        endpoint,
+
+        {}
+
+    );
+
+}
+
+/*=========================================================
+SEARCH
+=========================================================*/
+
+async function search(
+
+    name,
+
+    endpoint,
+
+    keyword
+
+){
+
+    const result =
+
+        await API.post(
+
+            endpoint,
+
+            {
+
+                keyword : keyword
+
+            }
+
+        );
+
+    const data =
+
+        result.data || [];
+
+    Lookup.setData(
+
+        name,
+
+        data
+
+    );
+
+    LookupPopup.render(
+
+        name,
+
+        data
+
+    );
+
+    return data;
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(name){
+
+    const data =
+
+        Lookup.getData(
+
+            name
+
+        );
+
+    LookupPopup.render(
+
+        name,
+
+        data
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    load,
+
+    reload,
+
+    search,
+
+    refresh
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+37_Lookup.html
+Enterprise v1.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const LookupTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-lookup-default",
+
+    light     : "rpn-lookup-light",
+
+    dark      : "rpn-lookup-dark",
+
+    corporate : "rpn-lookup-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current = theme;
+
+        applyAll();
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY
+=========================================================*/
+
+function apply(name){
+
+    const lookup =
+
+        Lookup.get(name);
+
+    if(
+
+        !lookup
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(themes)
+
+    .forEach(function(css){
+
+        lookup.classList.remove(css);
+
+    });
+
+    lookup.classList.add(
+
+        themes[current]
+
+    );
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    Lookup.state.elements
+
+    .forEach(function(
+
+        lookup,
+
+        name
+
+    ){
+
+        apply(name);
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] = css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    get,
+
+    apply,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+37_Lookup.html
+Enterprise v1.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const LookupProduction = (()=>{
+
+"use strict";
+
+const VERSION = "1.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config){
+
+    const lookup =
+
+        LookupRender.render(
+
+            config
+
+        );
+
+    LookupTheme.apply(
+
+        config.name
+
+    );
+
+    if(
+
+        config.api
+
+    ){
+
+        LookupApi.load(
+
+            config.name,
+
+            config.api,
+
+            config.parameter || {}
+
+        );
+
+    }
+
+    return lookup;
+
+}
+
+/*=========================================================
+LOAD
+=========================================================*/
+
+async function load(
+
+    name,
+
+    api,
+
+    parameter
+
+){
+
+    return await LookupApi.load(
+
+        name,
+
+        api,
+
+        parameter
+
+    );
+
+}
+
+/*=========================================================
+SEARCH
+=========================================================*/
+
+async function search(
+
+    name,
+
+    api,
+
+    keyword
+
+){
+
+    return await LookupApi.search(
+
+        name,
+
+        api,
+
+        keyword
+
+    );
+
+}
+
+/*=========================================================
+VALUE
+=========================================================*/
+
+function value(name){
+
+    return LookupSelection.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    LookupSelection.clear(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+OPEN
+=========================================================*/
+
+function open(name){
+
+    LookupPopup.open(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+CLOSE
+=========================================================*/
+
+function close(name){
+
+    LookupPopup.close(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    Lookup.clear(
+
+        name
+
+    );
+
+    LookupRender.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "Lookup",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    load,
+
+    search,
+
+    value,
+
+    clear,
+
+    open,
+
+    close,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

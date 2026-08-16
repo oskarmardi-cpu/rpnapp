@@ -1,0 +1,1711 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+60_FileManager.html
+Enterprise v2.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const FileManager = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    managers:new Map(),
+
+    files:new Map(),
+
+    folders:new Map(),
+
+    settings:new Map(),
+
+    history:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    manager
+
+){
+
+    state.managers.set(
+
+        name,
+
+        manager
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.managers.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+FILES
+=========================================================*/
+
+function files(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.files.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.files.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+FOLDERS
+=========================================================*/
+
+function folders(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.folders.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.folders.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+SETTINGS
+=========================================================*/
+
+function settings(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.settings.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.settings.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+HISTORY
+=========================================================*/
+
+function history(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.history.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.history.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.managers.delete(name);
+
+    state.files.delete(name);
+
+    state.folders.delete(name);
+
+    state.settings.delete(name);
+
+    state.history.delete(name);
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    files,
+
+    folders,
+
+    settings,
+
+    history,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+60_FileManager.html
+Enterprise v2.0
+Part 2 - Upload Engine
+==========================================================-->
+
+<script>
+
+const FileUpload = (()=>{
+
+"use strict";
+
+/*=========================================================
+UPLOAD
+=========================================================*/
+
+async function upload(
+
+    name,
+
+    files
+
+){
+
+    const list =
+
+        FileManager.files(
+
+            name
+
+        );
+
+    Array.from(
+
+        files
+
+    ).forEach(function(file){
+
+        list.push({
+
+            id :
+
+            crypto.randomUUID(),
+
+            name :
+
+            file.name,
+
+            size :
+
+            file.size,
+
+            type :
+
+            file.type,
+
+            lastModified :
+
+            file.lastModified,
+
+            file
+
+        });
+
+    });
+
+    FileManager.files(
+
+        name,
+
+        list
+
+    );
+
+    return list;
+
+}
+
+/*=========================================================
+SINGLE
+=========================================================*/
+
+async function single(
+
+    name,
+
+    file
+
+){
+
+    return upload(
+
+        name,
+
+        [file]
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(
+
+    name,
+
+    id
+
+){
+
+    const files =
+
+        FileManager.files(
+
+            name
+
+        ).filter(function(item){
+
+            return item.id !== id;
+
+        });
+
+    FileManager.files(
+
+        name,
+
+        files
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    FileManager.files(
+
+        name,
+
+        []
+
+    );
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(name){
+
+    return FileManager
+
+        .files(name)
+
+        .length;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    upload,
+
+    single,
+
+    remove,
+
+    clear,
+
+    count
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+60_FileManager.html
+Enterprise v2.0
+Part 3 - Download Engine
+==========================================================-->
+
+<script>
+
+const FileDownload = (()=>{
+
+"use strict";
+
+/*=========================================================
+DOWNLOAD
+=========================================================*/
+
+function download(
+
+    name,
+
+    id
+
+){
+
+    const file =
+
+        get(
+
+            name,
+
+            id
+
+        );
+
+    if(
+
+        !file
+
+    ){
+
+        return;
+
+    }
+
+    const url =
+
+        URL.createObjectURL(
+
+            file.file
+
+        );
+
+    const link =
+
+        document.createElement(
+
+            "a"
+
+        );
+
+    link.href =
+
+        url;
+
+    link.download =
+
+        file.name;
+
+    document.body.appendChild(
+
+        link
+
+    );
+
+    link.click();
+
+    document.body.removeChild(
+
+        link
+
+    );
+
+    URL.revokeObjectURL(
+
+        url
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(
+
+    name,
+
+    id
+
+){
+
+    return FileManager
+
+        .files(name)
+
+        .find(function(item){
+
+            return item.id===id;
+
+        });
+
+}
+
+/*=========================================================
+DOWNLOAD ALL
+=========================================================*/
+
+function downloadAll(name){
+
+    FileManager.files(
+
+        name
+
+    ).forEach(function(file){
+
+        download(
+
+            name,
+
+            file.id
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+EXISTS
+=========================================================*/
+
+function exists(
+
+    name,
+
+    id
+
+){
+
+    return !!get(
+
+        name,
+
+        id
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    download,
+
+    downloadAll,
+
+    get,
+
+    exists
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+60_FileManager.html
+Enterprise v2.0
+Part 4 - Explorer Engine
+==========================================================-->
+
+<script>
+
+const FileExplorer = (()=>{
+
+"use strict";
+
+/*=========================================================
+LIST
+=========================================================*/
+
+function list(name){
+
+    return FileManager.files(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+SORT
+=========================================================*/
+
+function sort(
+
+    name,
+
+    field="name",
+
+    order="asc"
+
+){
+
+    const files =
+
+        [...FileManager.files(name)];
+
+    files.sort(function(a,b){
+
+        if(
+
+            a[field] < b[field]
+
+        ){
+
+            return order==="asc"
+
+                ? -1
+
+                : 1;
+
+        }
+
+        if(
+
+            a[field] > b[field]
+
+        ){
+
+            return order==="asc"
+
+                ? 1
+
+                : -1;
+
+        }
+
+        return 0;
+
+    });
+
+    FileManager.files(
+
+        name,
+
+        files
+
+    );
+
+    return files;
+
+}
+
+/*=========================================================
+FILTER TYPE
+=========================================================*/
+
+function filterType(
+
+    name,
+
+    type
+
+){
+
+    return FileManager
+
+        .files(name)
+
+        .filter(function(file){
+
+            return file.type
+
+                .startsWith(type);
+
+        });
+
+}
+
+/*=========================================================
+DETAIL
+=========================================================*/
+
+function detail(
+
+    name,
+
+    id
+
+){
+
+    return FileDownload.get(
+
+        name,
+
+        id
+
+    );
+
+}
+
+/*=========================================================
+SIZE
+=========================================================*/
+
+function totalSize(name){
+
+    return FileManager
+
+        .files(name)
+
+        .reduce(function(
+
+            total,
+
+            file
+
+        ){
+
+            return total +
+
+                file.size;
+
+        },0);
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    list,
+
+    sort,
+
+    filterType,
+
+    detail,
+
+    totalSize
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+60_FileManager.html
+Enterprise v2.0
+Part 5 - Search Engine
+==========================================================-->
+
+<script>
+
+const FileSearch = (()=>{
+
+"use strict";
+
+/*=========================================================
+SEARCH NAME
+=========================================================*/
+
+function name(
+
+    manager,
+
+    keyword
+
+){
+
+    keyword =
+
+        String(
+
+            keyword || ""
+
+        ).toLowerCase();
+
+    return FileManager
+
+        .files(manager)
+
+        .filter(function(file){
+
+            return file.name
+
+                .toLowerCase()
+
+                .includes(
+
+                    keyword
+
+                );
+
+        });
+
+}
+
+/*=========================================================
+SEARCH TYPE
+=========================================================*/
+
+function type(
+
+    manager,
+
+    mime
+
+){
+
+    return FileManager
+
+        .files(manager)
+
+        .filter(function(file){
+
+            return file.type
+
+                .startsWith(
+
+                    mime
+
+                );
+
+        });
+
+}
+
+/*=========================================================
+SEARCH SIZE
+=========================================================*/
+
+function size(
+
+    manager,
+
+    min=0,
+
+    max=Number.MAX_SAFE_INTEGER
+
+){
+
+    return FileManager
+
+        .files(manager)
+
+        .filter(function(file){
+
+            return file.size>=min &&
+
+                   file.size<=max;
+
+        });
+
+}
+
+/*=========================================================
+SEARCH EXTENSION
+=========================================================*/
+
+function extension(
+
+    manager,
+
+    ext
+
+){
+
+    ext =
+
+        "." +
+
+        String(ext)
+
+        .replace(".","")
+
+        .toLowerCase();
+
+    return FileManager
+
+        .files(manager)
+
+        .filter(function(file){
+
+            return file.name
+
+                .toLowerCase()
+
+                .endsWith(
+
+                    ext
+
+                );
+
+        });
+
+}
+
+/*=========================================================
+ADVANCED
+=========================================================*/
+
+function advanced(
+
+    manager,
+
+    filter={}
+
+){
+
+    return FileManager
+
+        .files(manager)
+
+        .filter(function(file){
+
+            return (
+
+                !filter.keyword ||
+
+                file.name
+
+                .toLowerCase()
+
+                .includes(
+
+                    filter.keyword
+
+                    .toLowerCase()
+
+                )
+
+            ) && (
+
+                !filter.type ||
+
+                file.type
+
+                .startsWith(
+
+                    filter.type
+
+                )
+
+            ) && (
+
+                !filter.min ||
+
+                file.size>=
+
+                filter.min
+
+            ) && (
+
+                !filter.max ||
+
+                file.size<=
+
+                filter.max
+
+            );
+
+        });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    name,
+
+    type,
+
+    size,
+
+    extension,
+
+    advanced
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+60_FileManager.html
+Enterprise v2.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const FileEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    manager,
+
+    event,
+
+    callback
+
+){
+
+    const element =
+
+        FileManager.get(
+
+            manager
+
+        );
+
+    if(
+
+        !element ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    element.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        manager +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    manager,
+
+    event
+
+){
+
+    const element =
+
+        FileManager.get(
+
+            manager
+
+        );
+
+    const key =
+
+        manager +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        element &&
+
+        callback
+
+    ){
+
+        element.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    manager,
+
+    event,
+
+    detail
+
+){
+
+    const element =
+
+        FileManager.get(
+
+            manager
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(
+
+    manager
+
+){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                manager +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                manager,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+60_FileManager.html
+Enterprise v2.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const FileTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-file-default",
+
+    light     : "rpn-file-light",
+
+    dark      : "rpn-file-dark",
+
+    primary   : "rpn-file-primary",
+
+    success   : "rpn-file-success",
+
+    warning   : "rpn-file-warning",
+
+    danger    : "rpn-file-danger",
+
+    corporate : "rpn-file-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    manager,
+
+    theme
+
+){
+
+    if(
+
+        !themes[theme]
+
+    ){
+
+        return;
+
+    }
+
+    const element =
+
+        FileManager.get(
+
+            manager
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(
+
+        themes
+
+    )
+
+    .forEach(function(css){
+
+        element.classList.remove(
+
+            css
+
+        );
+
+    });
+
+    element.classList.add(
+
+        themes[theme]
+
+    );
+
+}
+
+/*=========================================================
+SET DEFAULT
+=========================================================*/
+
+function setDefault(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current =
+
+            theme;
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    FileManager.state.managers
+
+    .forEach(function(
+
+        element,
+
+        name
+
+    ){
+
+        set(
+
+            name,
+
+            current
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] =
+
+        css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    setDefault,
+
+    get,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+60_FileManager.html
+Enterprise v2.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const FileProduction = (()=>{
+
+"use strict";
+
+const VERSION = "2.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config={}){
+
+    FileManager.register(
+
+        config.name,
+
+        document.body
+
+    );
+
+    FileManager.files(
+
+        config.name,
+
+        config.files ||
+
+        []
+
+    );
+
+    FileManager.folders(
+
+        config.name,
+
+        config.folders ||
+
+        []
+
+    );
+
+    FileManager.settings(
+
+        config.name,
+
+        config.settings ||
+
+        {}
+
+    );
+
+    FileTheme.set(
+
+        config.name,
+
+        config.theme ||
+
+        "default"
+
+    );
+
+    FileEvent.trigger(
+
+        config.name,
+
+        "ready",
+
+        {
+
+            files :
+
+            FileManager.files(
+
+                config.name
+
+            ).length,
+
+            folders :
+
+            FileManager.folders(
+
+                config.name
+
+            ).length
+
+        }
+
+    );
+
+    return info();
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(name){
+
+    FileEvent.trigger(
+
+        name,
+
+        "refresh",
+
+        {
+
+            files :
+
+            FileManager.files(
+
+                name
+
+            ).length
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    FileManager.files(
+
+        name,
+
+        []
+
+    );
+
+    FileManager.history(
+
+        name,
+
+        []
+
+    );
+
+    FileEvent.trigger(
+
+        name,
+
+        "clear",
+
+        {}
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    FileEvent.clear(
+
+        name
+
+    );
+
+    FileManager.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "FileManager",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    refresh,
+
+    clear,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

@@ -1,0 +1,1795 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+50_Report.html
+Enterprise v1.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const Report = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    reports:new Map(),
+
+    datasource:new Map(),
+
+    filters:new Map(),
+
+    templates:new Map(),
+
+    data:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    element
+
+){
+
+    state.reports.set(
+
+        name,
+
+        element
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.reports.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+DATASOURCE
+=========================================================*/
+
+function datasource(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.datasource.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.datasource.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+FILTER
+=========================================================*/
+
+function filter(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.filters.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.filters.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+TEMPLATE
+=========================================================*/
+
+function template(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.templates.get(
+
+            name
+
+        ) || "";
+
+    }
+
+    state.templates.set(
+
+        name,
+
+        value || ""
+
+    );
+
+}
+
+/*=========================================================
+DATA
+=========================================================*/
+
+function data(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.data.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.data.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.reports.delete(
+
+        name
+
+    );
+
+    state.datasource.delete(
+
+        name
+
+    );
+
+    state.filters.delete(
+
+        name
+
+    );
+
+    state.templates.delete(
+
+        name
+
+    );
+
+    state.data.delete(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    datasource,
+
+    filter,
+
+    template,
+
+    data,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+50_Report.html
+Enterprise v1.0
+Part 2 - Render Engine
+==========================================================-->
+
+<script>
+
+const ReportRender = (()=>{
+
+"use strict";
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(config){
+
+    const report =
+
+        document.createElement(
+
+            "div"
+
+        );
+
+    report.id =
+
+        config.id ||
+
+        config.name;
+
+    report.className =
+
+        config.className ||
+
+        "rpn-report";
+
+    report.innerHTML = `
+
+<div class="report-header"></div>
+
+<div class="report-toolbar"></div>
+
+<div class="report-filter"></div>
+
+<div class="report-content"></div>
+
+<div class="report-footer"></div>
+
+`;
+
+    if(
+
+        config.container
+
+    ){
+
+        document
+
+        .getElementById(
+
+            config.container
+
+        )
+
+        .appendChild(
+
+            report
+
+        );
+
+    }
+
+    Report.register(
+
+        config.name,
+
+        report
+
+    );
+
+    return report;
+
+}
+
+/*=========================================================
+HEADER
+=========================================================*/
+
+function header(name){
+
+    const report =
+
+        Report.get(name);
+
+    return report
+
+        ? report.querySelector(
+
+            ".report-header"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+TOOLBAR
+=========================================================*/
+
+function toolbar(name){
+
+    const report =
+
+        Report.get(name);
+
+    return report
+
+        ? report.querySelector(
+
+            ".report-toolbar"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+FILTER
+=========================================================*/
+
+function filter(name){
+
+    const report =
+
+        Report.get(name);
+
+    return report
+
+        ? report.querySelector(
+
+            ".report-filter"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+CONTENT
+=========================================================*/
+
+function content(name){
+
+    const report =
+
+        Report.get(name);
+
+    return report
+
+        ? report.querySelector(
+
+            ".report-content"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+FOOTER
+=========================================================*/
+
+function footer(name){
+
+    const report =
+
+        Report.get(name);
+
+    return report
+
+        ? report.querySelector(
+
+            ".report-footer"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    const report =
+
+        Report.get(name);
+
+    if(
+
+        report &&
+
+        report.parentNode
+
+    ){
+
+        report.parentNode.removeChild(
+
+            report
+
+        );
+
+    }
+
+    Report.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    render,
+
+    header,
+
+    toolbar,
+
+    filter,
+
+    content,
+
+    footer,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+50_Report.html
+Enterprise v1.0
+Part 3 - Data Engine
+==========================================================-->
+
+<script>
+
+const ReportData = (()=>{
+
+"use strict";
+
+/*=========================================================
+LOAD
+=========================================================*/
+
+async function load(name){
+
+    const source =
+
+        Report.datasource(
+
+            name
+
+        );
+
+    if(
+
+        !source.endpoint
+
+    ){
+
+        return [];
+
+    }
+
+    const result =
+
+        await API.post(
+
+            source.endpoint,
+
+            source.parameter || {}
+
+        );
+
+    Report.data(
+
+        name,
+
+        result.data || []
+
+    );
+
+    return Report.data(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    name,
+
+    data
+
+){
+
+    Report.data(
+
+        name,
+
+        data || []
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return Report.data(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+APPEND
+=========================================================*/
+
+function append(
+
+    name,
+
+    rows
+
+){
+
+    const data =
+
+        get(name);
+
+    rows.forEach(function(row){
+
+        data.push(row);
+
+    });
+
+    set(
+
+        name,
+
+        data
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    set(
+
+        name,
+
+        []
+
+    );
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(name){
+
+    return get(name)
+
+        .length;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    load,
+
+    set,
+
+    get,
+
+    append,
+
+    clear,
+
+    count
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+50_Report.html
+Enterprise v1.0
+Part 4 - Filter Engine
+==========================================================-->
+
+<script>
+
+const ReportFilter = (()=>{
+
+"use strict";
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    name,
+
+    filter
+
+){
+
+    Report.filter(
+
+        name,
+
+        filter || {}
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return Report.filter(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+APPLY
+=========================================================*/
+
+function apply(name){
+
+    const data =
+
+        Report.data(
+
+            name
+
+        );
+
+    const filter =
+
+        get(name);
+
+    if(
+
+        Object.keys(
+
+            filter
+
+        ).length===0
+
+    ){
+
+        return data;
+
+    }
+
+    return data.filter(
+
+        function(row){
+
+            return Object.keys(
+
+                filter
+
+            ).every(function(key){
+
+                return row[key] ==
+
+                    filter[key];
+
+            });
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+RESET
+=========================================================*/
+
+function reset(name){
+
+    set(
+
+        name,
+
+        {}
+
+    );
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(name){
+
+    return apply(name)
+
+        .length;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    get,
+
+    apply,
+
+    reset,
+
+    count
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+50_Report.html
+Enterprise v1.0
+Part 5 - Export Engine
+==========================================================-->
+
+<script>
+
+const ReportExport = (()=>{
+
+"use strict";
+
+/*=========================================================
+CSV
+=========================================================*/
+
+function csv(name){
+
+    const data =
+
+        ReportFilter.apply(
+
+            name
+
+        );
+
+    exportFile(
+
+        data,
+
+        "csv",
+
+        name + ".csv"
+
+    );
+
+}
+
+/*=========================================================
+JSON
+=========================================================*/
+
+function json(name){
+
+    const data =
+
+        ReportFilter.apply(
+
+            name
+
+        );
+
+    exportFile(
+
+        JSON.stringify(
+
+            data,
+
+            null,
+
+            2
+
+        ),
+
+        "json",
+
+        name + ".json"
+
+    );
+
+}
+
+/*=========================================================
+PRINT
+=========================================================*/
+
+function print(name){
+
+    const content =
+
+        ReportRender.content(
+
+            name
+
+        );
+
+    if(
+
+        !content
+
+    ){
+
+        return;
+
+    }
+
+    const popup =
+
+        window.open(
+
+            "",
+
+            "_blank"
+
+        );
+
+    popup.document.write(
+
+        content.innerHTML
+
+    );
+
+    popup.print();
+
+    popup.close();
+
+}
+
+/*=========================================================
+DOWNLOAD
+=========================================================*/
+
+function exportFile(
+
+    data,
+
+    type,
+
+    filename
+
+){
+
+    const blob =
+
+        new Blob(
+
+            [
+
+                typeof data ===
+
+                "string"
+
+                ? data
+
+                : convertCSV(data)
+
+            ],
+
+            {
+
+                type:
+
+                "text/" +
+
+                type
+
+            }
+
+        );
+
+    const url =
+
+        URL.createObjectURL(
+
+            blob
+
+        );
+
+    const link =
+
+        document.createElement(
+
+            "a"
+
+        );
+
+    link.href = url;
+
+    link.download =
+
+        filename;
+
+    link.click();
+
+    URL.revokeObjectURL(
+
+        url
+
+    );
+
+}
+
+/*=========================================================
+CSV CONVERTER
+=========================================================*/
+
+function convertCSV(data){
+
+    if(
+
+        !data.length
+
+    ){
+
+        return "";
+
+    }
+
+    const header =
+
+        Object.keys(
+
+            data[0]
+
+        ).join(",");
+
+    const body =
+
+        data.map(function(row){
+
+            return Object.values(
+
+                row
+
+            ).join(",");
+
+        }).join("\n");
+
+    return header +
+
+        "\n" +
+
+        body;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    csv,
+
+    json,
+
+    print
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+50_Report.html
+Enterprise v1.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const ReportEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    report,
+
+    event,
+
+    callback
+
+){
+
+    const element =
+
+        Report.get(
+
+            report
+
+        );
+
+    if(
+
+        !element ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    element.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        report +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    report,
+
+    event
+
+){
+
+    const element =
+
+        Report.get(
+
+            report
+
+        );
+
+    const key =
+
+        report +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        element &&
+
+        callback
+
+    ){
+
+        element.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    report,
+
+    event,
+
+    detail
+
+){
+
+    const element =
+
+        Report.get(
+
+            report
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(
+
+    report
+
+){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                report +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                report,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+50_Report.html
+Enterprise v1.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const ReportTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-report-default",
+
+    light     : "rpn-report-light",
+
+    dark      : "rpn-report-dark",
+
+    primary   : "rpn-report-primary",
+
+    success   : "rpn-report-success",
+
+    warning   : "rpn-report-warning",
+
+    danger    : "rpn-report-danger",
+
+    corporate : "rpn-report-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    report,
+
+    theme
+
+){
+
+    if(
+
+        !themes[theme]
+
+    ){
+
+        return;
+
+    }
+
+    const element =
+
+        Report.get(
+
+            report
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(
+
+        themes
+
+    )
+
+    .forEach(function(css){
+
+        element.classList.remove(
+
+            css
+
+        );
+
+    });
+
+    element.classList.add(
+
+        themes[theme]
+
+    );
+
+}
+
+/*=========================================================
+SET DEFAULT
+=========================================================*/
+
+function setDefault(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current = theme;
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    Report.state.reports
+
+    .forEach(function(
+
+        report,
+
+        name
+
+    ){
+
+        set(
+
+            name,
+
+            current
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] = css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    setDefault,
+
+    get,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+50_Report.html
+Enterprise v1.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const ReportProduction = (()=>{
+
+"use strict";
+
+const VERSION = "1.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+async function boot(config){
+
+    const report =
+
+        ReportRender.render(
+
+            config
+
+        );
+
+    ReportTheme.set(
+
+        config.name,
+
+        config.theme ||
+
+        "default"
+
+    );
+
+    Report.datasource(
+
+        config.name,
+
+        config.datasource ||
+
+        {}
+
+    );
+
+    Report.filter(
+
+        config.name,
+
+        config.filter ||
+
+        {}
+
+    );
+
+    Report.template(
+
+        config.name,
+
+        config.template ||
+
+        ""
+
+    );
+
+    if(
+
+        config.data
+
+    ){
+
+        ReportData.set(
+
+            config.name,
+
+            config.data
+
+        );
+
+    }else{
+
+        await ReportData.load(
+
+            config.name
+
+        );
+
+    }
+
+    ReportEvent.trigger(
+
+        config.name,
+
+        "ready",
+
+        {
+
+            rows :
+
+            ReportData.count(
+
+                config.name
+
+            )
+
+        }
+
+    );
+
+    return report;
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+async function refresh(name){
+
+    await ReportData.load(
+
+        name
+
+    );
+
+    ReportEvent.trigger(
+
+        name,
+
+        "refresh",
+
+        {
+
+            rows :
+
+            ReportData.count(
+
+                name
+
+            )
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    ReportData.clear(
+
+        name
+
+    );
+
+    ReportFilter.reset(
+
+        name
+
+    );
+
+    ReportEvent.trigger(
+
+        name,
+
+        "clear",
+
+        {}
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    ReportEvent.clear(
+
+        name
+
+    );
+
+    ReportRender.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "Report",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    refresh,
+
+    clear,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

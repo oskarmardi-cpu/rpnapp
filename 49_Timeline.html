@@ -1,0 +1,1802 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+49_Timeline.html
+Enterprise v1.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const Timeline = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    timelines:new Map(),
+
+    items:new Map(),
+
+    datasource:new Map(),
+
+    orientation:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    element
+
+){
+
+    state.timelines.set(
+
+        name,
+
+        element
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.timelines.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+ITEMS
+=========================================================*/
+
+function items(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.items.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.items.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+DATASOURCE
+=========================================================*/
+
+function datasource(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.datasource.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.datasource.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+ORIENTATION
+=========================================================*/
+
+function orientation(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.orientation.get(
+
+            name
+
+        ) || "vertical";
+
+    }
+
+    state.orientation.set(
+
+        name,
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.timelines.delete(
+
+        name
+
+    );
+
+    state.items.delete(
+
+        name
+
+    );
+
+    state.datasource.delete(
+
+        name
+
+    );
+
+    state.orientation.delete(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    items,
+
+    datasource,
+
+    orientation,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+49_Timeline.html
+Enterprise v1.0
+Part 2 - Render Engine
+==========================================================-->
+
+<script>
+
+const TimelineRender = (()=>{
+
+"use strict";
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(config){
+
+    const timeline =
+
+        document.createElement(
+
+            "div"
+
+        );
+
+    timeline.id =
+
+        config.id ||
+
+        config.name;
+
+    timeline.className =
+
+        config.className ||
+
+        "rpn-timeline";
+
+    timeline.innerHTML = `
+
+<div class="timeline-header"></div>
+
+<div class="timeline-toolbar"></div>
+
+<div class="timeline-body"></div>
+
+<div class="timeline-footer"></div>
+
+`;
+
+    if(
+
+        config.container
+
+    ){
+
+        document
+
+        .getElementById(
+
+            config.container
+
+        )
+
+        .appendChild(
+
+            timeline
+
+        );
+
+    }
+
+    Timeline.register(
+
+        config.name,
+
+        timeline
+
+    );
+
+    return timeline;
+
+}
+
+/*=========================================================
+HEADER
+=========================================================*/
+
+function header(name){
+
+    const timeline =
+
+        Timeline.get(name);
+
+    return timeline
+
+        ? timeline.querySelector(
+
+            ".timeline-header"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+TOOLBAR
+=========================================================*/
+
+function toolbar(name){
+
+    const timeline =
+
+        Timeline.get(name);
+
+    return timeline
+
+        ? timeline.querySelector(
+
+            ".timeline-toolbar"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+BODY
+=========================================================*/
+
+function body(name){
+
+    const timeline =
+
+        Timeline.get(name);
+
+    return timeline
+
+        ? timeline.querySelector(
+
+            ".timeline-body"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+FOOTER
+=========================================================*/
+
+function footer(name){
+
+    const timeline =
+
+        Timeline.get(name);
+
+    return timeline
+
+        ? timeline.querySelector(
+
+            ".timeline-footer"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    const timeline =
+
+        Timeline.get(name);
+
+    if(
+
+        timeline &&
+
+        timeline.parentNode
+
+    ){
+
+        timeline.parentNode.removeChild(
+
+            timeline
+
+        );
+
+    }
+
+    Timeline.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    render,
+
+    header,
+
+    toolbar,
+
+    body,
+
+    footer,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+49_Timeline.html
+Enterprise v1.0
+Part 3 - Item Engine
+==========================================================-->
+
+<script>
+
+const TimelineItem = (()=>{
+
+"use strict";
+
+/*=========================================================
+ADD
+=========================================================*/
+
+function add(
+
+    timeline,
+
+    item
+
+){
+
+    const items =
+
+        Timeline.items(
+
+            timeline
+
+        );
+
+    items.push(
+
+        item
+
+    );
+
+    Timeline.items(
+
+        timeline,
+
+        items
+
+    );
+
+    refresh(
+
+        timeline
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(
+
+    timeline,
+
+    id
+
+){
+
+    const items =
+
+        Timeline.items(
+
+            timeline
+
+        ).filter(function(item){
+
+            return item.id !== id;
+
+        });
+
+    Timeline.items(
+
+        timeline,
+
+        items
+
+    );
+
+    refresh(
+
+        timeline
+
+    );
+
+}
+
+/*=========================================================
+UPDATE
+=========================================================*/
+
+function update(
+
+    timeline,
+
+    item
+
+){
+
+    const items =
+
+        Timeline.items(
+
+            timeline
+
+        );
+
+    const index =
+
+        items.findIndex(function(row){
+
+            return row.id === item.id;
+
+        });
+
+    if(
+
+        index >= 0
+
+    ){
+
+        items[index] = item;
+
+    }
+
+    Timeline.items(
+
+        timeline,
+
+        items
+
+    );
+
+    refresh(
+
+        timeline
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(
+
+    timeline,
+
+    id
+
+){
+
+    return Timeline.items(
+
+        timeline
+
+    ).find(function(item){
+
+        return item.id === id;
+
+    });
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(timeline){
+
+    const body =
+
+        TimelineRender.body(
+
+            timeline
+
+        );
+
+    if(
+
+        !body
+
+    ){
+
+        return;
+
+    }
+
+    body.innerHTML = "";
+
+    Timeline.items(
+
+        timeline
+
+    ).forEach(function(item){
+
+        body.insertAdjacentHTML(
+
+            "beforeend",
+
+            render(item)
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(item){
+
+    return `
+
+<div class="timeline-item"
+data-id="${item.id}">
+
+<div class="timeline-point"></div>
+
+<div class="timeline-content">
+
+<div class="timeline-date">
+
+${item.date || ""}
+
+</div>
+
+<div class="timeline-title">
+
+${item.title || ""}
+
+</div>
+
+<div class="timeline-description">
+
+${item.description || ""}
+
+</div>
+
+</div>
+
+</div>
+
+`;
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(timeline){
+
+    Timeline.items(
+
+        timeline,
+
+        []
+
+    );
+
+    refresh(
+
+        timeline
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    add,
+
+    remove,
+
+    update,
+
+    get,
+
+    refresh,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+49_Timeline.html
+Enterprise v1.0
+Part 4 - Navigation Engine
+==========================================================-->
+
+<script>
+
+const TimelineNavigation = (()=>{
+
+"use strict";
+
+/*=========================================================
+FIRST
+=========================================================*/
+
+function first(timeline){
+
+    const items =
+
+        Timeline.items(
+
+            timeline
+
+        );
+
+    return items.length
+
+        ? items[0]
+
+        : null;
+
+}
+
+/*=========================================================
+LAST
+=========================================================*/
+
+function last(timeline){
+
+    const items =
+
+        Timeline.items(
+
+            timeline
+
+        );
+
+    return items.length
+
+        ? items[
+
+            items.length-1
+
+          ]
+
+        : null;
+
+}
+
+/*=========================================================
+NEXT
+=========================================================*/
+
+function next(
+
+    timeline,
+
+    id
+
+){
+
+    const items =
+
+        Timeline.items(
+
+            timeline
+
+        );
+
+    const index =
+
+        items.findIndex(function(item){
+
+            return item.id===id;
+
+        });
+
+    return (
+
+        index>=0 &&
+
+        index<items.length-1
+
+    )
+
+    ? items[index+1]
+
+    : null;
+
+}
+
+/*=========================================================
+PREVIOUS
+=========================================================*/
+
+function previous(
+
+    timeline,
+
+    id
+
+){
+
+    const items =
+
+        Timeline.items(
+
+            timeline
+
+        );
+
+    const index =
+
+        items.findIndex(function(item){
+
+            return item.id===id;
+
+        });
+
+    return (
+
+        index>0
+
+    )
+
+    ? items[index-1]
+
+    : null;
+
+}
+
+/*=========================================================
+SORT
+=========================================================*/
+
+function sort(
+
+    timeline,
+
+    asc=true
+
+){
+
+    const items =
+
+        Timeline.items(
+
+            timeline
+
+        );
+
+    items.sort(function(a,b){
+
+        const d1 =
+
+            new Date(a.date);
+
+        const d2 =
+
+            new Date(b.date);
+
+        return asc
+
+            ? d1-d2
+
+            : d2-d1;
+
+    });
+
+    Timeline.items(
+
+        timeline,
+
+        items
+
+    );
+
+    TimelineItem.refresh(
+
+        timeline
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    first,
+
+    last,
+
+    next,
+
+    previous,
+
+    sort
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+49_Timeline.html
+Enterprise v1.0
+Part 5 - Refresh Engine
+==========================================================-->
+
+<script>
+
+const TimelineRefresh = (()=>{
+
+"use strict";
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+async function refresh(
+
+    timeline
+
+){
+
+    const source =
+
+        Timeline.datasource(
+
+            timeline
+
+        );
+
+    if(
+
+        !source.endpoint
+
+    ){
+
+        TimelineItem.refresh(
+
+            timeline
+
+        );
+
+        return;
+
+    }
+
+    const result =
+
+        await API.post(
+
+            source.endpoint,
+
+            source.parameter || {}
+
+        );
+
+    Timeline.items(
+
+        timeline,
+
+        result.data || []
+
+    );
+
+    TimelineItem.refresh(
+
+        timeline
+
+    );
+
+}
+
+/*=========================================================
+AUTO REFRESH
+=========================================================*/
+
+function auto(
+
+    timeline,
+
+    interval
+
+){
+
+    stop(
+
+        timeline
+
+    );
+
+    const timer =
+
+        setInterval(
+
+            function(){
+
+                refresh(
+
+                    timeline
+
+                );
+
+            },
+
+            interval || 60000
+
+        );
+
+    Timeline.datasource(
+
+        "__timer__" +
+
+        timeline,
+
+        timer
+
+    );
+
+}
+
+/*=========================================================
+STOP
+=========================================================*/
+
+function stop(
+
+    timeline
+
+){
+
+    const timer =
+
+        Timeline.datasource(
+
+            "__timer__" +
+
+            timeline
+
+        );
+
+    if(
+
+        timer
+
+    ){
+
+        clearInterval(
+
+            timer
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+RELOAD
+=========================================================*/
+
+async function reload(
+
+    timeline
+
+){
+
+    await refresh(
+
+        timeline
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    refresh,
+
+    auto,
+
+    stop,
+
+    reload
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+49_Timeline.html
+Enterprise v1.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const TimelineEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    timeline,
+
+    event,
+
+    callback
+
+){
+
+    const element =
+
+        Timeline.get(
+
+            timeline
+
+        );
+
+    if(
+
+        !element ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    element.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        timeline +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    timeline,
+
+    event
+
+){
+
+    const element =
+
+        Timeline.get(
+
+            timeline
+
+        );
+
+    const key =
+
+        timeline +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        element &&
+
+        callback
+
+    ){
+
+        element.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    timeline,
+
+    event,
+
+    detail
+
+){
+
+    const element =
+
+        Timeline.get(
+
+            timeline
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(
+
+    timeline
+
+){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                timeline +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                timeline,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+49_Timeline.html
+Enterprise v1.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const TimelineTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-timeline-default",
+
+    light     : "rpn-timeline-light",
+
+    dark      : "rpn-timeline-dark",
+
+    primary   : "rpn-timeline-primary",
+
+    success   : "rpn-timeline-success",
+
+    warning   : "rpn-timeline-warning",
+
+    danger    : "rpn-timeline-danger",
+
+    corporate : "rpn-timeline-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    timeline,
+
+    theme
+
+){
+
+    if(
+
+        !themes[theme]
+
+    ){
+
+        return;
+
+    }
+
+    const element =
+
+        Timeline.get(
+
+            timeline
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(
+
+        themes
+
+    )
+
+    .forEach(function(css){
+
+        element.classList.remove(
+
+            css
+
+        );
+
+    });
+
+    element.classList.add(
+
+        themes[theme]
+
+    );
+
+}
+
+/*=========================================================
+SET DEFAULT
+=========================================================*/
+
+function setDefault(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current = theme;
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    Timeline.state.timelines
+
+    .forEach(function(
+
+        timeline,
+
+        name
+
+    ){
+
+        set(
+
+            name,
+
+            current
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] = css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    setDefault,
+
+    get,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+49_Timeline.html
+Enterprise v1.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const TimelineProduction = (()=>{
+
+"use strict";
+
+const VERSION = "1.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config){
+
+    const timeline =
+
+        TimelineRender.render(
+
+            config
+
+        );
+
+    TimelineTheme.set(
+
+        config.name,
+
+        config.theme ||
+
+        "default"
+
+    );
+
+    Timeline.orientation(
+
+        config.name,
+
+        config.orientation ||
+
+        "vertical"
+
+    );
+
+    Timeline.datasource(
+
+        config.name,
+
+        config.datasource ||
+
+        {}
+
+    );
+
+    Timeline.items(
+
+        config.name,
+
+        config.items ||
+
+        []
+
+    );
+
+    TimelineItem.refresh(
+
+        config.name
+
+    );
+
+    return timeline;
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+async function refresh(name){
+
+    await TimelineRefresh.refresh(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+RELOAD
+=========================================================*/
+
+async function reload(name){
+
+    await TimelineRefresh.reload(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    TimelineItem.clear(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    TimelineRefresh.stop(
+
+        name
+
+    );
+
+    TimelineEvent.clear(
+
+        name
+
+    );
+
+    TimelineRender.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "Timeline",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    refresh,
+
+    reload,
+
+    clear,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

@@ -1,0 +1,1378 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+65_AI_Assistant.html
+Enterprise v2.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const AIAssistant = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    assistants:new Map(),
+
+    models:new Map(),
+
+    conversations:new Map(),
+
+    context:new Map(),
+
+    settings:new Map(),
+
+    history:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    assistant
+
+){
+
+    state.assistants.set(
+
+        name,
+
+        assistant
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.assistants.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+MODEL
+=========================================================*/
+
+function model(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.models.get(
+
+            name
+
+        ) || "";
+
+    }
+
+    state.models.set(
+
+        name,
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+CONVERSATION
+=========================================================*/
+
+function conversation(
+
+    id,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.conversations.get(
+
+            id
+
+        ) || [];
+
+    }
+
+    state.conversations.set(
+
+        id,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+CONTEXT
+=========================================================*/
+
+function context(
+
+    id,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.context.get(
+
+            id
+
+        ) || {};
+
+    }
+
+    state.context.set(
+
+        id,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+SETTINGS
+=========================================================*/
+
+function settings(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.settings.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.settings.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.assistants.delete(name);
+
+    state.models.delete(name);
+
+    state.settings.delete(name);
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    model,
+
+    conversation,
+
+    context,
+
+    settings,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+65_AI_Assistant.html
+Enterprise v2.0
+Part 2 - Conversation Engine
+==========================================================-->
+
+<script>
+
+const AIConversation = (()=>{
+
+"use strict";
+
+/*=========================================================
+CREATE
+=========================================================*/
+
+function create(
+
+    id
+
+){
+
+    AIAssistant.conversation(
+
+        id,
+
+        []
+
+    );
+
+    return id;
+
+}
+
+/*=========================================================
+ADD MESSAGE
+=========================================================*/
+
+function add(
+
+    id,
+
+    role,
+
+    content
+
+){
+
+    const history =
+
+        AIAssistant.conversation(
+
+            id
+
+        );
+
+    history.push({
+
+        id :
+
+        crypto.randomUUID(),
+
+        role,
+
+        content,
+
+        timestamp :
+
+        new Date()
+
+    });
+
+    AIAssistant.conversation(
+
+        id,
+
+        history
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(id){
+
+    return AIAssistant.conversation(
+
+        id
+
+    );
+
+}
+
+/*=========================================================
+LAST
+=========================================================*/
+
+function last(id){
+
+    const history =
+
+        get(id);
+
+    return history.length
+
+        ? history[
+
+            history.length-1
+
+          ]
+
+        : null;
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(id){
+
+    AIAssistant.conversation(
+
+        id,
+
+        []
+
+    );
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(id){
+
+    return get(id).length;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    create,
+
+    add,
+
+    get,
+
+    last,
+
+    clear,
+
+    count
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+65_AI_Assistant.html
+Enterprise v2.0
+Part 3 - Prompt Engine
+==========================================================-->
+
+<script>
+
+const AIPrompt = (()=>{
+
+"use strict";
+
+/*=========================================================
+SYSTEM
+=========================================================*/
+
+function system(
+
+    conversationId,
+
+    content
+
+){
+
+    AIConversation.add(
+
+        conversationId,
+
+        "system",
+
+        content
+
+    );
+
+}
+
+/*=========================================================
+USER
+=========================================================*/
+
+function user(
+
+    conversationId,
+
+    content
+
+){
+
+    AIConversation.add(
+
+        conversationId,
+
+        "user",
+
+        content
+
+    );
+
+}
+
+/*=========================================================
+ASSISTANT
+=========================================================*/
+
+function assistant(
+
+    conversationId,
+
+    content
+
+){
+
+    AIConversation.add(
+
+        conversationId,
+
+        "assistant",
+
+        content
+
+    );
+
+}
+
+/*=========================================================
+BUILD
+=========================================================*/
+
+function build(
+
+    conversationId
+
+){
+
+    return AIConversation
+
+        .get(conversationId)
+
+        .map(function(item){
+
+            return{
+
+                role :
+
+                item.role,
+
+                content :
+
+                item.content
+
+            };
+
+        });
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(
+
+    conversationId
+
+){
+
+    AIConversation.clear(
+
+        conversationId
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    system,
+
+    user,
+
+    assistant,
+
+    build,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+65_AI_Assistant.html
+Enterprise v2.0
+Part 4 - Memory Engine
+==========================================================-->
+
+<script>
+
+const AIMemory = (()=>{
+
+"use strict";
+
+/*=========================================================
+SAVE
+=========================================================*/
+
+function save(
+
+    conversationId,
+
+    key,
+
+    value
+
+){
+
+    const memory =
+
+        AIAssistant.context(
+
+            conversationId
+
+        );
+
+    memory[key] =
+
+        value;
+
+    AIAssistant.context(
+
+        conversationId,
+
+        memory
+
+    );
+
+}
+
+/*=========================================================
+LOAD
+=========================================================*/
+
+function load(
+
+    conversationId,
+
+    key
+
+){
+
+    const memory =
+
+        AIAssistant.context(
+
+            conversationId
+
+        );
+
+    return memory[key];
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(
+
+    conversationId,
+
+    key
+
+){
+
+    const memory =
+
+        AIAssistant.context(
+
+            conversationId
+
+        );
+
+    delete memory[key];
+
+    AIAssistant.context(
+
+        conversationId,
+
+        memory
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(
+
+    conversationId
+
+){
+
+    AIAssistant.context(
+
+        conversationId,
+
+        {}
+
+    );
+
+}
+
+/*=========================================================
+ALL
+=========================================================*/
+
+function all(
+
+    conversationId
+
+){
+
+    return AIAssistant.context(
+
+        conversationId
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    save,
+
+    load,
+
+    remove,
+
+    clear,
+
+    all
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+65_AI_Assistant.html
+Enterprise v2.0
+Part 5 - Tool Engine
+==========================================================-->
+
+<script>
+
+const AITool = (()=>{
+
+"use strict";
+
+const tools = new Map();
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    handler
+
+){
+
+    if(
+
+        typeof handler !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    tools.set(
+
+        name,
+
+        handler
+
+    );
+
+}
+
+/*=========================================================
+EXECUTE
+=========================================================*/
+
+async function execute(
+
+    name,
+
+    payload={}
+
+){
+
+    const tool =
+
+        tools.get(
+
+            name
+
+        );
+
+    if(
+
+        !tool
+
+    ){
+
+        throw new Error(
+
+            "Tool not found : " +
+
+            name
+
+        );
+
+    }
+
+    return await tool(
+
+        payload
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    tools.delete(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+LIST
+=========================================================*/
+
+function list(){
+
+    return Array.from(
+
+        tools.keys()
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(){
+
+    tools.clear();
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    register,
+
+    execute,
+
+    remove,
+
+    list,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+65_AI_Assistant.html
+Enterprise v2.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const AIEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    assistant,
+
+    event,
+
+    callback
+
+){
+
+    const element =
+
+        AIAssistant.get(
+
+            assistant
+
+        );
+
+    if(
+
+        !element ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    element.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        assistant +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    assistant,
+
+    event
+
+){
+
+    const element =
+
+        AIAssistant.get(
+
+            assistant
+
+        );
+
+    const key =
+
+        assistant +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        element &&
+
+        callback
+
+    ){
+
+        element.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    assistant,
+
+    event,
+
+    detail
+
+){
+
+    const element =
+
+        AIAssistant.get(
+
+            assistant
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(
+
+    assistant
+
+){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                assistant +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                assistant,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+65_AI_Assistant.html
+Enterprise v2.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const AIProduction = (()=>{
+
+"use strict";
+
+const VERSION = "2.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config={}){
+
+    AIAssistant.register(
+
+        config.name,
+
+        document.body
+
+    );
+
+    AIAssistant.model(
+
+        config.name,
+
+        config.model ||
+
+        "gpt"
+
+    );
+
+    AIAssistant.settings(
+
+        config.name,
+
+        config.settings ||
+
+        {}
+
+    );
+
+    AIEvent.trigger(
+
+        config.name,
+
+        "ready",
+
+        {
+
+            model :
+
+            AIAssistant.model(
+
+                config.name
+
+            )
+
+        }
+
+    );
+
+    return info();
+
+}
+
+/*=========================================================
+PROMPT
+=========================================================*/
+
+async function prompt(
+
+    conversationId,
+
+    text,
+
+    options={}
+
+){
+
+    const securePrompt =
+
+        AISecurity.secure(
+
+            conversationId,
+
+            options.token ||
+
+            "",
+
+            text
+
+        );
+
+    AIEvent.trigger(
+
+        "system",
+
+        "beforePrompt",
+
+        {
+
+            conversationId
+
+        }
+
+    );
+
+    AIPrompt.user(
+
+        conversationId,
+
+        securePrompt
+
+    );
+
+    let response = "";
+
+    if(
+
+        options.tool
+
+    ){
+
+        response =
+
+            await AITool.execute(
+
+                options.tool,
+
+                {
+
+                    prompt :
+
+                    securePrompt,
+
+                    conversationId
+
+                }
+
+            );
+
+    }
+
+    AIPrompt.assistant(
+
+        conversationId,
+
+        response
+
+    );
+
+    AIEvent.trigger(
+
+        "system",
+
+        "afterPrompt",
+
+        {
+
+            conversationId,
+
+            response
+
+        }
+
+    );
+
+    return response;
+
+}
+
+/*=========================================================
+RESET
+=========================================================*/
+
+function reset(
+
+    conversationId
+
+){
+
+    AIConversation.clear(
+
+        conversationId
+
+    );
+
+    AIMemory.clear(
+
+        conversationId
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "AI_Assistant",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    prompt,
+
+    reset,
+
+    info
+
+};
+
+})();
+
+</script>

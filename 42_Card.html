@@ -1,0 +1,1859 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+42_Card.html
+Enterprise v1.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const Card = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    cards:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    element
+
+){
+
+    state.cards.set(
+
+        name,
+
+        element
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.cards.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+EXISTS
+=========================================================*/
+
+function exists(name){
+
+    return state.cards.has(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.cards.delete(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(){
+
+    state.cards.clear();
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    exists,
+
+    remove,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+42_Card.html
+Enterprise v1.0
+Part 2 - Render Engine
+==========================================================-->
+
+<script>
+
+const CardRender = (()=>{
+
+"use strict";
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(config){
+
+    const card =
+
+        document.createElement(
+
+            "div"
+
+        );
+
+    card.id =
+
+        config.id ||
+
+        config.name;
+
+    card.className =
+
+        config.className ||
+
+        "rpn-card";
+
+    card.innerHTML = `
+
+<div class="card-header"></div>
+
+<div class="card-body"></div>
+
+<div class="card-footer"></div>
+
+`;
+
+    if(
+
+        config.container
+
+    ){
+
+        document
+
+        .getElementById(
+
+            config.container
+
+        )
+
+        .appendChild(
+
+            card
+
+        );
+
+    }
+
+    Card.register(
+
+        config.name,
+
+        card
+
+    );
+
+    return card;
+
+}
+
+/*=========================================================
+HEADER
+=========================================================*/
+
+function header(name){
+
+    const card =
+
+        Card.get(name);
+
+    return card
+
+        ? card.querySelector(
+
+            ".card-header"
+
+          )
+
+        : null;
+
+}
+
+/*=========================================================
+BODY
+=========================================================*/
+
+function body(name){
+
+    const card =
+
+        Card.get(name);
+
+    return card
+
+        ? card.querySelector(
+
+            ".card-body"
+
+          )
+
+        : null;
+
+}
+
+/*=========================================================
+FOOTER
+=========================================================*/
+
+function footer(name){
+
+    const card =
+
+        Card.get(name);
+
+    return card
+
+        ? card.querySelector(
+
+            ".card-footer"
+
+          )
+
+        : null;
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    const card =
+
+        Card.get(name);
+
+    if(
+
+        card &&
+
+        card.parentNode
+
+    ){
+
+        card.parentNode.removeChild(
+
+            card
+
+        );
+
+    }
+
+    Card.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    render,
+
+    header,
+
+    body,
+
+    footer,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+42_Card.html
+Enterprise v1.0
+Part 3 - Header Engine
+==========================================================-->
+
+<script>
+
+const CardHeader = (()=>{
+
+"use strict";
+
+/*=========================================================
+TITLE
+=========================================================*/
+
+function title(
+
+    name,
+
+    text
+
+){
+
+    const header =
+
+        CardRender.header(
+
+            name
+
+        );
+
+    if(
+
+        !header
+
+    ){
+
+        return;
+
+    }
+
+    let title =
+
+        header.querySelector(
+
+            ".card-title"
+
+        );
+
+    if(
+
+        !title
+
+    ){
+
+        title =
+
+            document.createElement(
+
+                "h5"
+
+            );
+
+        title.className =
+
+            "card-title";
+
+        header.appendChild(
+
+            title
+
+        );
+
+    }
+
+    title.textContent =
+
+        text;
+
+}
+
+/*=========================================================
+SUBTITLE
+=========================================================*/
+
+function subtitle(
+
+    name,
+
+    text
+
+){
+
+    const header =
+
+        CardRender.header(
+
+            name
+
+        );
+
+    if(
+
+        !header
+
+    ){
+
+        return;
+
+    }
+
+    let subtitle =
+
+        header.querySelector(
+
+            ".card-subtitle"
+
+        );
+
+    if(
+
+        !subtitle
+
+    ){
+
+        subtitle =
+
+            document.createElement(
+
+                "small"
+
+            );
+
+        subtitle.className =
+
+            "card-subtitle";
+
+        header.appendChild(
+
+            subtitle
+
+        );
+
+    }
+
+    subtitle.textContent =
+
+        text;
+
+}
+
+/*=========================================================
+ICON
+=========================================================*/
+
+function icon(
+
+    name,
+
+    cssClass
+
+){
+
+    const header =
+
+        CardRender.header(
+
+            name
+
+        );
+
+    if(
+
+        !header
+
+    ){
+
+        return;
+
+    }
+
+    let icon =
+
+        header.querySelector(
+
+            ".card-icon"
+
+        );
+
+    if(
+
+        !icon
+
+    ){
+
+        icon =
+
+            document.createElement(
+
+                "i"
+
+            );
+
+        icon.className =
+
+            "card-icon";
+
+        header.prepend(
+
+            icon
+
+        );
+
+    }
+
+    icon.className =
+
+        "card-icon " +
+
+        cssClass;
+
+}
+
+/*=========================================================
+BADGE
+=========================================================*/
+
+function badge(
+
+    name,
+
+    text,
+
+    css
+
+){
+
+    const header =
+
+        CardRender.header(
+
+            name
+
+        );
+
+    if(
+
+        !header
+
+    ){
+
+        return;
+
+    }
+
+    let badge =
+
+        header.querySelector(
+
+            ".card-badge"
+
+        );
+
+    if(
+
+        !badge
+
+    ){
+
+        badge =
+
+            document.createElement(
+
+                "span"
+
+            );
+
+        badge.className =
+
+            "card-badge";
+
+        header.appendChild(
+
+            badge
+
+        );
+
+    }
+
+    badge.className =
+
+        "card-badge " +
+
+        (css || "");
+
+    badge.textContent =
+
+        text;
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    const header =
+
+        CardRender.header(
+
+            name
+
+        );
+
+    if(
+
+        header
+
+    ){
+
+        header.innerHTML =
+
+            "";
+
+    }
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    title,
+
+    subtitle,
+
+    icon,
+
+    badge,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+42_Card.html
+Enterprise v1.0
+Part 4 - Body Engine
+==========================================================-->
+
+<script>
+
+const CardBody = (()=>{
+
+"use strict";
+
+/*=========================================================
+TEXT
+=========================================================*/
+
+function text(
+
+    name,
+
+    content
+
+){
+
+    const body =
+
+        CardRender.body(
+
+            name
+
+        );
+
+    if(
+
+        body
+
+    ){
+
+        body.innerHTML =
+
+            content;
+
+    }
+
+}
+
+/*=========================================================
+APPEND
+=========================================================*/
+
+function append(
+
+    name,
+
+    element
+
+){
+
+    const body =
+
+        CardRender.body(
+
+            name
+
+        );
+
+    if(
+
+        body
+
+    ){
+
+        body.appendChild(
+
+            element
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+PREPEND
+=========================================================*/
+
+function prepend(
+
+    name,
+
+    element
+
+){
+
+    const body =
+
+        CardRender.body(
+
+            name
+
+        );
+
+    if(
+
+        body
+
+    ){
+
+        body.prepend(
+
+            element
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+LOADING
+=========================================================*/
+
+function loading(name){
+
+    const body =
+
+        CardRender.body(
+
+            name
+
+        );
+
+    if(
+
+        body
+
+    ){
+
+        body.innerHTML = `
+
+<div class="card-loading">
+
+Loading...
+
+</div>
+
+`;
+
+    }
+
+}
+
+/*=========================================================
+EMPTY
+=========================================================*/
+
+function empty(
+
+    name,
+
+    message
+
+){
+
+    const body =
+
+        CardRender.body(
+
+            name
+
+        );
+
+    if(
+
+        body
+
+    ){
+
+        body.innerHTML = `
+
+<div class="card-empty">
+
+${message || "No Data"}
+
+</div>
+
+`;
+
+    }
+
+}
+
+/*=========================================================
+ERROR
+=========================================================*/
+
+function error(
+
+    name,
+
+    message
+
+){
+
+    const body =
+
+        CardRender.body(
+
+            name
+
+        );
+
+    if(
+
+        body
+
+    ){
+
+        body.innerHTML = `
+
+<div class="card-error">
+
+${message || "Error"}
+
+</div>
+
+`;
+
+    }
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    const body =
+
+        CardRender.body(
+
+            name
+
+        );
+
+    if(
+
+        body
+
+    ){
+
+        body.innerHTML="";
+
+    }
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    text,
+
+    append,
+
+    prepend,
+
+    loading,
+
+    empty,
+
+    error,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+42_Card.html
+Enterprise v1.0
+Part 5 - Footer Engine
+==========================================================-->
+
+<script>
+
+const CardFooter = (()=>{
+
+"use strict";
+
+/*=========================================================
+TEXT
+=========================================================*/
+
+function text(
+
+    name,
+
+    content
+
+){
+
+    const footer =
+
+        CardRender.footer(
+
+            name
+
+        );
+
+    if(
+
+        footer
+
+    ){
+
+        footer.innerHTML =
+
+            content;
+
+    }
+
+}
+
+/*=========================================================
+APPEND
+=========================================================*/
+
+function append(
+
+    name,
+
+    element
+
+){
+
+    const footer =
+
+        CardRender.footer(
+
+            name
+
+        );
+
+    if(
+
+        footer
+
+    ){
+
+        footer.appendChild(
+
+            element
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+PREPEND
+=========================================================*/
+
+function prepend(
+
+    name,
+
+    element
+
+){
+
+    const footer =
+
+        CardRender.footer(
+
+            name
+
+        );
+
+    if(
+
+        footer
+
+    ){
+
+        footer.prepend(
+
+            element
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+STATUS
+=========================================================*/
+
+function status(
+
+    name,
+
+    text,
+
+    css
+
+){
+
+    const footer =
+
+        CardRender.footer(
+
+            name
+
+        );
+
+    if(
+
+        !footer
+
+    ){
+
+        return;
+
+    }
+
+    footer.innerHTML = `
+
+<span class="card-status ${css || ""}">
+
+${text}
+
+</span>
+
+`;
+
+}
+
+/*=========================================================
+TIMESTAMP
+=========================================================*/
+
+function timestamp(
+
+    name,
+
+    value
+
+){
+
+    const footer =
+
+        CardRender.footer(
+
+            name
+
+        );
+
+    if(
+
+        !footer
+
+    ){
+
+        return;
+
+    }
+
+    const time =
+
+        value ||
+
+        new Date()
+
+        .toLocaleString();
+
+    footer.innerHTML += `
+
+<span class="card-time">
+
+${time}
+
+</span>
+
+`;
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    const footer =
+
+        CardRender.footer(
+
+            name
+
+        );
+
+    if(
+
+        footer
+
+    ){
+
+        footer.innerHTML = "";
+
+    }
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    text,
+
+    append,
+
+    prepend,
+
+    status,
+
+    timestamp,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+42_Card.html
+Enterprise v1.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const CardEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    name,
+
+    event,
+
+    callback
+
+){
+
+    const card =
+
+        Card.get(name);
+
+    if(
+
+        !card ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    card.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        name + ":" + event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    name,
+
+    event
+
+){
+
+    const card =
+
+        Card.get(name);
+
+    const key =
+
+        name + ":" + event;
+
+    const callback =
+
+        listeners.get(key);
+
+    if(
+
+        card &&
+
+        callback
+
+    ){
+
+        card.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    name,
+
+    event
+
+){
+
+    const card =
+
+        Card.get(name);
+
+    if(
+
+        card
+
+    ){
+
+        card.dispatchEvent(
+
+            new Event(
+
+                event
+
+            )
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                name + ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(":")[1];
+
+            off(
+
+                name,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+42_Card.html
+Enterprise v1.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const CardTheme = (()=>{
+
+"use strict";
+
+let current="default";
+
+const themes={
+
+    default   :"rpn-card-default",
+
+    primary   :"rpn-card-primary",
+
+    secondary :"rpn-card-secondary",
+
+    success   :"rpn-card-success",
+
+    danger    :"rpn-card-danger",
+
+    warning   :"rpn-card-warning",
+
+    info      :"rpn-card-info",
+
+    light     :"rpn-card-light",
+
+    dark      :"rpn-card-dark",
+
+    corporate :"rpn-card-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    name,
+
+    theme
+
+){
+
+    if(
+
+        !themes[theme]
+
+    ){
+
+        return;
+
+    }
+
+    const card=
+
+        Card.get(name);
+
+    if(
+
+        !card
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(themes)
+
+    .forEach(function(css){
+
+        card.classList.remove(css);
+
+    });
+
+    card.classList.add(
+
+        themes[theme]
+
+    );
+
+}
+
+/*=========================================================
+DEFAULT
+=========================================================*/
+
+function setDefault(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current=theme;
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    Card.state.cards
+
+    .forEach(function(
+
+        card,
+
+        name
+
+    ){
+
+        set(
+
+            name,
+
+            current
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name]=css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    setDefault,
+
+    get,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+42_Card.html
+Enterprise v1.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const CardProduction = (()=>{
+
+"use strict";
+
+const VERSION="1.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config){
+
+    const card=
+
+        CardRender.render(
+
+            config
+
+        );
+
+    CardTheme.set(
+
+        config.name,
+
+        config.theme ||
+
+        "default"
+
+    );
+
+    if(config.title){
+
+        CardHeader.title(
+
+            config.name,
+
+            config.title
+
+        );
+
+    }
+
+    if(config.subtitle){
+
+        CardHeader.subtitle(
+
+            config.name,
+
+            config.subtitle
+
+        );
+
+    }
+
+    if(config.body){
+
+        CardBody.text(
+
+            config.name,
+
+            config.body
+
+        );
+
+    }
+
+    if(config.footer){
+
+        CardFooter.text(
+
+            config.name,
+
+            config.footer
+
+        );
+
+    }
+
+    return card;
+
+}
+
+/*=========================================================
+LOADING
+=========================================================*/
+
+function loading(name){
+
+    CardBody.loading(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+EMPTY
+=========================================================*/
+
+function empty(
+
+    name,
+
+    message
+
+){
+
+    CardBody.empty(
+
+        name,
+
+        message
+
+    );
+
+}
+
+/*=========================================================
+ERROR
+=========================================================*/
+
+function error(
+
+    name,
+
+    message
+
+){
+
+    CardBody.error(
+
+        name,
+
+        message
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    CardHeader.clear(
+
+        name
+
+    );
+
+    CardBody.clear(
+
+        name
+
+    );
+
+    CardFooter.clear(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    CardEvent.clear(
+
+        name
+
+    );
+
+    CardRender.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component:
+
+        "Card",
+
+        version:
+
+        VERSION,
+
+        edition:
+
+        "Enterprise",
+
+        status:
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    loading,
+
+    empty,
+
+    error,
+
+    clear,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

@@ -1,0 +1,431 @@
+<!--=========================================================
+ RPN MANAGEMENT SYSTEM
+ 40_API.html
+ Dashboard Direct Patch
+==========================================================-->
+
+<script>
+
+const API = (() => {
+
+    "use strict";
+
+
+    /*=====================================================
+      CALLBACK HELPERS
+    =====================================================*/
+
+    function callbackSuccess(callback, response){
+
+        if(typeof callback === "function"){
+            callback(response);
+        }
+
+    }
+
+
+    function callbackError(callback, error){
+
+        if(typeof callback === "function"){
+            callback(error);
+        }
+
+    }
+
+
+    /*=====================================================
+      LOGIN
+      DIRECT → Code.gs.authLogin()
+    =====================================================*/
+
+    function login(
+        username,
+        password,
+        onSuccess,
+        onError
+    ){
+
+        username =
+            String(username || "").trim();
+
+        password =
+            String(password || "");
+
+
+        console.log(
+            "AUTH LOGIN REQUEST:",
+            username
+        );
+
+
+        google.script.run
+
+            .withSuccessHandler(function(response){
+
+                console.log(
+                    "AUTH LOGIN DIRECT RESPONSE:",
+                    response
+                );
+
+                callbackSuccess(
+                    onSuccess,
+                    response
+                );
+
+            })
+
+            .withFailureHandler(function(error){
+
+                console.error(
+                    "AUTH LOGIN DIRECT ERROR:",
+                    error
+                );
+
+                callbackError(
+                    onError,
+                    error
+                );
+
+            })
+
+            .authLogin(
+                username,
+                password
+            );
+
+    }
+
+
+    /*=====================================================
+      LOGOUT
+      DIRECT → Code.gs.authLogout()
+    =====================================================*/
+
+    function logout(
+        onSuccess,
+        onError
+    ){
+
+        google.script.run
+
+            .withSuccessHandler(function(response){
+
+                console.log(
+                    "AUTH LOGOUT RESPONSE:",
+                    response
+                );
+
+                callbackSuccess(
+                    onSuccess,
+                    response
+                );
+
+            })
+
+            .withFailureHandler(function(error){
+
+                console.error(
+                    "AUTH LOGOUT ERROR:",
+                    error
+                );
+
+                callbackError(
+                    onError,
+                    error
+                );
+
+            })
+
+            .authLogout();
+
+    }
+
+
+    /*=====================================================
+      SESSION
+      DIRECT → Code.gs.authSession()
+    =====================================================*/
+
+    function getSession(
+        onSuccess,
+        onError
+    ){
+
+        google.script.run
+
+            .withSuccessHandler(function(response){
+
+                console.log(
+                    "AUTH SESSION RESPONSE:",
+                    response
+                );
+
+                callbackSuccess(
+                    onSuccess,
+                    response
+                );
+
+            })
+
+            .withFailureHandler(function(error){
+
+                console.error(
+                    "AUTH SESSION ERROR:",
+                    error
+                );
+
+                callbackError(
+                    onError,
+                    error
+                );
+
+            })
+
+            .authSession();
+
+    }
+
+
+    function session(
+        onSuccess,
+        onError
+    ){
+
+        return getSession(
+            onSuccess,
+            onError
+        );
+
+    }
+
+
+    /*=====================================================
+      DASHBOARD
+      DIRECT → Code.gs.dashboardGet()
+
+      IMPORTANT:
+      Tidak lagi menggunakan:
+      api("DASHBOARD.GET", ...)
+    =====================================================*/
+
+    function getDashboard(
+        onSuccess,
+        onError
+    ){
+
+        console.log(
+            "DASHBOARD REQUEST DIRECT"
+        );
+
+
+        google.script.run
+
+            .withSuccessHandler(function(response){
+
+                console.log(
+                    "DASHBOARD DIRECT RESPONSE:",
+                    response
+                );
+
+                callbackSuccess(
+                    onSuccess,
+                    response
+                );
+
+            })
+
+            .withFailureHandler(function(error){
+
+                console.error(
+                    "DASHBOARD DIRECT ERROR:",
+                    error
+                );
+
+                callbackError(
+                    onError,
+                    error
+                );
+
+            })
+
+            .dashboardGet();
+
+    }
+
+
+    /*=====================================================
+      GENERIC POST
+    =====================================================*/
+
+    function post(
+        action,
+        payload,
+        onSuccess,
+        onError
+    ){
+
+        payload =
+            payload || {};
+
+
+        google.script.run
+
+            .withSuccessHandler(function(response){
+
+                console.log(
+                    "API RESPONSE:",
+                    action,
+                    response
+                );
+
+                callbackSuccess(
+                    onSuccess,
+                    response
+                );
+
+            })
+
+            .withFailureHandler(function(error){
+
+                console.error(
+                    "API ERROR:",
+                    action,
+                    error
+                );
+
+                callbackError(
+                    onError,
+                    error
+                );
+
+            })
+
+            .api(
+                action,
+                payload
+            );
+
+    }
+
+
+    /*=====================================================
+      GENERIC GET
+    =====================================================*/
+
+    function get(
+        action,
+        payload,
+        onSuccess,
+        onError
+    ){
+
+        return post(
+            action,
+            payload,
+            onSuccess,
+            onError
+        );
+
+    }
+
+
+    /*=====================================================
+      UPLOAD
+    =====================================================*/
+
+    function upload(
+        action,
+        payload,
+        file,
+        onSuccess,
+        onError
+    ){
+
+        payload =
+            payload || {};
+
+        payload.FILE =
+            file;
+
+
+        return post(
+            action,
+            payload,
+            onSuccess,
+            onError
+        );
+
+    }
+
+
+    /*=====================================================
+      DOWNLOAD
+    =====================================================*/
+
+    function download(
+        action,
+        payload,
+        onSuccess,
+        onError
+    ){
+
+        return post(
+            action,
+            payload,
+            onSuccess,
+            onError
+        );
+
+    }
+
+
+    /*=====================================================
+      PING
+    =====================================================*/
+
+    function ping(
+        onSuccess,
+        onError
+    ){
+
+        return post(
+            "SYSTEM.PING",
+            {},
+            onSuccess,
+            onError
+        );
+
+    }
+
+
+    /*=====================================================
+      PUBLIC
+    =====================================================*/
+
+    return {
+
+        login,
+
+        logout,
+
+        getSession,
+
+        session,
+
+        getDashboard,
+
+        post,
+
+        get,
+
+        upload,
+
+        download,
+
+        ping
+
+    };
+
+})();
+
+</script>

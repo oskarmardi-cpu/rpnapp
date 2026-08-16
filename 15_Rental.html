@@ -1,0 +1,483 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+15_Rental.html
+Enterprise Edition v5.0
+==========================================================-->
+
+<div class="rental-page">
+
+  <!--=========================================
+    PAGE HEADER
+  ==========================================-->
+
+  <div class="page-header">
+
+    <div>
+
+      <h2>
+
+        Rental Management
+
+      </h2>
+
+      <span>
+
+        Booking • Contract • Delivery • Return
+
+      </span>
+
+    </div>
+
+    <div class="header-action">
+
+      <button
+        class="btn btn-primary"
+        onclick="Rental.booking()">
+
+        <i class="ri-calendar-check-line"></i>
+
+        Booking
+
+      </button>
+
+      <button
+        class="btn btn-success"
+        onclick="Rental.contract()">
+
+        <i class="ri-file-text-line"></i>
+
+        Contract
+
+      </button>
+
+      <button
+        class="btn btn-warning"
+        onclick="Rental.delivery()">
+
+        <i class="ri-truck-line"></i>
+
+        Delivery
+
+      </button>
+
+      <button
+        class="btn btn-danger"
+        onclick="Rental.returnUnit()">
+
+        <i class="ri-arrow-go-back-line"></i>
+
+        Return
+
+      </button>
+
+    </div>
+
+  </div>
+
+  <!--=========================================
+    KPI
+  ==========================================-->
+
+  <div class="dashboard-kpi">
+
+    <div id="rentalActive"></div>
+
+    <div id="rentalBooking"></div>
+
+    <div id="rentalDelivery"></div>
+
+    <div id="rentalReturn"></div>
+
+    <div id="rentalExpired"></div>
+
+    <div id="rentalRevenue"></div>
+
+  </div>
+
+  <!--=========================================
+    FILTER
+  ==========================================-->
+
+  <div class="page-filter">
+
+    <input
+
+      id="rentalKeyword"
+
+      type="text"
+
+      placeholder="Search SO / Customer / Unit / SN"
+
+      onkeyup="Rental.search()">
+
+    <select
+
+      id="rentalStatus"
+
+      onchange="Rental.filter()">
+
+      <option value="">All Status</option>
+
+      <option>BOOKING</option>
+
+      <option>CONTRACT</option>
+
+      <option>DELIVERY</option>
+
+      <option>ACTIVE</option>
+
+      <option>RETURN</option>
+
+      <option>FINISHED</option>
+
+      <option>CANCEL</option>
+
+    </select>
+
+  </div>
+
+  <!--=========================================
+    GRID
+  ==========================================-->
+
+  <div id="rentalGrid">
+
+  </div>
+
+</div>
+
+<script>
+
+const Rental = (()=>{
+
+"use strict";
+
+let rows=[];
+
+/*=======================================================
+LOAD
+=======================================================*/
+
+async function load(){
+
+    Loader.show(
+
+        "Loading Rental..."
+
+    );
+
+    rows = await API.post(
+
+        "RENTAL.LOAD",
+
+        {}
+
+    );
+
+    render();
+
+    Loader.hide();
+
+}
+
+/*=======================================================
+RENDER
+=======================================================*/
+
+function render(){
+
+    rentalGrid.innerHTML =
+
+        Grid.render(
+
+            rows,
+
+            {
+
+                view:view,
+
+                edit:edit,
+
+                remove:cancel,
+
+                print:print,
+
+                timeline:timeline
+
+            }
+
+        );
+
+}
+
+/*=======================================================
+SEARCH
+=======================================================*/
+
+function search(){
+
+    Grid.filter(
+
+        "rentalGrid",
+
+        rentalKeyword.value
+
+    );
+
+}
+
+/*=======================================================
+FILTER
+=======================================================*/
+
+function filter(){
+
+    Grid.status(
+
+        "rentalGrid",
+
+        rentalStatus.value
+
+    );
+
+}
+
+/*=======================================================
+BOOKING
+=======================================================*/
+
+function booking(){
+
+    Router.load(
+
+        "15A_RentalBooking"
+
+    );
+
+}
+
+/*=======================================================
+CONTRACT
+=======================================================*/
+
+function contract(){
+
+    Router.load(
+
+        "15B_RentalContract"
+
+    );
+
+}
+
+/*=======================================================
+DELIVERY
+=======================================================*/
+
+function delivery(){
+
+    Router.load(
+
+        "15C_RentalDelivery"
+
+    );
+
+}
+
+/*=======================================================
+RETURN
+=======================================================*/
+
+function returnUnit(){
+
+    Router.load(
+
+        "15D_RentalReturn"
+
+    );
+
+}
+
+/*=======================================================
+VIEW
+=======================================================*/
+
+function view(id){
+
+    Router.load(
+
+        "15E_RentalDetail",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+EDIT
+=======================================================*/
+
+function edit(id){
+
+    Router.load(
+
+        "15F_RentalEdit",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+TIMELINE
+=======================================================*/
+
+function timeline(id){
+
+    Router.load(
+
+        "15G_RentalTimeline",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+PRINT
+=======================================================*/
+
+async function print(id){
+
+    Loader.show();
+
+    const pdf = await API.post(
+
+        "REPORT.PDF",
+
+        {
+
+            TYPE:"RENTAL",
+
+            ID:id
+
+        }
+
+    );
+
+    Loader.hide();
+
+    window.open(
+
+        pdf.URL,
+
+        "_blank"
+
+    );
+
+}
+
+/*=======================================================
+CANCEL
+=======================================================*/
+
+function cancel(id){
+
+    Modal.confirm(
+
+        "Cancel Rental",
+
+        "Cancel selected rental?",
+
+        async function(){
+
+            await API.post(
+
+                "RENTAL.CANCEL",
+
+                {
+
+                    ID:id
+
+                }
+
+            );
+
+            Toast.success(
+
+                "Rental cancelled."
+
+            );
+
+            load();
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+REFRESH
+=======================================================*/
+
+function refresh(){
+
+    load();
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    load,
+
+    render,
+
+    refresh,
+
+    search,
+
+    filter,
+
+    booking,
+
+    contract,
+
+    delivery,
+
+    returnUnit,
+
+    view,
+
+    edit,
+
+    timeline,
+
+    print,
+
+    cancel
+
+};
+
+})();
+
+</script>

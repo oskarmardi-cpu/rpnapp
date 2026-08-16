@@ -1,0 +1,348 @@
+<script>
+
+/*=========================================================
+ RPN MANAGEMENT SYSTEM
+ 44_HistoryJS.html
+ Enterprise Edition v3.0
+ HISTORY UI ENGINE
+=========================================================*/
+
+const HistoryUI = (() => {
+
+  "use strict";
+
+  /*=======================================================
+    STATE
+  =======================================================*/
+
+  let data = [];
+  let loading = false;
+  let requestToken = 0;
+  const REQUEST_TIMEOUT = 15000;
+
+  /*=======================================================
+    ELEMENT
+  =======================================================*/
+
+  function el(id) {
+    return document.getElementById(id);
+  }
+
+  /*=======================================================
+    LOADER SAFE
+  =======================================================*/
+
+  function loaderStart() {
+
+    loading = true;
+
+    try {
+
+      if (typeof showLoader === "function") {
+
+        showLoader(
+          "History",
+          "Mengambil data transaksi..."
+        );
+
+      }
+
+    } catch (e) {
+
+      console.warn(
+        "History loader start:",
+        e
+      );
+
+    }
+
+  }
+
+  function loaderStop() {
+
+    loading = false;
+
+    try {
+
+      if (typeof hideLoader === "function") {
+
+        hideLoader();
+
+      }
+
+    } catch (e) {
+
+      console.warn(
+        "History loader stop:",
+        e
+      );
+
+    }
+
+  }
+
+  /*=======================================================
+    RENDER
+  =======================================================*/
+
+  function render(rows) {
+
+    data =
+      Array.isArray(rows)
+        ? rows
+        : [];
+
+    const container =
+      el("riwayatContainer") ||
+      el("history-list");
+
+    if (!container) {
+
+      return;
+
+    }
+
+    if (!data.length) {
+
+      container.innerHTML =
+        '<div class="history-empty">' +
+        'Belum ada riwayat transaksi.' +
+        "</div>";
+
+      return;
+
+    }
+
+    container.innerHTML =
+      data.map(function(item) {
+
+        const date =
+          item.CREATED_AT ||
+          item.DATETIME ||
+          item.DATE ||
+          item.tgl_jam ||
+          "";
+
+        const action =
+          item.ACTION ||
+          item.action ||
+          item.jenis ||
+          "";
+
+        const module =
+          item.MODULE ||
+          item.module ||
+          "";
+
+        const user =
+          item.USER ||
+          item.user ||
+          "";
+
+        const reference =
+          item.REFERENCE ||
+          item.REFERENCE_NO ||
+          item.DOCUMENT_NO ||
+          item.reference ||
+          "";
+
+        return (
+          '<div class="history-item">' +
+
+            '<div class="history-icon">U</div>' +
+
+            '<div class="history-content">' +
+
+              '<div class="history-text">' +
+                escapeHtml_(action) +
+              "</div>" +
+
+              '<div class="history-module">' +
+                escapeHtml_(module) +
+              "</div>" +
+
+              '<div class="history-reference">' +
+                escapeHtml_(reference) +
+              "</div>" +
+
+              '<div>' +
+                escapeHtml_(date) +
+              "</div>" +
+
+              "<small>" +
+                escapeHtml_(user) +
+              "</small>" +
+
+            "</div>" +
+
+          "</div>"
+        );
+
+      }).join("");
+
+  }
+
+  /*=======================================================
+    ERROR
+  =======================================================*/
+
+  function renderError(message) {
+
+    const container =
+      el("historyContainer") ||
+      el("riwayatContainer") ||
+      el("history-list");
+
+    if (!container) {
+
+      return;
+
+    }
+
+    container.innerHTML =
+      '<div class="history-error">' +
+
+        "<b>History gagal dimuat.</b>" +
+
+        "<br>" +
+
+        escapeHtml_(
+          message ||
+          "Terjadi kesalahan saat mengambil data."
+        ) +
+
+      "</div>";
+
+  }
+
+  /*=======================================================
+    LOAD
+  =======================================================*/
+
+  function load() {
+
+    const token =
+      ++requestToken;
+
+    loaderStart();
+
+    try {
+
+      API.get(
+
+        "HISTORY.GET",
+
+        {},
+
+        function(response) {
+
+          if (token !== requestToken) {
+
+            return;
+
+          }
+
+          loaderStop();
+
+          if (
+            response &&
+            response.success
+          ) {
+
+            const result =
+              response.data || [];
+
+            render(result);
+
+          } else {
+
+            renderError(
+
+              response
+                ? response.message
+                : "Server tidak memberikan response."
+
+            );
+
+          }
+
+        },
+
+        function(error) {
+
+          if (token !== requestToken) {
+
+            return;
+
+          }
+
+          loaderStop();
+
+          console.error(
+            "History API error:",
+            error
+          );
+
+          renderError(
+            error && error.message
+              ? error.message
+              : String(error || "Unknown error")
+          );
+
+        }
+
+      );
+
+    } catch (err) {
+
+      loaderStop();
+
+      console.error(
+        "History load:",
+        err
+      );
+
+      renderError(
+        err.message || String(err)
+      );
+
+    }
+
+  }
+
+  /*=======================================================
+    ESCAPE HTML
+  =======================================================*/
+
+  function escapeHtml_(value) {
+
+    return String(
+      value == null
+        ? ""
+        : value
+    )
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+  }
+
+  /*=======================================================
+    PUBLIC
+  =======================================================*/
+
+  return {
+
+    load,
+
+    render,
+
+    renderError
+
+  };
+
+})();
+
+</script>

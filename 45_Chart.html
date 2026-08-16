@@ -1,0 +1,1661 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+45_Chart.html
+Enterprise v1.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const Chart = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    charts:new Map(),
+
+    data:new Map(),
+
+    options:new Map(),
+
+    type:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    chart
+
+){
+
+    state.charts.set(
+
+        name,
+
+        chart
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.charts.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+DATA
+=========================================================*/
+
+function data(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.data.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.data.set(
+
+        name,
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+OPTION
+=========================================================*/
+
+function option(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.options.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.options.set(
+
+        name,
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+TYPE
+=========================================================*/
+
+function type(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.type.get(
+
+            name
+
+        ) || "bar";
+
+    }
+
+    state.type.set(
+
+        name,
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.charts.delete(
+
+        name
+
+    );
+
+    state.data.delete(
+
+        name
+
+    );
+
+    state.options.delete(
+
+        name
+
+    );
+
+    state.type.delete(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    data,
+
+    option,
+
+    type,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+45_Chart.html
+Enterprise v1.0
+Part 2 - Render Engine
+==========================================================-->
+
+<script>
+
+const ChartRender = (()=>{
+
+"use strict";
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(config){
+
+    const canvas =
+
+        document.createElement(
+
+            "canvas"
+
+        );
+
+    canvas.id =
+
+        config.id ||
+
+        config.name;
+
+    canvas.className =
+
+        config.className ||
+
+        "rpn-chart";
+
+    canvas.width =
+
+        config.width ||
+
+        800;
+
+    canvas.height =
+
+        config.height ||
+
+        400;
+
+    if(
+
+        config.container
+
+    ){
+
+        document
+
+        .getElementById(
+
+            config.container
+
+        )
+
+        .appendChild(
+
+            canvas
+
+        );
+
+    }
+
+    Chart.register(
+
+        config.name,
+
+        canvas
+
+    );
+
+    Chart.type(
+
+        config.name,
+
+        config.type ||
+
+        "bar"
+
+    );
+
+    return canvas;
+
+}
+
+/*=========================================================
+CONTEXT
+=========================================================*/
+
+function context(name){
+
+    const canvas =
+
+        Chart.get(name);
+
+    if(
+
+        !canvas
+
+    ){
+
+        return null;
+
+    }
+
+    return canvas.getContext(
+
+        "2d"
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    const canvas =
+
+        Chart.get(name);
+
+    if(
+
+        !canvas
+
+    ){
+
+        return;
+
+    }
+
+    const ctx =
+
+        context(name);
+
+    ctx.clearRect(
+
+        0,
+
+        0,
+
+        canvas.width,
+
+        canvas.height
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    const canvas =
+
+        Chart.get(name);
+
+    if(
+
+        canvas &&
+
+        canvas.parentNode
+
+    ){
+
+        canvas.parentNode.removeChild(
+
+            canvas
+
+        );
+
+    }
+
+    Chart.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    render,
+
+    context,
+
+    clear,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+45_Chart.html
+Enterprise v1.0
+Part 3 - Data Engine
+==========================================================-->
+
+<script>
+
+const ChartData = (()=>{
+
+"use strict";
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    name,
+
+    data
+
+){
+
+    Chart.data(
+
+        name,
+
+        data || []
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return Chart.data(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+ADD
+=========================================================*/
+
+function add(
+
+    name,
+
+    item
+
+){
+
+    const data =
+
+        get(name);
+
+    data.push(
+
+        item
+
+    );
+
+    set(
+
+        name,
+
+        data
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(
+
+    name,
+
+    index
+
+){
+
+    const data =
+
+        get(name);
+
+    if(
+
+        index>=0 &&
+
+        index<data.length
+
+    ){
+
+        data.splice(
+
+            index,
+
+            1
+
+        );
+
+    }
+
+    set(
+
+        name,
+
+        data
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    set(
+
+        name,
+
+        []
+
+    );
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(name){
+
+    return get(name)
+
+        .length;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    get,
+
+    add,
+
+    remove,
+
+    clear,
+
+    count
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+45_Chart.html
+Enterprise v1.0
+Part 4 - Series Engine
+==========================================================-->
+
+<script>
+
+const ChartSeries = (()=>{
+
+"use strict";
+
+const series = new Map();
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    name,
+
+    data
+
+){
+
+    series.set(
+
+        name,
+
+        data || []
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return series.get(
+
+        name
+
+    ) || [];
+
+}
+
+/*=========================================================
+ADD
+=========================================================*/
+
+function add(
+
+    name,
+
+    item
+
+){
+
+    const list =
+
+        get(name);
+
+    list.push(
+
+        item
+
+    );
+
+    set(
+
+        name,
+
+        list
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(
+
+    name,
+
+    index
+
+){
+
+    const list =
+
+        get(name);
+
+    if(
+
+        index>=0 &&
+
+        index<list.length
+
+    ){
+
+        list.splice(
+
+            index,
+
+            1
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    set(
+
+        name,
+
+        []
+
+    );
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(name){
+
+    return get(name)
+
+        .length;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    get,
+
+    add,
+
+    remove,
+
+    clear,
+
+    count
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+45_Chart.html
+Enterprise v1.0
+Part 5 - Event Engine
+==========================================================-->
+
+<script>
+
+const ChartEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    name,
+
+    event,
+
+    callback
+
+){
+
+    const chart =
+
+        Chart.get(name);
+
+    if(
+
+        !chart ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    chart.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        name + ":" + event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    name,
+
+    event
+
+){
+
+    const chart =
+
+        Chart.get(name);
+
+    const key =
+
+        name + ":" + event;
+
+    const callback =
+
+        listeners.get(key);
+
+    if(
+
+        chart &&
+
+        callback
+
+    ){
+
+        chart.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    name,
+
+    event,
+
+    detail
+
+){
+
+    const chart =
+
+        Chart.get(name);
+
+    if(
+
+        !chart
+
+    ){
+
+        return;
+
+    }
+
+    chart.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                name + ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(":")[1];
+
+            off(
+
+                name,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+45_Chart.html
+Enterprise v1.0
+Part 6 - API Engine
+==========================================================-->
+
+<script>
+
+const ChartApi = (()=>{
+
+"use strict";
+
+/*=========================================================
+LOAD
+=========================================================*/
+
+async function load(
+
+    endpoint,
+
+    parameter
+
+){
+
+    const result =
+
+        await API.post(
+
+            endpoint,
+
+            parameter || {}
+
+        );
+
+    return result.data || [];
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+async function refresh(
+
+    name,
+
+    endpoint,
+
+    parameter
+
+){
+
+    const data =
+
+        await load(
+
+            endpoint,
+
+            parameter
+
+        );
+
+    ChartData.set(
+
+        name,
+
+        data
+
+    );
+
+    ChartEvent.trigger(
+
+        name,
+
+        "refresh",
+
+        data
+
+    );
+
+    return data;
+
+}
+
+/*=========================================================
+APPEND
+=========================================================*/
+
+async function append(
+
+    name,
+
+    endpoint,
+
+    parameter
+
+){
+
+    const data =
+
+        await load(
+
+            endpoint,
+
+            parameter
+
+        );
+
+    data.forEach(function(item){
+
+        ChartData.add(
+
+            name,
+
+            item
+
+        );
+
+    });
+
+    ChartEvent.trigger(
+
+        name,
+
+        "append",
+
+        data
+
+    );
+
+    return ChartData.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+async function count(
+
+    endpoint,
+
+    parameter
+
+){
+
+    const data =
+
+        await load(
+
+            endpoint,
+
+            parameter
+
+        );
+
+    return data.length;
+
+}
+
+/*=========================================================
+EXISTS
+=========================================================*/
+
+async function exists(
+
+    endpoint,
+
+    parameter
+
+){
+
+    return (
+
+        await count(
+
+            endpoint,
+
+            parameter
+
+        )
+
+    ) > 0;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    load,
+
+    refresh,
+
+    append,
+
+    count,
+
+    exists
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+45_Chart.html
+Enterprise v1.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const ChartTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-chart-default",
+
+    light     : "rpn-chart-light",
+
+    dark      : "rpn-chart-dark",
+
+    primary   : "rpn-chart-primary",
+
+    success   : "rpn-chart-success",
+
+    warning   : "rpn-chart-warning",
+
+    danger    : "rpn-chart-danger",
+
+    corporate : "rpn-chart-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    name,
+
+    theme
+
+){
+
+    if(
+
+        !themes[theme]
+
+    ){
+
+        return;
+
+    }
+
+    const chart =
+
+        Chart.get(name);
+
+    if(
+
+        !chart
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(themes)
+
+    .forEach(function(css){
+
+        chart.classList.remove(css);
+
+    });
+
+    chart.classList.add(
+
+        themes[theme]
+
+    );
+
+}
+
+/*=========================================================
+SET DEFAULT
+=========================================================*/
+
+function setDefault(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current = theme;
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    Chart.state.charts
+
+    .forEach(function(
+
+        chart,
+
+        name
+
+    ){
+
+        set(
+
+            name,
+
+            current
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] = css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    setDefault,
+
+    get,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+45_Chart.html
+Enterprise v1.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const ChartProduction = (()=>{
+
+"use strict";
+
+const VERSION = "1.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config){
+
+    const canvas =
+
+        ChartRender.render(
+
+            config
+
+        );
+
+    ChartTheme.set(
+
+        config.name,
+
+        config.theme ||
+
+        "default"
+
+    );
+
+    Chart.type(
+
+        config.name,
+
+        config.type ||
+
+        "bar"
+
+    );
+
+    Chart.option(
+
+        config.name,
+
+        config.option ||
+
+        {}
+
+    );
+
+    ChartData.set(
+
+        config.name,
+
+        config.data ||
+
+        []
+
+    );
+
+    if(
+
+        config.series
+
+    ){
+
+        ChartSeries.set(
+
+            config.name,
+
+            config.series
+
+        );
+
+    }
+
+    ChartEvent.trigger(
+
+        config.name,
+
+        "ready",
+
+        {
+
+            type :
+
+            Chart.type(
+
+                config.name
+
+            )
+
+        }
+
+    );
+
+    return canvas;
+
+}
+
+/*=========================================================
+UPDATE
+=========================================================*/
+
+function update(
+
+    name,
+
+    data
+
+){
+
+    ChartData.set(
+
+        name,
+
+        data
+
+    );
+
+    ChartEvent.trigger(
+
+        name,
+
+        "update",
+
+        {
+
+            data
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(name){
+
+    ChartRender.clear(
+
+        name
+
+    );
+
+    ChartEvent.trigger(
+
+        name,
+
+        "refresh",
+
+        {
+
+            data :
+
+            ChartData.get(
+
+                name
+
+            )
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    ChartData.clear(
+
+        name
+
+    );
+
+    ChartSeries.clear(
+
+        name
+
+    );
+
+    ChartRender.clear(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    ChartEvent.clear(
+
+        name
+
+    );
+
+    ChartRender.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "Chart",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    update,
+
+    refresh,
+
+    clear,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

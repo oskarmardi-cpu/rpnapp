@@ -1,0 +1,439 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+16_Workshop.html
+Enterprise Edition v5.0
+==========================================================-->
+
+<div class="workshop-page">
+
+  <!--=========================================
+    PAGE HEADER
+  ==========================================-->
+
+  <div class="page-header">
+
+    <div>
+
+      <h2>
+
+        Workshop Management
+
+      </h2>
+
+      <span>
+
+        PM • Breakdown • Repair • QC • Delivery
+
+      </span>
+
+    </div>
+
+    <div class="header-action">
+
+      <button
+        class="btn btn-primary"
+        onclick="Workshop.newWO()">
+
+        <i class="ri-add-line"></i>
+
+        New WO
+
+      </button>
+
+      <button
+        class="btn btn-warning"
+        onclick="Workshop.requestPart()">
+
+        <i class="ri-tools-line"></i>
+
+        Request Part
+
+      </button>
+
+      <button
+        class="btn btn-success"
+        onclick="Workshop.refresh()">
+
+        <i class="ri-refresh-line"></i>
+
+        Refresh
+
+      </button>
+
+    </div>
+
+  </div>
+
+  <!--=========================================
+    KPI
+  ==========================================-->
+
+  <div class="dashboard-kpi">
+
+    <div id="woOpen"></div>
+
+    <div id="woProgress"></div>
+
+    <div id="woWaiting"></div>
+
+    <div id="woQc"></div>
+
+    <div id="woFinish"></div>
+
+    <div id="woOverdue"></div>
+
+  </div>
+
+  <!--=========================================
+    FILTER
+  ==========================================-->
+
+  <div class="page-filter">
+
+    <input
+
+      id="woKeyword"
+
+      type="text"
+
+      placeholder="Search WO / Unit / Customer"
+
+      onkeyup="Workshop.search()">
+
+    <select
+
+      id="woStatus"
+
+      onchange="Workshop.filter()">
+
+      <option value="">All Status</option>
+
+      <option>OPEN</option>
+
+      <option>WAITING PART</option>
+
+      <option>REPAIR</option>
+
+      <option>QC</option>
+
+      <option>FINISH</option>
+
+      <option>CANCEL</option>
+
+    </select>
+
+  </div>
+
+  <!--=========================================
+    GRID
+  ==========================================-->
+
+  <div id="workshopGrid">
+
+  </div>
+
+</div>
+
+<script>
+
+const Workshop = (()=>{
+
+"use strict";
+
+let rows=[];
+
+/*=======================================================
+LOAD
+=======================================================*/
+
+async function load(){
+
+    Loader.show(
+
+        "Loading Workshop..."
+
+    );
+
+    rows = await API.post(
+
+        "WORKSHOP.LOAD",
+
+        {}
+
+    );
+
+    render();
+
+    Loader.hide();
+
+}
+
+/*=======================================================
+RENDER
+=======================================================*/
+
+function render(){
+
+    workshopGrid.innerHTML =
+
+        Grid.render(
+
+            rows,
+
+            {
+
+                view:view,
+
+                edit:edit,
+
+                qc:qc,
+
+                close:closeWO,
+
+                print:print
+
+            }
+
+        );
+
+}
+
+/*=======================================================
+SEARCH
+=======================================================*/
+
+function search(){
+
+    Grid.filter(
+
+        "workshopGrid",
+
+        woKeyword.value
+
+    );
+
+}
+
+/*=======================================================
+FILTER
+=======================================================*/
+
+function filter(){
+
+    Grid.status(
+
+        "workshopGrid",
+
+        woStatus.value
+
+    );
+
+}
+
+/*=======================================================
+NEW WO
+=======================================================*/
+
+function newWO(){
+
+    Router.load(
+
+        "16A_WorkOrder"
+
+    );
+
+}
+
+/*=======================================================
+REQUEST PART
+=======================================================*/
+
+function requestPart(){
+
+    Router.load(
+
+        "16B_RequestPart"
+
+    );
+
+}
+
+/*=======================================================
+VIEW
+=======================================================*/
+
+function view(id){
+
+    Router.load(
+
+        "16C_WorkOrderDetail",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+EDIT
+=======================================================*/
+
+function edit(id){
+
+    Router.load(
+
+        "16D_WorkOrderEdit",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+QC
+=======================================================*/
+
+function qc(id){
+
+    Router.load(
+
+        "16E_QC",
+
+        {
+
+            ID:id
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+CLOSE WO
+=======================================================*/
+
+async function closeWO(id){
+
+    Modal.confirm(
+
+        "Close Work Order",
+
+        "Finish this Work Order?",
+
+        async function(){
+
+            await API.post(
+
+                "WORKSHOP.CLOSE",
+
+                {
+
+                    ID:id
+
+                }
+
+            );
+
+            Toast.success(
+
+                "Work Order Closed"
+
+            );
+
+            load();
+
+        }
+
+    );
+
+}
+
+/*=======================================================
+PRINT
+=======================================================*/
+
+async function print(id){
+
+    Loader.show();
+
+    const pdf = await API.post(
+
+        "REPORT.PDF",
+
+        {
+
+            TYPE:"WORKSHOP",
+
+            ID:id
+
+        }
+
+    );
+
+    Loader.hide();
+
+    window.open(
+
+        pdf.URL,
+
+        "_blank"
+
+    );
+
+}
+
+/*=======================================================
+REFRESH
+=======================================================*/
+
+function refresh(){
+
+    load();
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    load,
+
+    render,
+
+    refresh,
+
+    search,
+
+    filter,
+
+    newWO,
+
+    requestPart,
+
+    view,
+
+    edit,
+
+    qc,
+
+    closeWO,
+
+    print
+
+};
+
+})();
+
+</script>

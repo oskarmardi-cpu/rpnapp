@@ -1,0 +1,293 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+21_Admin.html
+Enterprise Edition v5.0
+==========================================================-->
+
+<div class="admin-page">
+
+  <!--=========================================
+    PAGE HEADER
+  ==========================================-->
+
+  <div class="page-header">
+
+    <div>
+
+      <h2>
+
+        Administration
+
+      </h2>
+
+      <span>
+
+        User • Role • Permission • System Configuration
+
+      </span>
+
+    </div>
+
+    <div class="header-action">
+
+      <button
+        class="btn btn-primary"
+        onclick="Admin.user()">
+
+        <i class="ri-user-add-line"></i>
+
+        User
+
+      </button>
+
+      <button
+        class="btn btn-warning"
+        onclick="Admin.role()">
+
+        <i class="ri-shield-user-line"></i>
+
+        Role
+
+      </button>
+
+      <button
+        class="btn btn-success"
+        onclick="Admin.setting()">
+
+        <i class="ri-settings-3-line"></i>
+
+        Setting
+
+      </button>
+
+      <button
+        class="btn btn-info"
+        onclick="Admin.refresh()">
+
+        <i class="ri-refresh-line"></i>
+
+        Refresh
+
+      </button>
+
+    </div>
+
+  </div>
+
+  <!--=========================================
+    MENU
+  ==========================================-->
+
+  <div class="admin-menu">
+
+    <button onclick="Admin.user()">
+
+      User
+
+    </button>
+
+    <button onclick="Admin.role()">
+
+      Role
+
+    </button>
+
+    <button onclick="Admin.permission()">
+
+      Permission
+
+    </button>
+
+    <button onclick="Admin.branch()">
+
+      Branch
+
+    </button>
+
+    <button onclick="Admin.system()">
+
+      System
+
+    </button>
+
+    <button onclick="Admin.audit()">
+
+      Audit Trail
+
+    </button>
+
+    <button onclick="Admin.log()">
+
+      System Log
+
+    </button>
+
+    <button onclick="Admin.backup()">
+
+      Backup
+
+    </button>
+
+  </div>
+
+  <!--=========================================
+    CONTENT
+  ==========================================-->
+
+  <div id="adminContent">
+
+  </div>
+
+</div>
+
+<script>
+
+const Admin = (()=>{
+
+"use strict";
+
+let module = "USER";
+
+async function load(){
+
+    Loader.show("Loading...");
+
+    const data = await API.post(
+
+        "ADMIN.LOAD",
+
+        {
+
+            MODULE:module
+
+        }
+
+    );
+
+    adminContent.innerHTML =
+
+        Grid.render(data);
+
+    Loader.hide();
+
+}
+
+function refresh(){
+
+    load();
+
+}
+
+function user(){
+
+    module="USER";
+
+    load();
+
+}
+
+function role(){
+
+    module="ROLE";
+
+    load();
+
+}
+
+function permission(){
+
+    module="PERMISSION";
+
+    load();
+
+}
+
+function branch(){
+
+    module="BRANCH";
+
+    load();
+
+}
+
+function system(){
+
+    module="SYSTEM";
+
+    load();
+
+}
+
+function audit(){
+
+    module="AUDIT";
+
+    load();
+
+}
+
+function log(){
+
+    module="LOG";
+
+    load();
+
+}
+
+function backup(){
+
+    Modal.confirm(
+
+        "Backup",
+
+        "Create Backup Now?",
+
+        async ()=>{
+
+            await API.post(
+
+                "SYSTEM.BACKUP",
+
+                {}
+
+            );
+
+            Toast.success(
+
+                "Backup Complete"
+
+            );
+
+        }
+
+    );
+
+}
+
+return{
+
+    load,
+
+    refresh,
+
+    user,
+
+    role,
+
+    permission,
+
+    branch,
+
+    system,
+
+    audit,
+
+    log,
+
+    backup
+
+};
+
+})();
+
+</script>

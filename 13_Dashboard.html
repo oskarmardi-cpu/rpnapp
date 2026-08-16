@@ -1,0 +1,567 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+13_Dashboard.html
+Enterprise Edition v5.0
+==========================================================-->
+
+<div class="dashboard-page">
+
+  <!--=========================================
+    PAGE HEADER
+  ==========================================-->
+
+  <div class="page-header">
+
+    <div>
+
+      <h2>
+
+        Executive Dashboard
+
+      </h2>
+
+      <span>
+
+        Real Time Business Monitoring
+
+      </span>
+
+    </div>
+
+    <div>
+
+      <button
+        class="btn btn-primary"
+        onclick="Dashboard.refresh()">
+
+        <i class="ri-refresh-line"></i>
+
+        Refresh
+
+      </button>
+
+    </div>
+
+  </div>
+
+  <!--=========================================
+    KPI
+  ==========================================-->
+
+  <div class="dashboard-kpi">
+
+    <div id="kpiPopulation" class="kpi-card"></div>
+
+    <div id="kpiRental" class="kpi-card"></div>
+
+    <div id="kpiWorkshop" class="kpi-card"></div>
+
+    <div id="kpiInventory" class="kpi-card"></div>
+
+    <div id="kpiUsed" class="kpi-card"></div>
+
+    <div id="kpiExport" class="kpi-card"></div>
+
+  </div>
+
+  <!--=========================================
+    SUMMARY
+  ==========================================-->
+
+  <div class="dashboard-grid">
+
+    <div class="dashboard-panel">
+
+      <div class="panel-title">
+
+        Population
+
+      </div>
+
+      <div id="populationSummary">
+
+      </div>
+
+    </div>
+
+    <div class="dashboard-panel">
+
+      <div class="panel-title">
+
+        Rental
+
+      </div>
+
+      <div id="rentalSummary">
+
+      </div>
+
+    </div>
+
+    <div class="dashboard-panel">
+
+      <div class="panel-title">
+
+        Workshop
+
+      </div>
+
+      <div id="workshopSummary">
+
+      </div>
+
+    </div>
+
+    <div class="dashboard-panel">
+
+      <div class="panel-title">
+
+        Inventory
+
+      </div>
+
+      <div id="inventorySummary">
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!--=========================================
+    SECOND GRID
+  ==========================================-->
+
+  <div class="dashboard-grid">
+
+    <div class="dashboard-panel">
+
+      <div class="panel-title">
+
+        Approval Queue
+
+      </div>
+
+      <div id="approvalQueue">
+
+      </div>
+
+    </div>
+
+    <div class="dashboard-panel">
+
+      <div class="panel-title">
+
+        Waiting Part
+
+      </div>
+
+      <div id="waitingPart">
+
+      </div>
+
+    </div>
+
+    <div class="dashboard-panel">
+
+      <div class="panel-title">
+
+        PM Due
+
+      </div>
+
+      <div id="pmDue">
+
+      </div>
+
+    </div>
+
+    <div class="dashboard-panel">
+
+      <div class="panel-title">
+
+        Notification
+
+      </div>
+
+      <div id="notificationList">
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!--=========================================
+    THIRD GRID
+  ==========================================-->
+
+  <div class="dashboard-grid">
+
+    <div class="dashboard-panel dashboard-large">
+
+      <div class="panel-title">
+
+        Activity Timeline
+
+      </div>
+
+      <div id="activityTimeline">
+
+      </div>
+
+    </div>
+
+    <div class="dashboard-panel">
+
+      <div class="panel-title">
+
+        Quick Menu
+
+      </div>
+
+      <div id="quickMenu">
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+const Dashboard = (()=>{
+
+"use strict";
+
+let dashboardData = null;
+
+/*=======================================================
+LOAD
+=======================================================*/
+
+async function load(){
+
+    Loader.show(
+
+        "Loading Dashboard..."
+
+    );
+
+    try{
+
+        dashboardData =
+
+        await API.post(
+
+            "DASHBOARD.LOAD",
+
+            {}
+
+        );
+
+        render();
+
+    }
+
+    finally{
+
+        Loader.hide();
+
+    }
+
+}
+
+/*=======================================================
+REFRESH
+=======================================================*/
+
+async function refresh(){
+
+    dashboardData =
+
+    await API.post(
+
+        "DASHBOARD.REFRESH",
+
+        {}
+
+    );
+
+    render();
+
+}
+
+/*=======================================================
+RENDER
+=======================================================*/
+
+function render(){
+
+    renderKPI();
+
+    renderPopulation();
+
+    renderRental();
+
+    renderWorkshop();
+
+    renderInventory();
+
+    renderApproval();
+
+    renderWaitingPart();
+
+    renderPM();
+
+    renderNotification();
+
+    renderTimeline();
+
+    renderQuickMenu();
+
+}
+
+/*=======================================================
+KPI
+=======================================================*/
+
+function renderKPI(){
+
+    kpiPopulation.innerHTML =
+
+        Card.kpi(
+
+            "Population",
+
+            dashboardData.KPI.POPULATION
+
+        );
+
+    kpiRental.innerHTML =
+
+        Card.kpi(
+
+            "Rental",
+
+            dashboardData.KPI.RENTAL
+
+        );
+
+    kpiWorkshop.innerHTML =
+
+        Card.kpi(
+
+            "Workshop",
+
+            dashboardData.KPI.WORKSHOP
+
+        );
+
+    kpiInventory.innerHTML =
+
+        Card.kpi(
+
+            "Inventory",
+
+            dashboardData.KPI.INVENTORY
+
+        );
+
+    kpiUsed.innerHTML =
+
+        Card.kpi(
+
+            "Used",
+
+            dashboardData.KPI.USED
+
+        );
+
+    kpiExport.innerHTML =
+
+        Card.kpi(
+
+            "Export",
+
+            dashboardData.KPI.EXPORT
+
+        );
+
+}
+
+/*=======================================================
+POPULATION
+=======================================================*/
+
+function renderPopulation(){
+
+    populationSummary.innerHTML =
+
+        Component.population(
+
+            dashboardData.POPULATION
+
+        );
+
+}
+
+/*=======================================================
+RENTAL
+=======================================================*/
+
+function renderRental(){
+
+    rentalSummary.innerHTML =
+
+        Component.rental(
+
+            dashboardData.RENTAL
+
+        );
+
+}
+
+/*=======================================================
+WORKSHOP
+=======================================================*/
+
+function renderWorkshop(){
+
+    workshopSummary.innerHTML =
+
+        Component.workshop(
+
+            dashboardData.WORKSHOP
+
+        );
+
+}
+
+/*=======================================================
+INVENTORY
+=======================================================*/
+
+function renderInventory(){
+
+    inventorySummary.innerHTML =
+
+        Component.inventory(
+
+            dashboardData.INVENTORY
+
+        );
+
+}
+
+/*=======================================================
+APPROVAL
+=======================================================*/
+
+function renderApproval(){
+
+    approvalQueue.innerHTML =
+
+        Component.approval(
+
+            dashboardData.APPROVAL
+
+        );
+
+}
+
+/*=======================================================
+WAITING PART
+=======================================================*/
+
+function renderWaitingPart(){
+
+    waitingPart.innerHTML =
+
+        Component.waitingPart(
+
+            dashboardData.ALERT
+
+        );
+
+}
+
+/*=======================================================
+PM
+=======================================================*/
+
+function renderPM(){
+
+    pmDue.innerHTML =
+
+        Component.pm(
+
+            dashboardData.ALERT
+
+        );
+
+}
+
+/*=======================================================
+NOTIFICATION
+=======================================================*/
+
+function renderNotification(){
+
+    notificationList.innerHTML =
+
+        Component.notification(
+
+            dashboardData.NOTIFICATION
+
+        );
+
+}
+
+/*=======================================================
+TIMELINE
+=======================================================*/
+
+function renderTimeline(){
+
+    activityTimeline.innerHTML =
+
+        Component.timeline(
+
+            dashboardData.TIMELINE
+
+        );
+
+}
+
+/*=======================================================
+QUICK MENU
+=======================================================*/
+
+function renderQuickMenu(){
+
+    quickMenu.innerHTML =
+
+        Component.quickMenu();
+
+}
+
+/*=======================================================
+PUBLIC
+=======================================================*/
+
+return{
+
+    load,
+
+    refresh,
+
+    render
+
+};
+
+})();
+
+</script>

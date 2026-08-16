@@ -1,0 +1,1306 @@
+<!-- =========================================================
+     RPN MANAGEMENT SYSTEM
+     20_Dashboard.html
+     DASHBOARD UI — FINAL
+========================================================= -->
+
+<section id="pageDashboard" class="rpn-dashboard">
+
+<style>
+/* =========================================================
+   DASHBOARD
+========================================================= */
+
+.rpn-dashboard{
+    padding:20px;
+    background:#f5f7fa;
+    min-height:100%;
+    color:#172033;
+}
+
+.rpn-dashboard *{
+    box-sizing:border-box;
+}
+
+/* HEADER */
+
+.dashboard-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:15px;
+    margin-bottom:18px;
+}
+
+.dashboard-title h1{
+    margin:0;
+    font-size:24px;
+    font-weight:800;
+    letter-spacing:-.5px;
+}
+
+.dashboard-title p{
+    margin:5px 0 0;
+    color:#7b8798;
+    font-size:11px;
+}
+
+.dashboard-actions{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+.dashboard-refresh{
+    height:38px;
+    padding:0 15px;
+    border:0;
+    border-radius:9px;
+    background:#ff5a00;
+    color:#fff;
+    font-size:11px;
+    font-weight:700;
+    cursor:pointer;
+}
+
+.dashboard-refresh:hover{
+    background:#e94e00;
+}
+
+/* =========================================================
+   KPI
+========================================================= */
+
+.dashboard-kpis{
+    display:grid;
+    grid-template-columns:
+        repeat(5,minmax(0,1fr));
+    gap:12px;
+}
+
+.dashboard-card{
+    background:#fff;
+    border:1px solid #e7ebf0;
+    border-radius:13px;
+    box-shadow:
+        0 5px 16px rgba(16,24,40,.055);
+}
+
+.dashboard-kpi{
+    min-height:112px;
+    padding:15px;
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+}
+
+.dashboard-kpi-icon{
+    width:45px;
+    height:45px;
+    min-width:45px;
+    border-radius:11px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:19px;
+    font-weight:800;
+}
+
+.dashboard-kpi-label{
+    display:block;
+    color:#7b8798;
+    font-size:9px;
+    font-weight:800;
+    text-transform:uppercase;
+}
+
+.dashboard-kpi-value{
+    display:block;
+    margin-top:6px;
+    font-size:25px;
+    line-height:1;
+    font-weight:800;
+}
+
+.dashboard-kpi-unit{
+    font-size:9px;
+    color:#7b8798;
+    font-weight:500;
+}
+
+.dashboard-kpi-note{
+    margin-top:7px;
+    color:#16a34a;
+    font-size:9px;
+}
+
+.kpi-orange{
+    background:#fff0e8;
+    color:#ff5a00;
+}
+
+.kpi-blue{
+    background:#eaf3ff;
+    color:#2f82ee;
+}
+
+.kpi-green{
+    background:#eaf9ef;
+    color:#16a34a;
+}
+
+.kpi-purple{
+    background:#f0eaff;
+    color:#7c4de8;
+}
+
+.kpi-red{
+    background:#ffeded;
+    color:#ef4444;
+}
+
+/* =========================================================
+   CHART AREA
+========================================================= */
+
+.dashboard-charts{
+    display:grid;
+    grid-template-columns:
+        repeat(3,minmax(0,1fr));
+    gap:14px;
+    margin-top:14px;
+}
+
+.dashboard-chart-card{
+    padding:17px;
+    min-height:290px;
+}
+
+.dashboard-card-header{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+}
+
+.dashboard-card-header h3{
+    margin:0;
+    font-size:12px;
+    font-weight:800;
+}
+
+.dashboard-card-header span{
+    display:block;
+    margin-top:4px;
+    color:#7b8798;
+    font-size:9px;
+}
+
+.dashboard-chart-wrap{
+    position:relative;
+    height:205px;
+    margin-top:10px;
+}
+
+.dashboard-chart-wrap canvas{
+    width:100% !important;
+    height:100% !important;
+}
+
+.dashboard-chart-footer{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    margin-top:8px;
+    font-size:9px;
+}
+
+.dashboard-dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    display:inline-block;
+}
+
+.dashboard-dot-blue{
+    background:#2f82ee;
+}
+
+.dashboard-dot-green{
+    background:#16a34a;
+}
+
+.dashboard-dot-dark{
+    background:#172033;
+}
+
+/* =========================================================
+   NATIONAL DETAIL
+========================================================= */
+
+.dashboard-national{
+    margin-top:14px;
+    padding:18px;
+}
+
+.dashboard-table-wrap{
+    width:100%;
+    overflow-x:auto;
+    margin-top:14px;
+}
+
+.dashboard-table{
+    width:100%;
+    min-width:900px;
+    border-collapse:collapse;
+}
+
+.dashboard-table th,
+.dashboard-table td{
+    padding:8px;
+    border:1px solid #dfe4ea;
+    text-align:center;
+    white-space:nowrap;
+    font-size:8px;
+}
+
+.dashboard-table th{
+    background:#f4f6f8;
+    font-size:8px;
+    font-weight:800;
+    text-transform:uppercase;
+}
+
+.dashboard-table th:first-child,
+.dashboard-table td:first-child{
+    text-align:left;
+    min-width:180px;
+}
+
+.dashboard-table .total{
+    background:#fff1a8;
+    font-weight:800;
+}
+
+.dashboard-table .ending td{
+    background:#c9d7f2;
+    font-weight:800;
+}
+
+.dashboard-indicator-title{
+    margin-top:16px;
+    margin-bottom:8px;
+    font-size:10px;
+    font-weight:800;
+}
+
+.dashboard-indicators{
+    display:grid;
+    grid-template-columns:
+        repeat(3,minmax(0,1fr));
+    gap:8px;
+}
+
+.dashboard-indicator{
+    padding:10px;
+    border:1px solid #e1e6ec;
+    border-radius:8px;
+    background:#fafbfc;
+}
+
+.dashboard-indicator b{
+    display:block;
+    margin-bottom:7px;
+    font-size:8px;
+}
+
+.dashboard-indicator span{
+    color:#667085;
+    font-size:8px;
+    line-height:1.7;
+}
+
+/* =========================================================
+   LOWER SECTION
+========================================================= */
+
+.dashboard-lower{
+    display:grid;
+    grid-template-columns:
+        1.55fr .75fr;
+    gap:14px;
+    margin-top:14px;
+}
+
+.dashboard-stock{
+    padding:18px;
+}
+
+.dashboard-stock-grid{
+    display:grid;
+    grid-template-columns:
+        repeat(5,minmax(0,1fr));
+    gap:10px;
+    margin-top:15px;
+}
+
+.dashboard-stock-item{
+    padding:13px;
+    background:#fff;
+    border:1px solid #e7ebf0;
+    border-radius:10px;
+}
+
+.dashboard-stock-code{
+    width:34px;
+    height:34px;
+    border-radius:9px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#fff0e8;
+    color:#ff5a00;
+    font-size:9px;
+    font-weight:900;
+}
+
+.dashboard-stock-name{
+    margin-top:9px;
+    color:#7b8798;
+    font-size:9px;
+}
+
+.dashboard-stock-value{
+    margin-top:3px;
+    font-size:22px;
+    font-weight:800;
+}
+
+.dashboard-stock-value small{
+    font-size:8px;
+    color:#7b8798;
+    font-weight:500;
+}
+
+.dashboard-stock-bar{
+    height:5px;
+    margin-top:10px;
+    overflow:hidden;
+    border-radius:10px;
+    background:#edf0f4;
+}
+
+.dashboard-stock-bar i{
+    display:block;
+    height:100%;
+    border-radius:10px;
+    background:#ff5a00;
+}
+
+/* =========================================================
+   ACTIVITY
+========================================================= */
+
+.dashboard-activity{
+    padding:18px;
+}
+
+.dashboard-activity-list{
+    margin-top:8px;
+}
+
+.dashboard-activity-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:11px 0;
+    border-bottom:1px solid #eef1f4;
+}
+
+.dashboard-activity-item:last-child{
+    border-bottom:0;
+}
+
+.dashboard-activity-icon{
+    width:31px;
+    height:31px;
+    min-width:31px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12px;
+}
+
+.dashboard-activity-content strong{
+    display:block;
+    font-size:9px;
+}
+
+.dashboard-activity-content small{
+    display:block;
+    margin-top:3px;
+    color:#7b8798;
+    font-size:8px;
+}
+
+/* =========================================================
+   REPORT
+========================================================= */
+
+.dashboard-report{
+    margin-top:14px;
+    padding:18px;
+}
+
+.dashboard-report-table{
+    width:100%;
+    margin-top:12px;
+    border-collapse:collapse;
+}
+
+.dashboard-report-table th,
+.dashboard-report-table td{
+    padding:9px;
+    border-bottom:1px solid #edf0f3;
+    text-align:left;
+    font-size:9px;
+}
+
+.dashboard-report-table th{
+    color:#667085;
+    background:#f8fafc;
+    font-size:8px;
+    text-transform:uppercase;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media(max-width:1250px){
+
+    .dashboard-kpis{
+        grid-template-columns:
+            repeat(3,minmax(0,1fr));
+    }
+
+    .dashboard-charts{
+        grid-template-columns:
+            repeat(2,minmax(0,1fr));
+    }
+
+    .dashboard-stock-grid{
+        grid-template-columns:
+            repeat(3,minmax(0,1fr));
+    }
+
+}
+
+@media(max-width:850px){
+
+    .rpn-dashboard{
+        padding:12px;
+    }
+
+    .dashboard-header{
+        align-items:flex-start;
+    }
+
+    .dashboard-kpis{
+        grid-template-columns:
+            repeat(2,minmax(0,1fr));
+    }
+
+    .dashboard-charts{
+        grid-template-columns:1fr;
+    }
+
+    .dashboard-lower{
+        grid-template-columns:1fr;
+    }
+
+    .dashboard-indicators{
+        grid-template-columns:1fr;
+    }
+
+    .dashboard-stock-grid{
+        grid-template-columns:
+            repeat(2,minmax(0,1fr));
+    }
+
+}
+
+@media(max-width:520px){
+
+    .dashboard-kpis{
+        grid-template-columns:1fr;
+    }
+
+    .dashboard-stock-grid{
+        grid-template-columns:1fr;
+    }
+
+    .dashboard-title h1{
+        font-size:20px;
+    }
+
+}
+</style>
+
+
+<!-- =========================================================
+     HEADER
+========================================================= -->
+
+<div class="dashboard-header">
+
+    <div class="dashboard-title">
+
+        <h1>Dashboard</h1>
+
+        <p>
+            Home&nbsp;&nbsp;•&nbsp;&nbsp;Dashboard
+        </p>
+
+        <h2
+            id="welcomeName"
+            style="
+                margin:6px 0 0;
+                font-size:12px;
+                font-weight:600;
+            ">
+            Welcome
+        </h2>
+
+    </div>
+
+    <div class="dashboard-actions">
+
+        <button
+            id="btnRefreshDashboard"
+            class="dashboard-refresh">
+
+            <i class="fa-solid fa-rotate"></i>
+
+            Refresh
+
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     KPI
+========================================================= -->
+
+<section class="dashboard-kpis">
+
+    <div class="dashboard-card dashboard-kpi">
+
+        <div class="dashboard-kpi-icon kpi-orange">
+            <i class="fa-solid fa-box"></i>
+        </div>
+
+        <div>
+
+            <span class="dashboard-kpi-label">
+                Total Unit Used
+            </span>
+
+            <strong
+                id="kpiTotalUnit"
+                class="dashboard-kpi-value">
+                0
+                <span class="dashboard-kpi-unit">
+                    Unit
+                </span>
+            </strong>
+
+            <div class="dashboard-kpi-note">
+                Stock Unit Used
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="dashboard-card dashboard-kpi">
+
+        <div class="dashboard-kpi-icon kpi-blue">
+            <i class="fa-solid fa-arrow-down"></i>
+        </div>
+
+        <div>
+
+            <span class="dashboard-kpi-label">
+                Unit Ditarik
+            </span>
+
+            <strong class="dashboard-kpi-value">
+                0
+                <span class="dashboard-kpi-unit">
+                    Unit
+                </span>
+            </strong>
+
+            <div class="dashboard-kpi-note">
+                Penarikan
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="dashboard-card dashboard-kpi">
+
+        <div class="dashboard-kpi-icon kpi-green">
+            <i class="fa-solid fa-arrow-up"></i>
+        </div>
+
+        <div>
+
+            <span class="dashboard-kpi-label">
+                Unit Dikirim
+            </span>
+
+            <strong class="dashboard-kpi-value">
+                0
+                <span class="dashboard-kpi-unit">
+                    Unit
+                </span>
+            </strong>
+
+            <div class="dashboard-kpi-note">
+                Pengiriman
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="dashboard-card dashboard-kpi">
+
+        <div class="dashboard-kpi-icon kpi-purple">
+            <i class="fa-solid fa-file-lines"></i>
+        </div>
+
+        <div>
+
+            <span class="dashboard-kpi-label">
+                RFU
+            </span>
+
+            <strong
+                id="kpiRFU"
+                class="dashboard-kpi-value">
+                0
+                <span class="dashboard-kpi-unit">
+                    Unit
+                </span>
+            </strong>
+
+            <div class="dashboard-kpi-note">
+                Ready For Use
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="dashboard-card dashboard-kpi">
+
+        <div class="dashboard-kpi-icon kpi-red">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+
+        <div>
+
+            <span class="dashboard-kpi-label">
+                NON RFU
+            </span>
+
+            <strong
+                id="kpiNonRFU"
+                class="dashboard-kpi-value">
+                0
+                <span class="dashboard-kpi-unit">
+                    Unit
+                </span>
+            </strong>
+
+            <div class="dashboard-kpi-note">
+                Perlu tindakan
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     CHARTS
+========================================================= -->
+
+<section class="dashboard-charts">
+
+
+    <div class="dashboard-card dashboard-chart-card">
+
+        <div class="dashboard-card-header">
+
+            <div>
+
+                <h3>
+                    Status Unit Used
+                </h3>
+
+                <span>
+                    RFU / NON RFU / Loan
+                </span>
+
+            </div>
+
+        </div>
+
+        <div class="dashboard-chart-wrap">
+
+            <canvas
+                id="chartUnitStatus">
+            </canvas>
+
+        </div>
+
+    </div>
+
+
+    <div class="dashboard-card dashboard-chart-card">
+
+        <div class="dashboard-card-header">
+
+            <div>
+
+                <h3>
+                    Transaksi Bulanan
+                </h3>
+
+                <span>
+                    Trend transaksi 12 bulan
+                </span>
+
+            </div>
+
+        </div>
+
+        <div class="dashboard-chart-wrap">
+
+            <canvas
+                id="chartMonthly">
+            </canvas>
+
+        </div>
+
+    </div>
+
+
+    <div class="dashboard-card dashboard-chart-card">
+
+        <div class="dashboard-card-header">
+
+            <div>
+
+                <h3>
+                    Unit Used
+                </h3>
+
+                <span>
+                    Trend stock nasional
+                </span>
+
+            </div>
+
+        </div>
+
+        <div class="dashboard-chart-wrap">
+
+            <canvas
+                id="chartUnitTrend">
+            </canvas>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     DETAIL NATIONAL
+========================================================= -->
+
+<section class="dashboard-card dashboard-national">
+
+    <div class="dashboard-card-header">
+
+        <div>
+
+            <h3>
+                Detail Unit Used Nasional
+            </h3>
+
+            <span>
+                Rekapitulasi Unit Used Nasional
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div class="dashboard-table-wrap">
+
+        <table class="dashboard-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>Keterangan</th>
+
+                    <th>January</th>
+                    <th>February</th>
+                    <th>March</th>
+                    <th>April</th>
+                    <th>May</th>
+                    <th>June</th>
+                    <th>July</th>
+                    <th>August</th>
+
+                    <th class="total">
+                        TOTAL
+                    </th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                <tr>
+                    <td>
+                        <b>STOCK UNIT USED</b>
+                    </td>
+                    <td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td>
+                    <td class="total">0</td>
+                </tr>
+
+                <tr>
+                    <td>PENARIKAN UNIT USED</td>
+                    <td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td>
+                    <td class="total">0</td>
+                </tr>
+
+                <tr>
+                    <td>PENGIRIMAN UNIT USED</td>
+                    <td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td>
+                    <td class="total">0</td>
+                </tr>
+
+                <tr>
+                    <td>RE-EXPORT / DUAL</td>
+                    <td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td>
+                    <td class="total">0</td>
+                </tr>
+
+                <tr>
+                    <td>SCRAP</td>
+                    <td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td>
+                    <td class="total">0</td>
+                </tr>
+
+                <tr>
+                    <td>MUTASI</td>
+                    <td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td>
+                    <td class="total">0</td>
+                </tr>
+
+                <tr>
+                    <td>Refurbish</td>
+                    <td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td>
+                    <td class="total">0</td>
+                </tr>
+
+                <tr>
+                    <td>RFU Akumulasi</td>
+                    <td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td>
+                    <td class="total">0</td>
+                </tr>
+
+                <tr class="ending">
+
+                    <td>
+                        <b>
+                            STOCK UNIT USED - Akhir
+                        </b>
+                    </td>
+
+                    <td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td>
+
+                    <td class="total">
+                        0
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <div class="dashboard-indicator-title">
+        Indikator Nasional
+    </div>
+
+
+    <div class="dashboard-indicators">
+
+        <div class="dashboard-indicator">
+
+            <b>
+                Total Unit Used Re-Rent X 100%
+            </b>
+
+            <span>
+                0% &nbsp; 0% &nbsp; 0% &nbsp; 0%
+                &nbsp; 0% &nbsp; 0% &nbsp; 0% &nbsp; 0%
+            </span>
+
+        </div>
+
+
+        <div class="dashboard-indicator">
+
+            <b>
+                Total Unit Used + Unit Return
+            </b>
+
+            <span>
+                0% &nbsp; 0% &nbsp; 0% &nbsp; 0%
+                &nbsp; 0% &nbsp; 0% &nbsp; 0% &nbsp; 0%
+            </span>
+
+        </div>
+
+
+        <div class="dashboard-indicator">
+
+            <b>
+                Total Unit Used + Ready X 100%
+            </b>
+
+            <span>
+                0% &nbsp; 0% &nbsp; 0% &nbsp; 0%
+                &nbsp; 0% &nbsp; 0% &nbsp; 0% &nbsp; 0%
+            </span>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     LOWER
+========================================================= -->
+
+<section class="dashboard-lower">
+
+
+    <div class="dashboard-card dashboard-stock">
+
+        <div class="dashboard-card-header">
+
+            <div>
+
+                <h3>
+                    Stock Unit Used per Lokasi
+                </h3>
+
+                <span>
+                    Distribusi stock nasional
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="dashboard-stock-grid">
+
+
+            <div class="dashboard-stock-item">
+
+                <div class="dashboard-stock-code">
+                    NAS
+                </div>
+
+                <div class="dashboard-stock-name">
+                    Nasional
+                </div>
+
+                <div class="dashboard-stock-value">
+                    0
+                    <small>Unit</small>
+                </div>
+
+                <div class="dashboard-stock-bar">
+                    <i style="width:100%"></i>
+                </div>
+
+            </div>
+
+
+            <div class="dashboard-stock-item">
+
+                <div class="dashboard-stock-code">
+                    LA
+                </div>
+
+                <div class="dashboard-stock-name">
+                    Lemah Abang
+                </div>
+
+                <div class="dashboard-stock-value">
+                    0
+                    <small>Unit</small>
+                </div>
+
+                <div class="dashboard-stock-bar">
+                    <i style="width:0%"></i>
+                </div>
+
+            </div>
+
+
+            <div class="dashboard-stock-item">
+
+                <div class="dashboard-stock-code">
+                    SBY
+                </div>
+
+                <div class="dashboard-stock-name">
+                    Surabaya
+                </div>
+
+                <div class="dashboard-stock-value">
+                    0
+                    <small>Unit</small>
+                </div>
+
+                <div class="dashboard-stock-bar">
+                    <i style="width:0%"></i>
+                </div>
+
+            </div>
+
+
+            <div class="dashboard-stock-item">
+
+                <div class="dashboard-stock-code">
+                    MDN
+                </div>
+
+                <div class="dashboard-stock-name">
+                    Medan
+                </div>
+
+                <div class="dashboard-stock-value">
+                    0
+                    <small>Unit</small>
+                </div>
+
+                <div class="dashboard-stock-bar">
+                    <i style="width:0%"></i>
+                </div>
+
+            </div>
+
+
+            <div class="dashboard-stock-item">
+
+                <div class="dashboard-stock-code">
+                    SMG
+                </div>
+
+                <div class="dashboard-stock-name">
+                    Semarang
+                </div>
+
+                <div class="dashboard-stock-value">
+                    0
+                    <small>Unit</small>
+                </div>
+
+                <div class="dashboard-stock-bar">
+                    <i style="width:0%"></i>
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         RECENT ACTIVITY
+    ====================================================== -->
+
+    <div class="dashboard-card dashboard-activity">
+
+        <div class="dashboard-card-header">
+
+            <div>
+
+                <h3>
+                    Aktivitas Terbaru
+                </h3>
+
+                <span>
+                    Update operational
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="recentActivity"
+            class="dashboard-activity-list">
+
+            <div
+                class="dashboard-activity-item">
+
+                <div
+                    class="dashboard-activity-icon kpi-blue">
+
+                    <i class="fa-solid fa-clock"></i>
+
+                </div>
+
+                <div
+                    class="dashboard-activity-content">
+
+                    <strong>
+                        Belum ada aktivitas
+                    </strong>
+
+                    <small>
+                        Menunggu data
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     LATEST REPORT
+========================================================= -->
+
+<section class="dashboard-card dashboard-report">
+
+    <div class="dashboard-card-header">
+
+        <div>
+
+            <h3>
+                Report Terbaru
+            </h3>
+
+            <span>
+                Data report terakhir
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div style="overflow-x:auto">
+
+        <table class="dashboard-report-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>Tanggal</th>
+                    <th>Unit</th>
+                    <th>Status</th>
+                    <th>Mechanic</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody id="dashboardReport">
+
+                <tr>
+
+                    <td colspan="4"
+                        style="text-align:center;color:#7b8798">
+
+                        Belum ada report.
+
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
+
+
+</section>

@@ -1,0 +1,1761 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+66_WorkflowDesigner.html
+Enterprise v3.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const WorkflowDesigner = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    designers:new Map(),
+
+    nodes:new Map(),
+
+    edges:new Map(),
+
+    canvas:new Map(),
+
+    settings:new Map(),
+
+    history:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    designer
+
+){
+
+    state.designers.set(
+
+        name,
+
+        designer
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.designers.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+NODES
+=========================================================*/
+
+function nodes(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.nodes.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.nodes.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+EDGES
+=========================================================*/
+
+function edges(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.edges.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.edges.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+CANVAS
+=========================================================*/
+
+function canvas(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.canvas.get(
+
+            name
+
+        );
+
+    }
+
+    state.canvas.set(
+
+        name,
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+SETTINGS
+=========================================================*/
+
+function settings(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.settings.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.settings.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.designers.delete(name);
+
+    state.nodes.delete(name);
+
+    state.edges.delete(name);
+
+    state.canvas.delete(name);
+
+    state.settings.delete(name);
+
+    state.history.delete(name);
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    nodes,
+
+    edges,
+
+    canvas,
+
+    settings,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+66_WorkflowDesigner.html
+Enterprise v3.0
+Part 2 - Node Engine
+==========================================================-->
+
+<script>
+
+const WorkflowNode = (()=>{
+
+"use strict";
+
+/*=========================================================
+ADD NODE
+=========================================================*/
+
+function add(
+
+    designer,
+
+    node
+
+){
+
+    const nodes =
+
+        WorkflowDesigner.nodes(
+
+            designer
+
+        );
+
+    nodes.push({
+
+        id :
+
+        node.id ||
+
+        crypto.randomUUID(),
+
+        type :
+
+        node.type ||
+
+        "TASK",
+
+        label :
+
+        node.label ||
+
+        "New Node",
+
+        x :
+
+        node.x || 0,
+
+        y :
+
+        node.y || 0,
+
+        width :
+
+        node.width ||
+
+        180,
+
+        height :
+
+        node.height ||
+
+        60,
+
+        data :
+
+        node.data ||
+
+        {}
+
+    });
+
+    WorkflowDesigner.nodes(
+
+        designer,
+
+        nodes
+
+    );
+
+}
+
+/*=========================================================
+UPDATE NODE
+=========================================================*/
+
+function update(
+
+    designer,
+
+    id,
+
+    data
+
+){
+
+    const node =
+
+        get(
+
+            designer,
+
+            id
+
+        );
+
+    if(
+
+        node
+
+    ){
+
+        Object.assign(
+
+            node,
+
+            data
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+GET NODE
+=========================================================*/
+
+function get(
+
+    designer,
+
+    id
+
+){
+
+    return WorkflowDesigner
+
+        .nodes(designer)
+
+        .find(function(node){
+
+            return node.id===id;
+
+        });
+
+}
+
+/*=========================================================
+REMOVE NODE
+=========================================================*/
+
+function remove(
+
+    designer,
+
+    id
+
+){
+
+    WorkflowDesigner.nodes(
+
+        designer,
+
+        WorkflowDesigner
+
+        .nodes(designer)
+
+        .filter(function(node){
+
+            return node.id!==id;
+
+        })
+
+    );
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(
+
+    designer
+
+){
+
+    return WorkflowDesigner
+
+        .nodes(designer)
+
+        .length;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    add,
+
+    update,
+
+    get,
+
+    remove,
+
+    count
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+66_WorkflowDesigner.html
+Enterprise v3.0
+Part 3 - Edge Engine
+==========================================================-->
+
+<script>
+
+const WorkflowEdge = (()=>{
+
+"use strict";
+
+/*=========================================================
+ADD EDGE
+=========================================================*/
+
+function add(
+
+    designer,
+
+    edge
+
+){
+
+    const edges =
+
+        WorkflowDesigner.edges(
+
+            designer
+
+        );
+
+    edges.push({
+
+        id :
+
+        edge.id ||
+
+        crypto.randomUUID(),
+
+        source :
+
+        edge.source,
+
+        target :
+
+        edge.target,
+
+        label :
+
+        edge.label ||
+
+        "",
+
+        type :
+
+        edge.type ||
+
+        "default",
+
+        animated :
+
+        edge.animated ||
+
+        false,
+
+        data :
+
+        edge.data ||
+
+        {}
+
+    });
+
+    WorkflowDesigner.edges(
+
+        designer,
+
+        edges
+
+    );
+
+}
+
+/*=========================================================
+UPDATE EDGE
+=========================================================*/
+
+function update(
+
+    designer,
+
+    id,
+
+    data
+
+){
+
+    const edge =
+
+        get(
+
+            designer,
+
+            id
+
+        );
+
+    if(
+
+        edge
+
+    ){
+
+        Object.assign(
+
+            edge,
+
+            data
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+GET EDGE
+=========================================================*/
+
+function get(
+
+    designer,
+
+    id
+
+){
+
+    return WorkflowDesigner
+
+        .edges(designer)
+
+        .find(function(edge){
+
+            return edge.id===id;
+
+        });
+
+}
+
+/*=========================================================
+REMOVE EDGE
+=========================================================*/
+
+function remove(
+
+    designer,
+
+    id
+
+){
+
+    WorkflowDesigner.edges(
+
+        designer,
+
+        WorkflowDesigner
+
+        .edges(designer)
+
+        .filter(function(edge){
+
+            return edge.id!==id;
+
+        })
+
+    );
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(
+
+    designer
+
+){
+
+    return WorkflowDesigner
+
+        .edges(designer)
+
+        .length;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    add,
+
+    update,
+
+    get,
+
+    remove,
+
+    count
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+66_WorkflowDesigner.html
+Enterprise v3.0
+Part 4 - Canvas Engine
+==========================================================-->
+
+<script>
+
+const WorkflowCanvas = (()=>{
+
+"use strict";
+
+/*=========================================================
+INIT
+=========================================================*/
+
+function init(
+
+    designer,
+
+    element
+
+){
+
+    WorkflowDesigner.canvas(
+
+        designer,
+
+        {
+
+            element,
+
+            zoom : 1,
+
+            offsetX : 0,
+
+            offsetY : 0
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(
+
+    designer
+
+){
+
+    return WorkflowDesigner.canvas(
+
+        designer
+
+    );
+
+}
+
+/*=========================================================
+ZOOM
+=========================================================*/
+
+function zoom(
+
+    designer,
+
+    scale
+
+){
+
+    const canvas =
+
+        get(
+
+            designer
+
+        );
+
+    if(
+
+        !canvas
+
+    ){
+
+        return;
+
+    }
+
+    canvas.zoom =
+
+        Math.max(
+
+            0.2,
+
+            Math.min(
+
+                5,
+
+                scale
+
+            )
+
+        );
+
+}
+
+/*=========================================================
+PAN
+=========================================================*/
+
+function pan(
+
+    designer,
+
+    x,
+
+    y
+
+){
+
+    const canvas =
+
+        get(
+
+            designer
+
+        );
+
+    if(
+
+        !canvas
+
+    ){
+
+        return;
+
+    }
+
+    canvas.offsetX =
+
+        x;
+
+    canvas.offsetY =
+
+        y;
+
+}
+
+/*=========================================================
+RESET
+=========================================================*/
+
+function reset(
+
+    designer
+
+){
+
+    const canvas =
+
+        get(
+
+            designer
+
+        );
+
+    if(
+
+        !canvas
+
+    ){
+
+        return;
+
+    }
+
+    canvas.zoom = 1;
+
+    canvas.offsetX = 0;
+
+    canvas.offsetY = 0;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    init,
+
+    get,
+
+    zoom,
+
+    pan,
+
+    reset
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+66_WorkflowDesigner.html
+Enterprise v3.0
+Part 5 - Validation Engine
+==========================================================-->
+
+<script>
+
+const WorkflowValidation = (()=>{
+
+"use strict";
+
+/*=========================================================
+VALIDATE
+=========================================================*/
+
+function validate(
+
+    designer
+
+){
+
+    return{
+
+        valid :
+
+        noDuplicateNode(
+
+            designer
+
+        ) &&
+
+        validEdges(
+
+            designer
+
+        ) &&
+
+        noOrphanNode(
+
+            designer
+
+        )
+
+    };
+
+}
+
+/*=========================================================
+NO DUPLICATE NODE
+=========================================================*/
+
+function noDuplicateNode(
+
+    designer
+
+){
+
+    const ids =
+
+        WorkflowDesigner
+
+        .nodes(designer)
+
+        .map(function(node){
+
+            return node.id;
+
+        });
+
+    return ids.length===
+
+        new Set(ids)
+
+        .size;
+
+}
+
+/*=========================================================
+VALID EDGES
+=========================================================*/
+
+function validEdges(
+
+    designer
+
+){
+
+    const ids =
+
+        WorkflowDesigner
+
+        .nodes(designer)
+
+        .map(function(node){
+
+            return node.id;
+
+        });
+
+    return WorkflowDesigner
+
+        .edges(designer)
+
+        .every(function(edge){
+
+            return ids.includes(
+
+                edge.source
+
+            ) &&
+
+            ids.includes(
+
+                edge.target
+
+            );
+
+        });
+
+}
+
+/*=========================================================
+ORPHAN NODE
+=========================================================*/
+
+function noOrphanNode(
+
+    designer
+
+){
+
+    const edges =
+
+        WorkflowDesigner
+
+        .edges(designer);
+
+    return WorkflowDesigner
+
+        .nodes(designer)
+
+        .every(function(node){
+
+            return edges.some(function(edge){
+
+                return edge.source===
+
+                    node.id ||
+
+                    edge.target===
+
+                    node.id;
+
+            });
+
+        });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    validate,
+
+    noDuplicateNode,
+
+    validEdges,
+
+    noOrphanNode
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+66_WorkflowDesigner.html
+Enterprise v3.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const WorkflowEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    designer,
+
+    event,
+
+    callback
+
+){
+
+    const element =
+
+        WorkflowDesigner.get(
+
+            designer
+
+        );
+
+    if(
+
+        !element ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    element.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        designer +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    designer,
+
+    event
+
+){
+
+    const element =
+
+        WorkflowDesigner.get(
+
+            designer
+
+        );
+
+    const key =
+
+        designer +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        element &&
+
+        callback
+
+    ){
+
+        element.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    designer,
+
+    event,
+
+    detail
+
+){
+
+    const element =
+
+        WorkflowDesigner.get(
+
+            designer
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(
+
+    designer
+
+){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                designer +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                designer,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+66_WorkflowDesigner.html
+Enterprise v3.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const WorkflowTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes={
+
+    default   :"rpn-workflow-default",
+
+    light     :"rpn-workflow-light",
+
+    dark      :"rpn-workflow-dark",
+
+    primary   :"rpn-workflow-primary",
+
+    success   :"rpn-workflow-success",
+
+    warning   :"rpn-workflow-warning",
+
+    danger    :"rpn-workflow-danger",
+
+    corporate :"rpn-workflow-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    designer,
+
+    theme
+
+){
+
+    if(
+
+        !themes[theme]
+
+    ){
+
+        return;
+
+    }
+
+    const element =
+
+        WorkflowDesigner.get(
+
+            designer
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(
+
+        themes
+
+    )
+
+    .forEach(function(css){
+
+        element.classList.remove(
+
+            css
+
+        );
+
+    });
+
+    element.classList.add(
+
+        themes[theme]
+
+    );
+
+}
+
+/*=========================================================
+SET DEFAULT
+=========================================================*/
+
+function setDefault(
+
+    theme
+
+){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current =
+
+            theme;
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    WorkflowDesigner
+
+    .state.designers
+
+    .forEach(function(
+
+        element,
+
+        name
+
+    ){
+
+        set(
+
+            name,
+
+            current
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] =
+
+        css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    setDefault,
+
+    get,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+66_WorkflowDesigner.html
+Enterprise v3.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const WorkflowProduction = (()=>{
+
+"use strict";
+
+const VERSION = "3.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config={}){
+
+    WorkflowDesigner.register(
+
+        config.name,
+
+        document.body
+
+    );
+
+    WorkflowDesigner.settings(
+
+        config.name,
+
+        config.settings ||
+
+        {}
+
+    );
+
+    WorkflowCanvas.init(
+
+        config.name,
+
+        config.canvas ||
+
+        document.body
+
+    );
+
+    WorkflowTheme.set(
+
+        config.name,
+
+        config.theme ||
+
+        "default"
+
+    );
+
+    WorkflowEvent.trigger(
+
+        config.name,
+
+        "ready",
+
+        {
+
+            version :
+
+            VERSION
+
+        }
+
+    );
+
+    return info();
+
+}
+
+/*=========================================================
+SAVE
+=========================================================*/
+
+function save(
+
+    designer
+
+){
+
+    return{
+
+        nodes :
+
+        WorkflowDesigner.nodes(
+
+            designer
+
+        ),
+
+        edges :
+
+        WorkflowDesigner.edges(
+
+            designer
+
+        ),
+
+        settings :
+
+        WorkflowDesigner.settings(
+
+            designer
+
+        )
+
+    };
+
+}
+
+/*=========================================================
+LOAD
+=========================================================*/
+
+function load(
+
+    designer,
+
+    workflow
+
+){
+
+    WorkflowDesigner.nodes(
+
+        designer,
+
+        workflow.nodes ||
+
+        []
+
+    );
+
+    WorkflowDesigner.edges(
+
+        designer,
+
+        workflow.edges ||
+
+        []
+
+    );
+
+    WorkflowDesigner.settings(
+
+        designer,
+
+        workflow.settings ||
+
+        {}
+
+    );
+
+}
+
+/*=========================================================
+VALIDATE
+=========================================================*/
+
+function validate(
+
+    designer
+
+){
+
+    return WorkflowValidation.validate(
+
+        designer
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "WorkflowDesigner",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    save,
+
+    load,
+
+    validate,
+
+    info
+
+};
+
+})();
+
+</script>

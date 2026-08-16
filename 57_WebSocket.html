@@ -1,0 +1,1645 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+57_WebSocket.html
+Enterprise v2.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const WebSocketService = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    sockets:new Map(),
+
+    configs:new Map(),
+
+    status:new Map(),
+
+    reconnect:new Map(),
+
+    heartbeat:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    socket
+
+){
+
+    state.sockets.set(
+
+        name,
+
+        socket
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.sockets.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+CONFIG
+=========================================================*/
+
+function config(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.configs.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.configs.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+STATUS
+=========================================================*/
+
+function status(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.status.get(
+
+            name
+
+        ) || "CLOSED";
+
+    }
+
+    state.status.set(
+
+        name,
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.sockets.delete(name);
+
+    state.configs.delete(name);
+
+    state.status.delete(name);
+
+    state.reconnect.delete(name);
+
+    state.heartbeat.delete(name);
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    config,
+
+    status,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+57_WebSocket.html
+Enterprise v2.0
+Part 2 - Connection Engine
+==========================================================-->
+
+<script>
+
+const WebSocketConnection = (()=>{
+
+"use strict";
+
+/*=========================================================
+CONNECT
+=========================================================*/
+
+function connect(
+
+    name,
+
+    url
+
+){
+
+    disconnect(
+
+        name
+
+    );
+
+    const socket =
+
+        new WebSocket(
+
+            url
+
+        );
+
+    WebSocketService.register(
+
+        name,
+
+        socket
+
+    );
+
+    WebSocketService.status(
+
+        name,
+
+        "CONNECTING"
+
+    );
+
+    bind(
+
+        name,
+
+        socket
+
+    );
+
+    return socket;
+
+}
+
+/*=========================================================
+DISCONNECT
+=========================================================*/
+
+function disconnect(name){
+
+    const socket =
+
+        WebSocketService.get(
+
+            name
+
+        );
+
+    if(
+
+        socket
+
+    ){
+
+        socket.close();
+
+    }
+
+    WebSocketService.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+BIND
+=========================================================*/
+
+function bind(
+
+    name,
+
+    socket
+
+){
+
+    socket.onopen =
+
+        function(){
+
+            WebSocketService.status(
+
+                name,
+
+                "OPEN"
+
+            );
+
+            WebSocketEvent.trigger(
+
+                name,
+
+                "open",
+
+                {}
+
+            );
+
+        };
+
+    socket.onclose =
+
+        function(event){
+
+            WebSocketService.status(
+
+                name,
+
+                "CLOSED"
+
+            );
+
+            WebSocketEvent.trigger(
+
+                name,
+
+                "close",
+
+                event
+
+            );
+
+        };
+
+    socket.onerror =
+
+        function(error){
+
+            WebSocketService.status(
+
+                name,
+
+                "ERROR"
+
+            );
+
+            WebSocketEvent.trigger(
+
+                name,
+
+                "error",
+
+                error
+
+            );
+
+        };
+
+}
+
+/*=========================================================
+STATUS
+=========================================================*/
+
+function status(name){
+
+    return WebSocketService.status(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    connect,
+
+    disconnect,
+
+    status
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+57_WebSocket.html
+Enterprise v2.0
+Part 3 - Message Engine
+==========================================================-->
+
+<script>
+
+const WebSocketMessage = (()=>{
+
+"use strict";
+
+/*=========================================================
+SEND
+=========================================================*/
+
+function send(
+
+    name,
+
+    data
+
+){
+
+    const socket =
+
+        WebSocketService.get(
+
+            name
+
+        );
+
+    if(
+
+        !socket ||
+
+        socket.readyState !==
+
+        WebSocket.OPEN
+
+    ){
+
+        return false;
+
+    }
+
+    socket.send(
+
+        JSON.stringify(
+
+            data
+
+        )
+
+    );
+
+    return true;
+
+}
+
+/*=========================================================
+BIND
+=========================================================*/
+
+function bind(name){
+
+    const socket =
+
+        WebSocketService.get(
+
+            name
+
+        );
+
+    if(
+
+        !socket
+
+    ){
+
+        return;
+
+    }
+
+    socket.onmessage =
+
+        function(event){
+
+            const message =
+
+                parse(
+
+                    event.data
+
+                );
+
+            WebSocketEvent.trigger(
+
+                name,
+
+                "message",
+
+                message
+
+            );
+
+        };
+
+}
+
+/*=========================================================
+PARSE
+=========================================================*/
+
+function parse(data){
+
+    try{
+
+        return JSON.parse(
+
+            data
+
+        );
+
+    }catch(e){
+
+        return data;
+
+    }
+
+}
+
+/*=========================================================
+BROADCAST
+=========================================================*/
+
+function broadcast(data){
+
+    WebSocketService.state
+
+    .sockets
+
+    .forEach(function(
+
+        socket,
+
+        name
+
+    ){
+
+        send(
+
+            name,
+
+            data
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    send,
+
+    bind,
+
+    parse,
+
+    broadcast
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+57_WebSocket.html
+Enterprise v2.0
+Part 4 - Reconnect Engine
+==========================================================-->
+
+<script>
+
+const WebSocketReconnect = (()=>{
+
+"use strict";
+
+/*=========================================================
+START
+=========================================================*/
+
+function start(name){
+
+    stop(name);
+
+    const config =
+
+        WebSocketService.config(
+
+            name
+
+        );
+
+    const delay =
+
+        config.reconnectDelay ||
+
+        5000;
+
+    const timer =
+
+        setTimeout(
+
+            function(){
+
+                WebSocketConnection.connect(
+
+                    name,
+
+                    config.url
+
+                );
+
+                WebSocketMessage.bind(
+
+                    name
+
+                );
+
+            },
+
+            delay
+
+        );
+
+    WebSocketService.state
+
+        .reconnect
+
+        .set(
+
+            name,
+
+            timer
+
+        );
+
+}
+
+/*=========================================================
+STOP
+=========================================================*/
+
+function stop(name){
+
+    const timer =
+
+        WebSocketService.state
+
+        .reconnect
+
+        .get(
+
+            name
+
+        );
+
+    if(
+
+        timer
+
+    ){
+
+        clearTimeout(
+
+            timer
+
+        );
+
+        WebSocketService.state
+
+        .reconnect
+
+        .delete(
+
+            name
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+RESTART
+=========================================================*/
+
+function restart(name){
+
+    stop(
+
+        name
+
+    );
+
+    start(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+ENABLE
+=========================================================*/
+
+function enable(
+
+    name,
+
+    url,
+
+    delay=5000
+
+){
+
+    WebSocketService.config(
+
+        name,
+
+        {
+
+            url,
+
+            reconnectDelay:
+
+            delay
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    start,
+
+    stop,
+
+    restart,
+
+    enable
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+57_WebSocket.html
+Enterprise v2.0
+Part 5 - Heartbeat Engine
+==========================================================-->
+
+<script>
+
+const WebSocketHeartbeat = (()=>{
+
+"use strict";
+
+/*=========================================================
+START
+=========================================================*/
+
+function start(name){
+
+    stop(name);
+
+    const config =
+
+        WebSocketService.config(
+
+            name
+
+        );
+
+    const interval =
+
+        config.heartbeat ||
+
+        30000;
+
+    const timer =
+
+        setInterval(
+
+            function(){
+
+                ping(
+
+                    name
+
+                );
+
+            },
+
+            interval
+
+        );
+
+    WebSocketService.state
+
+        .heartbeat
+
+        .set(
+
+            name,
+
+            timer
+
+        );
+
+}
+
+/*=========================================================
+STOP
+=========================================================*/
+
+function stop(name){
+
+    const timer =
+
+        WebSocketService.state
+
+        .heartbeat
+
+        .get(
+
+            name
+
+        );
+
+    if(
+
+        timer
+
+    ){
+
+        clearInterval(
+
+            timer
+
+        );
+
+        WebSocketService.state
+
+        .heartbeat
+
+        .delete(
+
+            name
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+PING
+=========================================================*/
+
+function ping(name){
+
+    WebSocketMessage.send(
+
+        name,
+
+        {
+
+            type :
+
+            "PING",
+
+            timestamp :
+
+            Date.now()
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+PONG
+=========================================================*/
+
+function pong(name){
+
+    WebSocketMessage.send(
+
+        name,
+
+        {
+
+            type :
+
+            "PONG",
+
+            timestamp :
+
+            Date.now()
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+RESTART
+=========================================================*/
+
+function restart(name){
+
+    stop(
+
+        name
+
+    );
+
+    start(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    start,
+
+    stop,
+
+    restart,
+
+    ping,
+
+    pong
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+57_WebSocket.html
+Enterprise v2.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const WebSocketEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    websocket,
+
+    event,
+
+    callback
+
+){
+
+    const socket =
+
+        WebSocketService.get(
+
+            websocket
+
+        );
+
+    if(
+
+        !socket ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    socket.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        websocket +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    websocket,
+
+    event
+
+){
+
+    const socket =
+
+        WebSocketService.get(
+
+            websocket
+
+        );
+
+    const key =
+
+        websocket +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        socket &&
+
+        callback
+
+    ){
+
+        socket.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    websocket,
+
+    event,
+
+    detail
+
+){
+
+    const socket =
+
+        WebSocketService.get(
+
+            websocket
+
+        );
+
+    if(
+
+        !socket
+
+    ){
+
+        return;
+
+    }
+
+    socket.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(
+
+    websocket
+
+){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                websocket +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                websocket,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+57_WebSocket.html
+Enterprise v2.0
+Part 7 - Security Engine
+==========================================================-->
+
+<script>
+
+const WebSocketSecurity = (()=>{
+
+"use strict";
+
+/*=========================================================
+TOKEN
+=========================================================*/
+
+function token(
+
+    name,
+
+    token
+
+){
+
+    const config =
+
+        WebSocketService.config(
+
+            name
+
+        );
+
+    config.token =
+
+        token;
+
+    WebSocketService.config(
+
+        name,
+
+        config
+
+    );
+
+}
+
+/*=========================================================
+AUTH URL
+=========================================================*/
+
+function authenticatedURL(name){
+
+    const config =
+
+        WebSocketService.config(
+
+            name
+
+        );
+
+    if(
+
+        !config.token
+
+    ){
+
+        return config.url;
+
+    }
+
+    const separator =
+
+        config.url.includes("?")
+
+        ? "&"
+
+        : "?";
+
+    return config.url +
+
+        separator +
+
+        "token=" +
+
+        encodeURIComponent(
+
+            config.token
+
+        );
+
+}
+
+/*=========================================================
+VERIFY
+=========================================================*/
+
+function verify(name){
+
+    const socket =
+
+        WebSocketService.get(
+
+            name
+
+        );
+
+    return !!(
+
+        socket &&
+
+        socket.readyState ===
+
+        WebSocket.OPEN
+
+    );
+
+}
+
+/*=========================================================
+REFRESH TOKEN
+=========================================================*/
+
+function refresh(
+
+    name,
+
+    token
+
+){
+
+    token(
+
+        name,
+
+        token
+
+    );
+
+    if(
+
+        verify(name)
+
+    ){
+
+        WebSocketMessage.send(
+
+            name,
+
+            {
+
+                type :
+
+                "AUTH_REFRESH",
+
+                token :
+
+                token
+
+            }
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    const config =
+
+        WebSocketService.config(
+
+            name
+
+        );
+
+    delete config.token;
+
+    WebSocketService.config(
+
+        name,
+
+        config
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    token,
+
+    authenticatedURL,
+
+    verify,
+
+    refresh,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+57_WebSocket.html
+Enterprise v2.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const WebSocketProduction = (()=>{
+
+"use strict";
+
+const VERSION = "2.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config){
+
+    WebSocketService.config(
+
+        config.name,
+
+        config
+
+    );
+
+    if(
+
+        config.token
+
+    ){
+
+        WebSocketSecurity.token(
+
+            config.name,
+
+            config.token
+
+        );
+
+    }
+
+    const socket =
+
+        WebSocketConnection.connect(
+
+            config.name,
+
+            WebSocketSecurity
+
+            .authenticatedURL(
+
+                config.name
+
+            )
+
+        );
+
+    WebSocketMessage.bind(
+
+        config.name
+
+    );
+
+    if(
+
+        config.autoReconnect
+
+    ){
+
+        WebSocketReconnect.enable(
+
+            config.name,
+
+            config.url,
+
+            config.reconnectDelay
+
+        );
+
+    }
+
+    if(
+
+        config.heartbeat
+
+    ){
+
+        WebSocketHeartbeat.start(
+
+            config.name
+
+        );
+
+    }
+
+    WebSocketEvent.trigger(
+
+        config.name,
+
+        "ready",
+
+        {
+
+            status :
+
+            WebSocketConnection.status(
+
+                config.name
+
+            )
+
+        }
+
+    );
+
+    return socket;
+
+}
+
+/*=========================================================
+SEND
+=========================================================*/
+
+function send(
+
+    name,
+
+    data
+
+){
+
+    return WebSocketMessage.send(
+
+        name,
+
+        data
+
+    );
+
+}
+
+/*=========================================================
+CLOSE
+=========================================================*/
+
+function close(name){
+
+    WebSocketHeartbeat.stop(
+
+        name
+
+    );
+
+    WebSocketReconnect.stop(
+
+        name
+
+    );
+
+    WebSocketConnection.disconnect(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "WebSocket",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    send,
+
+    close,
+
+    info
+
+};
+
+})();
+
+</script>

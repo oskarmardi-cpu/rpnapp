@@ -1,0 +1,1433 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+39_Filter.html
+Enterprise v1.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const Filter = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    filters:new Map(),
+
+    operators:new Map(),
+
+    results:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    config
+
+){
+
+    state.filters.set(
+
+        name,
+
+        config
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.filters.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+SET OPERATOR
+=========================================================*/
+
+function operator(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.operators.get(
+
+            name
+
+        ) || "=";
+
+    }
+
+    state.operators.set(
+
+        name,
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+RESULT
+=========================================================*/
+
+function result(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.results.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.results.set(
+
+        name,
+
+        value
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    state.results.delete(
+
+        name
+
+    );
+
+    state.operators.delete(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    operator,
+
+    result,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+39_Filter.html
+Enterprise v1.0
+Part 2 - Filter Engine
+==========================================================-->
+
+<script>
+
+const FilterEngine = (()=>{
+
+"use strict";
+
+/*=========================================================
+APPLY
+=========================================================*/
+
+function apply(
+
+    name,
+
+    data,
+
+    field,
+
+    operator,
+
+    value
+
+){
+
+    const result =
+
+        data.filter(function(row){
+
+            return compare(
+
+                row[field],
+
+                operator,
+
+                value
+
+            );
+
+        });
+
+    Filter.result(
+
+        name,
+
+        result
+
+    );
+
+    return result;
+
+}
+
+/*=========================================================
+COMPARE
+=========================================================*/
+
+function compare(
+
+    left,
+
+    operator,
+
+    right
+
+){
+
+    switch(operator){
+
+        case "=":
+
+            return left == right;
+
+        case "!=":
+
+            return left != right;
+
+        case ">":
+
+            return left > right;
+
+        case "<":
+
+            return left < right;
+
+        case ">=":
+
+            return left >= right;
+
+        case "<=":
+
+            return left <= right;
+
+        case "contains":
+
+            return String(left)
+
+            .toLowerCase()
+
+            .includes(
+
+                String(right)
+
+                .toLowerCase()
+
+            );
+
+        case "startsWith":
+
+            return String(left)
+
+            .toLowerCase()
+
+            .startsWith(
+
+                String(right)
+
+                .toLowerCase()
+
+            );
+
+        case "endsWith":
+
+            return String(left)
+
+            .toLowerCase()
+
+            .endsWith(
+
+                String(right)
+
+                .toLowerCase()
+
+            );
+
+        default:
+
+            return true;
+
+    }
+
+}
+
+/*=========================================================
+RESET
+=========================================================*/
+
+function reset(name){
+
+    Filter.clear(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    apply,
+
+    compare,
+
+    reset
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+39_Filter.html
+Enterprise v1.0
+Part 3 - Operator Engine
+==========================================================-->
+
+<script>
+
+const FilterOperator = (()=>{
+
+"use strict";
+
+const operators = [
+
+    "=",
+
+    "!=",
+
+    ">",
+
+    "<",
+
+    ">=",
+
+    "<=",
+
+    "contains",
+
+    "startsWith",
+
+    "endsWith",
+
+    "empty",
+
+    "notEmpty",
+
+    "in",
+
+    "notIn"
+
+];
+
+/*=========================================================
+GET ALL
+=========================================================*/
+
+function all(){
+
+    return [
+
+        ...operators
+
+    ];
+
+}
+
+/*=========================================================
+EXISTS
+=========================================================*/
+
+function exists(
+
+    operator
+
+){
+
+    return operators.includes(
+
+        operator
+
+    );
+
+}
+
+/*=========================================================
+DEFAULT
+=========================================================*/
+
+function defaultOperator(){
+
+    return "=";
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    operator
+
+){
+
+    if(
+
+        !exists(operator)
+
+    ){
+
+        operators.push(
+
+            operator
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(
+
+    operator
+
+){
+
+    const index =
+
+        operators.indexOf(
+
+            operator
+
+        );
+
+    if(
+
+        index >= 0
+
+    ){
+
+        operators.splice(
+
+            index,
+
+            1
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+LABEL
+=========================================================*/
+
+function label(
+
+    operator
+
+){
+
+    const labels = {
+
+        "="          : "Equals",
+
+        "!="         : "Not Equals",
+
+        ">"          : "Greater Than",
+
+        "<"          : "Less Than",
+
+        ">="         : "Greater Equal",
+
+        "<="         : "Less Equal",
+
+        "contains"   : "Contains",
+
+        "startsWith" : "Starts With",
+
+        "endsWith"   : "Ends With",
+
+        "empty"      : "Is Empty",
+
+        "notEmpty"   : "Is Not Empty",
+
+        "in"         : "In List",
+
+        "notIn"      : "Not In List"
+
+    };
+
+    return labels[operator]
+
+        || operator;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    all,
+
+    exists,
+
+    defaultOperator,
+
+    register,
+
+    remove,
+
+    label
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+39_Filter.html
+Enterprise v1.0
+Part 4 - Condition Engine
+==========================================================-->
+
+<script>
+
+const FilterCondition = (()=>{
+
+"use strict";
+
+/*=========================================================
+MATCH
+=========================================================*/
+
+function match(
+
+    row,
+
+    conditions
+
+){
+
+    if(
+
+        !conditions ||
+
+        conditions.length===0
+
+    ){
+
+        return true;
+
+    }
+
+    return conditions.every(function(condition){
+
+        return evaluate(
+
+            row,
+
+            condition
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+EVALUATE
+=========================================================*/
+
+function evaluate(
+
+    row,
+
+    condition
+
+){
+
+    return FilterEngine.compare(
+
+        row[
+
+            condition.field
+
+        ],
+
+        condition.operator,
+
+        condition.value
+
+    );
+
+}
+
+/*=========================================================
+APPLY
+=========================================================*/
+
+function apply(
+
+    data,
+
+    conditions
+
+){
+
+    return data.filter(function(row){
+
+        return match(
+
+            row,
+
+            conditions
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+ADD
+=========================================================*/
+
+function add(
+
+    conditions,
+
+    field,
+
+    operator,
+
+    value
+
+){
+
+    conditions.push({
+
+        field,
+
+        operator,
+
+        value
+
+    });
+
+    return conditions;
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(
+
+    conditions,
+
+    index
+
+){
+
+    conditions.splice(
+
+        index,
+
+        1
+
+    );
+
+    return conditions;
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(){
+
+    return [];
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    match,
+
+    evaluate,
+
+    apply,
+
+    add,
+
+    remove,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+39_Filter.html
+Enterprise v1.0
+Part 5 - Event Engine
+==========================================================-->
+
+<script>
+
+const FilterEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    name,
+
+    event,
+
+    callback
+
+){
+
+    const filter =
+
+        Filter.get(name);
+
+    if(
+
+        !filter ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    if(
+
+        !listeners.has(name)
+
+    ){
+
+        listeners.set(
+
+            name,
+
+            {}
+
+        );
+
+    }
+
+    listeners
+
+        .get(name)[event] =
+
+        callback;
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    name,
+
+    event
+
+){
+
+    if(
+
+        listeners.has(name)
+
+    ){
+
+        delete listeners
+
+            .get(name)[event];
+
+    }
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    name,
+
+    event,
+
+    payload
+
+){
+
+    const events =
+
+        listeners.get(name);
+
+    if(
+
+        events &&
+
+        typeof events[event] ===
+
+        "function"
+
+    ){
+
+        events[event](
+
+            payload
+
+        );
+
+    }
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    listeners.delete(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+CLEAR ALL
+=========================================================*/
+
+function clearAll(){
+
+    listeners.clear();
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear,
+
+    clearAll
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+39_Filter.html
+Enterprise v1.0
+Part 6 - API Engine
+==========================================================-->
+
+<script>
+
+const FilterApi = (()=>{
+
+"use strict";
+
+/*=========================================================
+LOAD
+=========================================================*/
+
+async function load(
+
+    endpoint,
+
+    parameter
+
+){
+
+    const result =
+
+        await API.post(
+
+            endpoint,
+
+            parameter || {}
+
+        );
+
+    return result.data || [];
+
+}
+
+/*=========================================================
+FILTER
+=========================================================*/
+
+async function filter(
+
+    endpoint,
+
+    conditions,
+
+    parameter
+
+){
+
+    const payload =
+
+        Object.assign(
+
+            {},
+
+            parameter || {},
+
+            {
+
+                conditions :
+
+                conditions || []
+
+            }
+
+        );
+
+    const result =
+
+        await API.post(
+
+            endpoint,
+
+            payload
+
+        );
+
+    return result.data || [];
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+async function count(
+
+    endpoint,
+
+    conditions
+
+){
+
+    const data =
+
+        await filter(
+
+            endpoint,
+
+            conditions
+
+        );
+
+    return data.length;
+
+}
+
+/*=========================================================
+EXISTS
+=========================================================*/
+
+async function exists(
+
+    endpoint,
+
+    conditions
+
+){
+
+    return (
+
+        await count(
+
+            endpoint,
+
+            conditions
+
+        )
+
+    ) > 0;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    load,
+
+    filter,
+
+    count,
+
+    exists
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+39_Filter.html
+Enterprise v1.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const FilterTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-filter-default",
+
+    light     : "rpn-filter-light",
+
+    dark      : "rpn-filter-dark",
+
+    corporate : "rpn-filter-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current = theme;
+
+        applyAll();
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY
+=========================================================*/
+
+function apply(name){
+
+    const filter =
+
+        Filter.get(name);
+
+    if(
+
+        !filter ||
+
+        !filter.element
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(themes)
+
+    .forEach(function(css){
+
+        filter.element.classList.remove(css);
+
+    });
+
+    filter.element.classList.add(
+
+        themes[current]
+
+    );
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    Filter.state.filters
+
+    .forEach(function(
+
+        filter,
+
+        name
+
+    ){
+
+        apply(name);
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] = css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    get,
+
+    apply,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+39_Filter.html
+Enterprise v1.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const FilterProduction = (()=>{
+
+"use strict";
+
+const VERSION = "1.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+function boot(config){
+
+    Filter.register(
+
+        config.name,
+
+        config
+
+    );
+
+    FilterTheme.apply(
+
+        config.name
+
+    );
+
+    return config;
+
+}
+
+/*=========================================================
+APPLY
+=========================================================*/
+
+function apply(
+
+    name,
+
+    data,
+
+    conditions
+
+){
+
+    const result =
+
+        FilterCondition.apply(
+
+            data,
+
+            conditions
+
+        );
+
+    Filter.result(
+
+        name,
+
+        result
+
+    );
+
+    FilterEvent.trigger(
+
+        name,
+
+        "filter",
+
+        result
+
+    );
+
+    return result;
+
+}
+
+/*=========================================================
+API
+=========================================================*/
+
+async function api(
+
+    endpoint,
+
+    conditions,
+
+    parameter
+
+){
+
+    return await FilterApi.filter(
+
+        endpoint,
+
+        conditions,
+
+        parameter
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    Filter.clear(
+
+        name
+
+    );
+
+    FilterEvent.clear(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    clear(name);
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "Filter",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    apply,
+
+    api,
+
+    clear,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>

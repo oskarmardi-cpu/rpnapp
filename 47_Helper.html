@@ -1,0 +1,125 @@
+<script>
+/*=========================================================
+ RPN SYSTEM
+ Global Helper
+=========================================================*/
+
+"use strict";
+
+/*=========================================================
+ LOADER
+=========================================================*/
+
+function showLoader(title = "Loading", message = "Mohon tunggu...") {
+
+    const overlay = document.getElementById("globalLoader");
+
+    if (!overlay) return;
+
+    const loaderTitle = document.getElementById("loaderTitle");
+    const loaderMessage = document.getElementById("loaderMessage");
+    const progress = document.getElementById("loaderProgressBar");
+    const percentage = document.getElementById("loaderPercentage");
+
+    if (loaderTitle) loaderTitle.textContent = title;
+
+    if (loaderMessage) loaderMessage.textContent = message;
+
+    if (progress) progress.style.width = "100%";
+
+    if (percentage) percentage.textContent = "100%";
+
+    overlay.style.display = "flex";
+
+}
+
+function hideLoader() {
+
+    const overlay = document.getElementById("globalLoader");
+
+    if (!overlay) return;
+
+    overlay.style.display = "none";
+
+}
+
+/*=========================================================
+ MODAL
+=========================================================*/
+
+function showModal(title = "Informasi", message = "") {
+
+    const modal = document.getElementById("modalOverlay");
+
+    if (!modal) {
+
+        alert(title + "\n\n" + message);
+
+        return;
+
+    }
+
+    document.getElementById("modalTitle").textContent = title;
+
+    document.getElementById("modalMessage").textContent = message;
+
+    modal.style.display = "flex";
+
+}
+
+function hideModal() {
+
+    const modal = document.getElementById("modalOverlay");
+
+    if (!modal) return;
+
+    modal.style.display = "none";
+
+}
+
+/*=========================================================
+ TOAST
+=========================================================*/
+
+function showToast(message = "Success") {
+
+    const toast = document.getElementById("toastNotification");
+
+    if (!toast) return;
+
+    document.getElementById("toastMessage").textContent = message;
+
+    toast.style.display = "flex";
+
+    setTimeout(function () {
+
+        toast.style.display = "none";
+
+    }, 3000);
+
+}
+
+/*=========================================================
+ EVENT
+=========================================================*/
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const modalOk = document.getElementById("modalOk");
+
+    if (modalOk) {
+
+        modalOk.addEventListener("click", hideModal);
+
+    }
+
+    const modalCancel = document.getElementById("modalCancel");
+
+    if (modalCancel) {
+
+        modalCancel.addEventListener("click", hideModal);
+
+    }
+
+});
+</script>

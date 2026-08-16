@@ -1,0 +1,235 @@
+<!-- =====================================================
+     RPN SYSTEM
+     HISTORY PAGE
+====================================================== -->
+
+<div id="view-history" class="page" style="display:none;">
+
+    <!-- HEADER -->
+
+    <header class="page-header">
+
+        <div>
+
+            <h2>
+
+                History Transaction
+
+            </h2>
+
+            <p>
+
+                Riwayat seluruh transaksi RPN System
+
+            </p>
+
+        </div>
+
+        <div>
+
+            <button
+                id="btnRefreshHistory"
+                class="btn-icon">
+
+                <i class="fa-solid fa-rotate-right"></i>
+
+            </button>
+
+        </div>
+
+    </header>
+
+
+
+    <!-- =====================================================
+         FILTER AREA
+    ====================================================== -->
+
+    <section class="history-filter">
+
+        <div class="filter-group">
+
+            <input
+                type="text"
+                id="historySearch"
+                placeholder="Cari transaksi...">
+
+        </div>
+
+        <div class="filter-group">
+
+            <select id="historyType">
+
+                <option value="ALL">
+                    Semua Transaksi
+                </option>
+
+                <option value="PERBAIKAN">
+                    Perbaikan
+                </option>
+
+                <option value="PENARIKAN">
+                    Penarikan
+                </option>
+
+                <option value="PENGIRIMAN">
+                    Pengiriman
+                </option>
+
+                <option value="LOAN">
+                    Loan Part
+                </option>
+
+            </select>
+
+        </div>
+
+        <div class="filter-group">
+
+            <input
+                type="date"
+                id="historyDate">
+
+        </div>
+
+        <button
+            id="btnFilterHistory"
+            class="btn-primary">
+
+            <i class="fa-solid fa-filter"></i>
+
+            <span>
+
+                Filter
+
+            </span>
+
+        </button>
+
+    </section>
+
+
+
+    <!-- =====================================================
+         TABLE
+    ====================================================== -->
+
+    <section class="history-table">
+
+        <table class="table-history">
+
+            <thead>
+
+                <tr>
+
+                    <th>No</th>
+
+                    <th>Tanggal</th>
+
+                    <th>Jenis</th>
+
+                    <th>Unit</th>
+
+                    <th>Serial Number</th>
+
+                    <th>Cabang</th>
+
+                    <th>Status</th>
+
+                    <th>User</th>
+
+                    <th>Aksi</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody id="historyTableBody">
+
+                <!-- AUTO GENERATE -->
+
+            </tbody>
+
+        </table>
+
+    </section>
+
+
+
+    <!-- =====================================================
+         PAGINATION
+    ====================================================== -->
+
+    <section class="history-pagination">
+
+        <button
+            id="btnPrevHistory"
+            class="btn-secondary">
+
+            <i class="fa-solid fa-angle-left"></i>
+
+        </button>
+
+        <span id="historyPage">
+
+            Page 1 / 1
+
+        </span>
+
+        <button
+            id="btnNextHistory"
+            class="btn-secondary">
+
+            <i class="fa-solid fa-angle-right"></i>
+
+        </button>
+
+    </section>
+
+
+
+    <!-- =====================================================
+         SUMMARY
+    ====================================================== -->
+
+    <section class="history-summary">
+
+        <div class="summary-card">
+
+            <span>Total Data</span>
+
+            <h3 id="historyTotal">
+
+                0
+
+            </h3>
+
+        </div>
+
+        <div class="summary-card">
+
+            <span>Hari Ini</span>
+
+            <h3 id="historyToday">
+
+                0
+
+            </h3>
+
+        </div>
+
+        <div class="summary-card">
+
+            <span>Bulan Ini</span>
+
+            <h3 id="historyMonth">
+
+                0
+
+            </h3>
+
+        </div>
+
+    </section>
+
+</div>

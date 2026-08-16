@@ -1,0 +1,607 @@
+<!--=========================================================
+ RPN MANAGEMENT SYSTEM
+ 41_Auth.html
+ AUTHENTICATION CONTROLLER
+ Enterprise Edition v4.1
+==========================================================-->
+
+<script>
+
+const Auth = (() => {
+
+    "use strict";
+
+    let currentUser = null;
+
+
+    /*=======================================================
+      LOGIN
+    =======================================================*/
+
+    function login(){
+
+        const usernameInput =
+            document.getElementById("loginUsername");
+
+        const passwordInput =
+            document.getElementById("loginPassword");
+
+
+        const username =
+            usernameInput
+                ? usernameInput.value.trim()
+                : "";
+
+        const password =
+            passwordInput
+                ? passwordInput.value
+                : "";
+
+
+        if(!username){
+
+            showError(
+                "Username wajib diisi."
+            );
+
+            return;
+
+        }
+
+
+        if(!password){
+
+            showError(
+                "Password wajib diisi."
+            );
+
+            return;
+
+        }
+
+
+        setLoading(true);
+
+
+        console.log(
+            "LOGIN REQUEST:",
+            username
+        );
+
+
+        /*===================================================
+          API LOGIN
+          API.login menggunakan CALLBACK
+        ===================================================*/
+
+        API.login(
+
+            username,
+
+            password,
+
+            function(response){
+
+                console.log(
+                    "LOGIN RESPONSE:",
+                    response
+                );
+
+
+                try{
+
+                    /*---------------------------------------
+                      RESPONSE CHECK
+                    ---------------------------------------*/
+
+                    if(!response){
+
+                        throw new Error(
+                            "Server tidak memberikan response."
+                        );
+
+                    }
+
+
+                    /*---------------------------------------
+                      SERVER ERROR
+                    ---------------------------------------*/
+
+                    if(
+                        response.success !== true
+                    ){
+
+                        throw new Error(
+
+                            response.message ||
+
+                            "Username atau password salah."
+
+                        );
+
+                    }
+
+
+                    /*---------------------------------------
+                      GET USER
+                    ---------------------------------------*/
+
+                    const data =
+                        response.data || {};
+
+                    const user =
+                        data.USER;
+
+
+                    if(!user){
+
+                        console.error(
+                            "RESPONSE DATA:",
+                            data
+                        );
+
+                        throw new Error(
+                            "Login berhasil tetapi data USER tidak diterima."
+                        );
+
+                    }
+
+
+                    /*---------------------------------------
+                      SAVE USER
+                    ---------------------------------------*/
+
+                    currentUser = user;
+
+
+                    sessionStorage.setItem(
+
+                        "RPN_USERNAME",
+
+                        String(
+                            user.USERNAME || ""
+                        )
+
+                    );
+
+
+                    sessionStorage.setItem(
+
+                        "RPN_USER",
+
+                        JSON.stringify(user)
+
+                    );
+
+
+                    /*---------------------------------------
+                      CLEAR PASSWORD
+                    ---------------------------------------*/
+
+                    if(passwordInput){
+
+                        passwordInput.value = "";
+
+                    }
+
+
+                    /*---------------------------------------
+                      LOGIN SUCCESS
+                    ---------------------------------------*/
+
+                    console.log(
+                        "LOGIN SUCCESS:",
+                        user
+                    );
+
+
+                    App.app();
+
+                }
+
+                catch(error){
+
+                    console.error(
+                        "LOGIN ERROR:",
+                        error
+                    );
+
+
+                    showError(
+
+                        error &&
+                        error.message
+
+                            ? error.message
+
+                            : "Login gagal."
+
+                    );
+
+                }
+
+                finally{
+
+                    setLoading(false);
+
+                }
+
+            },
+
+
+            function(error){
+
+                console.error(
+                    "LOGIN SERVER ERROR:",
+                    error
+                );
+
+
+                setLoading(false);
+
+
+                showError(
+
+                    error &&
+                    error.message
+
+                        ? error.message
+
+                        : "Server tidak memberikan response."
+
+                );
+
+            }
+
+        );
+
+    }
+
+
+    /*=======================================================
+      LOGOUT
+    =======================================================*/
+
+    function logout(){
+
+        setLoading(false);
+
+
+        API.logout(
+
+            function(response){
+
+                console.log(
+                    "LOGOUT RESPONSE:",
+                    response
+                );
+
+                clear();
+
+                App.login();
+
+            },
+
+
+            function(error){
+
+                console.error(
+                    "LOGOUT ERROR:",
+                    error
+                );
+
+                clear();
+
+                App.login();
+
+            }
+
+        );
+
+    }
+
+
+    /*=======================================================
+      CLEAR
+    =======================================================*/
+
+    function clear(){
+
+        currentUser = null;
+
+
+        sessionStorage.removeItem(
+            "RPN_USERNAME"
+        );
+
+
+        sessionStorage.removeItem(
+            "RPN_USER"
+        );
+
+    }
+
+
+    /*=======================================================
+      GET USER
+    =======================================================*/
+
+    function getUser(){
+
+        return currentUser;
+
+    }
+
+
+    /*=======================================================
+      LOGIN STATUS
+    =======================================================*/
+
+    function isLogin(){
+
+        return currentUser !== null;
+
+    }
+
+
+    /*=======================================================
+      LOADING
+    =======================================================*/
+
+    function setLoading(
+        loading
+    ){
+
+        const button =
+            document.getElementById(
+                "btnLogin"
+            );
+
+
+        if(!button){
+
+            return;
+
+        }
+
+
+        button.disabled = loading;
+
+
+        if(loading){
+
+            button.innerHTML =
+
+                '<i class="fa-solid fa-spinner fa-spin"></i>' +
+
+                '<span>Memverifikasi...</span>';
+
+        }
+
+        else{
+
+            button.innerHTML =
+
+                '<i class="fa-solid fa-right-to-bracket"></i>' +
+
+                '<span>Login</span>';
+
+        }
+
+    }
+
+
+    /*=======================================================
+      ERROR
+    =======================================================*/
+
+    function showError(
+        message
+    ){
+
+        if(
+            typeof showModal === "function"
+        ){
+
+            showModal(
+                "Login",
+                message
+            );
+
+            return;
+
+        }
+
+
+        if(
+            typeof Toast !== "undefined" &&
+            typeof Toast.error === "function"
+        ){
+
+            Toast.error(message);
+
+            return;
+
+        }
+
+
+        alert(message);
+
+    }
+
+
+    /*=======================================================
+      INITIALIZE
+    =======================================================*/
+
+    function init(){
+
+        const form =
+            document.getElementById(
+                "loginForm"
+            );
+
+
+        if(form){
+
+            if(
+                form.dataset.authBound !== "true"
+            ){
+
+                form.dataset.authBound = "true";
+
+
+                form.addEventListener(
+
+                    "submit",
+
+                    function(event){
+
+                        event.preventDefault();
+
+                        login();
+
+                    }
+
+                );
+
+            }
+
+        }
+
+
+        /*===================================================
+          PASSWORD EYE
+        ===================================================*/
+
+        const toggle =
+            document.getElementById(
+                "btnTogglePassword"
+            );
+
+
+        const password =
+            document.getElementById(
+                "loginPassword"
+            );
+
+
+        const eye =
+            document.getElementById(
+                "passwordEye"
+            );
+
+
+        if(
+            toggle &&
+            password &&
+            eye
+        ){
+
+            if(
+                toggle.dataset.bound !== "true"
+            ){
+
+                toggle.dataset.bound = "true";
+
+
+                toggle.addEventListener(
+
+                    "click",
+
+                    function(){
+
+                        if(
+                            password.type === "password"
+                        ){
+
+                            password.type = "text";
+
+
+                            eye.className =
+                                "fa-solid fa-eye-slash";
+
+
+                            toggle.title =
+                                "Sembunyikan password";
+
+
+                            toggle.setAttribute(
+                                "aria-label",
+                                "Sembunyikan password"
+                            );
+
+                        }
+
+                        else{
+
+                            password.type =
+                                "password";
+
+
+                            eye.className =
+                                "fa-solid fa-eye";
+
+
+                            toggle.title =
+                                "Tampilkan password";
+
+
+                            toggle.setAttribute(
+                                "aria-label",
+                                "Tampilkan password"
+                            );
+
+                        }
+
+                    }
+
+                );
+
+            }
+
+        }
+
+    }
+
+
+    /*=======================================================
+      PUBLIC
+    =======================================================*/
+
+    return {
+
+        init,
+
+        login,
+
+        logout,
+
+        clear,
+
+        getUser,
+
+        isLogin
+
+    };
+
+})();
+
+
+/*=========================================================
+ START AUTH
+==========================================================*/
+
+window.addEventListener(
+
+    "load",
+
+    function(){
+
+        Auth.init();
+
+    }
+
+);
+
+</script>

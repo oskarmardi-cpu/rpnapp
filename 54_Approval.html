@@ -1,0 +1,1799 @@
+<!--=========================================================
+RPN MANAGEMENT SYSTEM
+54_Approval.html
+Enterprise v1.0
+Part 1 - Core Engine
+==========================================================-->
+
+<script>
+
+const Approval = (()=>{
+
+"use strict";
+
+/*=========================================================
+STATE
+=========================================================*/
+
+const state={
+
+    approvals:new Map(),
+
+    requests:new Map(),
+
+    approvers:new Map(),
+
+    datasource:new Map(),
+
+    history:new Map()
+
+};
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    element
+
+){
+
+    state.approvals.set(
+
+        name,
+
+        element
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(name){
+
+    return state.approvals.get(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+REQUESTS
+=========================================================*/
+
+function requests(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.requests.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.requests.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+APPROVERS
+=========================================================*/
+
+function approvers(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.approvers.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.approvers.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+DATASOURCE
+=========================================================*/
+
+function datasource(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.datasource.get(
+
+            name
+
+        ) || {};
+
+    }
+
+    state.datasource.set(
+
+        name,
+
+        value || {}
+
+    );
+
+}
+
+/*=========================================================
+HISTORY
+=========================================================*/
+
+function history(
+
+    name,
+
+    value
+
+){
+
+    if(arguments.length===1){
+
+        return state.history.get(
+
+            name
+
+        ) || [];
+
+    }
+
+    state.history.set(
+
+        name,
+
+        value || []
+
+    );
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    state.approvals.delete(name);
+
+    state.requests.delete(name);
+
+    state.approvers.delete(name);
+
+    state.datasource.delete(name);
+
+    state.history.delete(name);
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    state,
+
+    register,
+
+    get,
+
+    requests,
+
+    approvers,
+
+    datasource,
+
+    history,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+54_Approval.html
+Enterprise v1.0
+Part 2 - Render Engine
+==========================================================-->
+
+<script>
+
+const ApprovalRender = (()=>{
+
+"use strict";
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(config){
+
+    const approval =
+
+        document.createElement(
+
+            "div"
+
+        );
+
+    approval.id =
+
+        config.id ||
+
+        config.name;
+
+    approval.className =
+
+        config.className ||
+
+        "rpn-approval";
+
+    approval.innerHTML = `
+
+<div class="approval-header"></div>
+
+<div class="approval-toolbar"></div>
+
+<div class="approval-list"></div>
+
+<div class="approval-footer"></div>
+
+`;
+
+    if(
+
+        config.container
+
+    ){
+
+        document
+
+        .getElementById(
+
+            config.container
+
+        )
+
+        .appendChild(
+
+            approval
+
+        );
+
+    }
+
+    Approval.register(
+
+        config.name,
+
+        approval
+
+    );
+
+    return approval;
+
+}
+
+/*=========================================================
+HEADER
+=========================================================*/
+
+function header(name){
+
+    const approval =
+
+        Approval.get(name);
+
+    return approval
+
+        ? approval.querySelector(
+
+            ".approval-header"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+TOOLBAR
+=========================================================*/
+
+function toolbar(name){
+
+    const approval =
+
+        Approval.get(name);
+
+    return approval
+
+        ? approval.querySelector(
+
+            ".approval-toolbar"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+LIST
+=========================================================*/
+
+function list(name){
+
+    const approval =
+
+        Approval.get(name);
+
+    return approval
+
+        ? approval.querySelector(
+
+            ".approval-list"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+FOOTER
+=========================================================*/
+
+function footer(name){
+
+    const approval =
+
+        Approval.get(name);
+
+    return approval
+
+        ? approval.querySelector(
+
+            ".approval-footer"
+
+        )
+
+        : null;
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(name){
+
+    const approval =
+
+        Approval.get(name);
+
+    if(
+
+        approval &&
+
+        approval.parentNode
+
+    ){
+
+        approval.parentNode.removeChild(
+
+            approval
+
+        );
+
+    }
+
+    Approval.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    render,
+
+    header,
+
+    toolbar,
+
+    list,
+
+    footer,
+
+    remove
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+54_Approval.html
+Enterprise v1.0
+Part 3 - Request Engine
+==========================================================-->
+
+<script>
+
+const ApprovalRequest = (()=>{
+
+"use strict";
+
+/*=========================================================
+ADD
+=========================================================*/
+
+function add(
+
+    name,
+
+    request
+
+){
+
+    const list =
+
+        Approval.requests(
+
+            name
+
+        );
+
+    list.push({
+
+        id :
+
+        request.id ||
+
+        Date.now(),
+
+        title :
+
+        request.title ||
+
+        "",
+
+        requester :
+
+        request.requester ||
+
+        "",
+
+        status :
+
+        request.status ||
+
+        "Pending",
+
+        date :
+
+        request.date ||
+
+        new Date(),
+
+        data :
+
+        request.data ||
+
+        {}
+
+    });
+
+    Approval.requests(
+
+        name,
+
+        list
+
+    );
+
+    render(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(
+
+    name,
+
+    id
+
+){
+
+    return Approval
+
+        .requests(name)
+
+        .find(function(item){
+
+            return item.id===id;
+
+        });
+
+}
+
+/*=========================================================
+REMOVE
+=========================================================*/
+
+function remove(
+
+    name,
+
+    id
+
+){
+
+    const list =
+
+        Approval
+
+        .requests(name)
+
+        .filter(function(item){
+
+            return item.id!==id;
+
+        });
+
+    Approval.requests(
+
+        name,
+
+        list
+
+    );
+
+    render(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+RENDER
+=========================================================*/
+
+function render(name){
+
+    const container =
+
+        ApprovalRender.list(
+
+            name
+
+        );
+
+    if(
+
+        !container
+
+    ){
+
+        return;
+
+    }
+
+    container.innerHTML = "";
+
+    Approval.requests(
+
+        name
+
+    ).forEach(function(item){
+
+        container.insertAdjacentHTML(
+
+            "beforeend",
+
+            template(item)
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+TEMPLATE
+=========================================================*/
+
+function template(item){
+
+return `
+
+<div
+class="approval-item"
+data-id="${item.id}">
+
+<div class="approval-title">
+
+${item.title}
+
+</div>
+
+<div class="approval-requester">
+
+${item.requester}
+
+</div>
+
+<div class="approval-status">
+
+${item.status}
+
+</div>
+
+</div>
+
+`;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    add,
+
+    get,
+
+    remove,
+
+    render
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+54_Approval.html
+Enterprise v1.0
+Part 4 - Approval Engine
+==========================================================-->
+
+<script>
+
+const ApprovalEngine = (()=>{
+
+"use strict";
+
+/*=========================================================
+APPROVE
+=========================================================*/
+
+function approve(
+
+    name,
+
+    id,
+
+    approver,
+
+    remark
+
+){
+
+    update(
+
+        name,
+
+        id,
+
+        "Approved",
+
+        approver,
+
+        remark
+
+    );
+
+}
+
+/*=========================================================
+REJECT
+=========================================================*/
+
+function reject(
+
+    name,
+
+    id,
+
+    approver,
+
+    remark
+
+){
+
+    update(
+
+        name,
+
+        id,
+
+        "Rejected",
+
+        approver,
+
+        remark
+
+    );
+
+}
+
+/*=========================================================
+UPDATE
+=========================================================*/
+
+function update(
+
+    name,
+
+    id,
+
+    status,
+
+    approver,
+
+    remark
+
+){
+
+    const item =
+
+        ApprovalRequest.get(
+
+            name,
+
+            id
+
+        );
+
+    if(
+
+        !item
+
+    ){
+
+        return;
+
+    }
+
+    item.status =
+
+        status;
+
+    item.approver =
+
+        approver || "";
+
+    item.remark =
+
+        remark || "";
+
+    item.approvedDate =
+
+        new Date();
+
+    ApprovalHistory.add(
+
+        name,
+
+        item
+
+    );
+
+    ApprovalRequest.render(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+PENDING
+=========================================================*/
+
+function pending(name){
+
+    return Approval
+
+        .requests(name)
+
+        .filter(function(item){
+
+            return item.status ===
+
+                "Pending";
+
+        });
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(
+
+    name,
+
+    status
+
+){
+
+    return Approval
+
+        .requests(name)
+
+        .filter(function(item){
+
+            return status
+
+                ? item.status===status
+
+                : true;
+
+        })
+
+        .length;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    approve,
+
+    reject,
+
+    pending,
+
+    count
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+54_Approval.html
+Enterprise v1.0
+Part 5 - History Engine
+==========================================================-->
+
+<script>
+
+const ApprovalHistory = (()=>{
+
+"use strict";
+
+/*=========================================================
+ADD
+=========================================================*/
+
+function add(
+
+    name,
+
+    record
+
+){
+
+    const history =
+
+        Approval.history(
+
+            name
+
+        );
+
+    history.push({
+
+        id :
+
+        record.id,
+
+        title :
+
+        record.title,
+
+        requester :
+
+        record.requester,
+
+        approver :
+
+        record.approver ||
+
+        "",
+
+        status :
+
+        record.status,
+
+        remark :
+
+        record.remark ||
+
+        "",
+
+        date :
+
+        new Date()
+
+    });
+
+    Approval.history(
+
+        name,
+
+        history
+
+    );
+
+}
+
+/*=========================================================
+LIST
+=========================================================*/
+
+function list(name){
+
+    return Approval.history(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(
+
+    name,
+
+    id
+
+){
+
+    return list(
+
+        name
+
+    ).find(function(item){
+
+        return item.id === id;
+
+    });
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    Approval.history(
+
+        name,
+
+        []
+
+    );
+
+}
+
+/*=========================================================
+COUNT
+=========================================================*/
+
+function count(name){
+
+    return list(
+
+        name
+
+    ).length;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    add,
+
+    list,
+
+    get,
+
+    clear,
+
+    count
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+54_Approval.html
+Enterprise v1.0
+Part 6 - Event Engine
+==========================================================-->
+
+<script>
+
+const ApprovalEvent = (()=>{
+
+"use strict";
+
+const listeners = new Map();
+
+/*=========================================================
+ON
+=========================================================*/
+
+function on(
+
+    approval,
+
+    event,
+
+    callback
+
+){
+
+    const element =
+
+        Approval.get(
+
+            approval
+
+        );
+
+    if(
+
+        !element ||
+
+        typeof callback !==
+
+        "function"
+
+    ){
+
+        return;
+
+    }
+
+    element.addEventListener(
+
+        event,
+
+        callback
+
+    );
+
+    listeners.set(
+
+        approval +
+
+        ":" +
+
+        event,
+
+        callback
+
+    );
+
+}
+
+/*=========================================================
+OFF
+=========================================================*/
+
+function off(
+
+    approval,
+
+    event
+
+){
+
+    const element =
+
+        Approval.get(
+
+            approval
+
+        );
+
+    const key =
+
+        approval +
+
+        ":" +
+
+        event;
+
+    const callback =
+
+        listeners.get(
+
+            key
+
+        );
+
+    if(
+
+        element &&
+
+        callback
+
+    ){
+
+        element.removeEventListener(
+
+            event,
+
+            callback
+
+        );
+
+    }
+
+    listeners.delete(
+
+        key
+
+    );
+
+}
+
+/*=========================================================
+TRIGGER
+=========================================================*/
+
+function trigger(
+
+    approval,
+
+    event,
+
+    detail
+
+){
+
+    const element =
+
+        Approval.get(
+
+            approval
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    element.dispatchEvent(
+
+        new CustomEvent(
+
+            event,
+
+            {
+
+                detail
+
+            }
+
+        )
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(
+
+    approval
+
+){
+
+    Array.from(
+
+        listeners.keys()
+
+    )
+
+    .forEach(function(key){
+
+        if(
+
+            key.startsWith(
+
+                approval +
+
+                ":"
+
+            )
+
+        ){
+
+            const event =
+
+                key.split(
+
+                    ":"
+
+                )[1];
+
+            off(
+
+                approval,
+
+                event
+
+            );
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    on,
+
+    off,
+
+    trigger,
+
+    clear
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+54_Approval.html
+Enterprise v1.0
+Part 7 - Theme Engine
+==========================================================-->
+
+<script>
+
+const ApprovalTheme = (()=>{
+
+"use strict";
+
+let current = "default";
+
+const themes = {
+
+    default   : "rpn-approval-default",
+
+    light     : "rpn-approval-light",
+
+    dark      : "rpn-approval-dark",
+
+    primary   : "rpn-approval-primary",
+
+    success   : "rpn-approval-success",
+
+    warning   : "rpn-approval-warning",
+
+    danger    : "rpn-approval-danger",
+
+    corporate : "rpn-approval-corporate"
+
+};
+
+/*=========================================================
+SET
+=========================================================*/
+
+function set(
+
+    approval,
+
+    theme
+
+){
+
+    if(
+
+        !themes[theme]
+
+    ){
+
+        return;
+
+    }
+
+    const element =
+
+        Approval.get(
+
+            approval
+
+        );
+
+    if(
+
+        !element
+
+    ){
+
+        return;
+
+    }
+
+    Object.values(
+
+        themes
+
+    )
+
+    .forEach(function(css){
+
+        element.classList.remove(
+
+            css
+
+        );
+
+    });
+
+    element.classList.add(
+
+        themes[theme]
+
+    );
+
+}
+
+/*=========================================================
+SET DEFAULT
+=========================================================*/
+
+function setDefault(theme){
+
+    if(
+
+        themes[theme]
+
+    ){
+
+        current =
+
+            theme;
+
+    }
+
+}
+
+/*=========================================================
+GET
+=========================================================*/
+
+function get(){
+
+    return current;
+
+}
+
+/*=========================================================
+APPLY ALL
+=========================================================*/
+
+function applyAll(){
+
+    Approval.state.approvals
+
+    .forEach(function(
+
+        element,
+
+        name
+
+    ){
+
+        set(
+
+            name,
+
+            current
+
+        );
+
+    });
+
+}
+
+/*=========================================================
+REGISTER
+=========================================================*/
+
+function register(
+
+    name,
+
+    css
+
+){
+
+    themes[name] =
+
+        css;
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    set,
+
+    setDefault,
+
+    get,
+
+    applyAll,
+
+    register
+
+};
+
+})();
+
+</script><!--=========================================================
+RPN MANAGEMENT SYSTEM
+54_Approval.html
+Enterprise v1.0
+Part 8 - Production Final
+==========================================================-->
+
+<script>
+
+const ApprovalProduction = (()=>{
+
+"use strict";
+
+const VERSION = "1.0.0";
+
+/*=========================================================
+BOOT
+=========================================================*/
+
+async function boot(config){
+
+    const approval =
+
+        ApprovalRender.render(
+
+            config
+
+        );
+
+    ApprovalTheme.set(
+
+        config.name,
+
+        config.theme ||
+
+        "default"
+
+    );
+
+    Approval.datasource(
+
+        config.name,
+
+        config.datasource ||
+
+        {}
+
+    );
+
+    Approval.approvers(
+
+        config.name,
+
+        config.approvers ||
+
+        []
+
+    );
+
+    Approval.requests(
+
+        config.name,
+
+        config.requests ||
+
+        []
+
+    );
+
+    ApprovalRequest.render(
+
+        config.name
+
+    );
+
+    ApprovalEvent.trigger(
+
+        config.name,
+
+        "ready",
+
+        {
+
+            total :
+
+            Approval.requests(
+
+                config.name
+
+            ).length
+
+        }
+
+    );
+
+    return approval;
+
+}
+
+/*=========================================================
+REFRESH
+=========================================================*/
+
+function refresh(name){
+
+    ApprovalRequest.render(
+
+        name
+
+    );
+
+    ApprovalEvent.trigger(
+
+        name,
+
+        "refresh",
+
+        {
+
+            pending :
+
+            ApprovalEngine.count(
+
+                name,
+
+                "Pending"
+
+            )
+
+        }
+
+    );
+
+}
+
+/*=========================================================
+CLEAR
+=========================================================*/
+
+function clear(name){
+
+    Approval.requests(
+
+        name,
+
+        []
+
+    );
+
+    ApprovalHistory.clear(
+
+        name
+
+    );
+
+    ApprovalRequest.render(
+
+        name
+
+    );
+
+    ApprovalEvent.trigger(
+
+        name,
+
+        "clear",
+
+        {}
+
+    );
+
+}
+
+/*=========================================================
+DESTROY
+=========================================================*/
+
+function destroy(name){
+
+    ApprovalEvent.clear(
+
+        name
+
+    );
+
+    ApprovalHistory.clear(
+
+        name
+
+    );
+
+    ApprovalRender.remove(
+
+        name
+
+    );
+
+}
+
+/*=========================================================
+INFO
+=========================================================*/
+
+function info(){
+
+    return{
+
+        component :
+
+        "Approval",
+
+        version :
+
+        VERSION,
+
+        edition :
+
+        "Enterprise",
+
+        status :
+
+        "Production"
+
+    };
+
+}
+
+/*=========================================================
+PUBLIC
+=========================================================*/
+
+return{
+
+    boot,
+
+    refresh,
+
+    clear,
+
+    destroy,
+
+    info
+
+};
+
+})();
+
+</script>
