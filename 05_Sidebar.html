@@ -1,318 +1,90 @@
 <!--=========================================================
 RPN MANAGEMENT SYSTEM
 05_Sidebar.html
-Enterprise Edition v5.0
+Enterprise Edition v6.0 — Responsive Navigation
 ==========================================================-->
 
 <aside id="sidebar" class="sidebar">
 
-  <!--=========================================
-    USER
-  ==========================================-->
+  <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Toggle sidebar" onclick="Sidebar.toggle()">
+    <i class="ri-menu-fold-line"></i>
+  </button>
 
   <div class="sidebar-user">
-
-    <img
-      id="sidebarUserPhoto"
-      class="sidebar-avatar"
-      src="">
-
+    <img id="sidebarUserPhoto" class="sidebar-avatar" src="" alt="User">
     <div class="sidebar-user-info">
-
-      <div id="sidebarUserName"
-           class="sidebar-user-name">
-      </div>
-
-      <div id="sidebarUserRole"
-           class="sidebar-user-role">
-      </div>
-
+      <div id="sidebarUserName" class="sidebar-user-name"></div>
+      <div id="sidebarUserRole" class="sidebar-user-role"></div>
     </div>
-
   </div>
 
-  <!--=========================================
-    MENU
-  ==========================================-->
-
   <nav id="sidebarMenu">
-
     <ul>
-
-      <!-- Dashboard -->
-
-      <li class="menu-item"
-          data-page="dashboard">
-
-        <a onclick="Router.dashboard()">
-
-          <i class="ri-dashboard-3-line"></i>
-
-          <span>Dashboard</span>
-
+      <li class="menu-item" data-page="dashboard">
+        <a onclick="Router.dashboard()" title="Dashboard">
+          <i class="ri-dashboard-3-line"></i><span>Dashboard</span>
         </a>
-
       </li>
-
-      <!-- Master -->
 
       <li class="menu-group">
-
         <div class="menu-title">
-
-          <i class="ri-database-2-line"></i>
-
-          <span>Master</span>
-
-          <i class="ri-arrow-down-s-line"></i>
-
+          <i class="ri-database-2-line"></i><span>Master</span><i class="ri-arrow-down-s-line menu-chevron"></i>
         </div>
-
         <ul>
-
-          <li onclick="Router.asset()">
-            Asset
-          </li>
-
-          <li onclick="Router.customer()">
-            Customer
-          </li>
-
-          <li onclick="Router.vendor()">
-            Vendor
-          </li>
-
-          <li onclick="Router.employee()">
-            Employee
-          </li>
-
+          <li onclick="Router.asset()">Asset</li>
+          <li onclick="Router.customer()">Customer</li>
+          <li onclick="Router.vendor()">Vendor</li>
+          <li onclick="Router.employee()">Employee</li>
         </ul>
-
       </li>
 
-      <!-- Rental -->
-
-      <li class="menu-item">
-
-        <a onclick="Router.rental()">
-
-          <i class="ri-truck-line"></i>
-
-          <span>Rental</span>
-
-        </a>
-
-      </li>
-
-      <!-- Workshop -->
-
-      <li class="menu-item">
-
-        <a onclick="Router.workshop()">
-
-          <i class="ri-tools-line"></i>
-
-          <span>Workshop</span>
-
-          <span
-            id="badgeWorkshop"
-            class="badge">
-          </span>
-
-        </a>
-
-      </li>
-
-      <!-- Inventory -->
-
-      <li class="menu-item">
-
-        <a onclick="Router.inventory()">
-
-          <i class="ri-box-3-line"></i>
-
-          <span>Inventory</span>
-
-        </a>
-
-      </li>
-
-      <!-- Used Unit -->
-
-      <li class="menu-item">
-
-        <a onclick="Router.used()">
-
-          <i class="ri-recycle-line"></i>
-
-          <span>Used Unit</span>
-
-        </a>
-
-      </li>
-
-      <!-- Export -->
-
-      <li class="menu-item">
-
-        <a onclick="Router.export()">
-
-          <i class="ri-ship-line"></i>
-
-          <span>Export</span>
-
-        </a>
-
-      </li>
-
-      <!-- Report -->
-
-      <li class="menu-item">
-
-        <a onclick="Router.report()">
-
-          <i class="ri-file-chart-line"></i>
-
-          <span>Report</span>
-
-        </a>
-
-      </li>
-
-      <!-- Admin -->
-
-      <li
-        id="menuAdmin"
-        class="menu-item">
-
-        <a onclick="Router.admin()">
-
-          <i class="ri-settings-3-line"></i>
-
-          <span>Administration</span>
-
-        </a>
-
-      </li>
-
+      <li class="menu-item"><a onclick="Router.rental()" title="Rental"><i class="ri-truck-line"></i><span>Rental</span></a></li>
+      <li class="menu-item"><a onclick="Router.workshop()" title="Workshop"><i class="ri-tools-line"></i><span>Workshop</span><span id="badgeWorkshop" class="badge"></span></a></li>
+      <li class="menu-item"><a onclick="Router.inventory()" title="Inventory"><i class="ri-box-3-line"></i><span>Inventory</span></a></li>
+      <li class="menu-item"><a onclick="Router.used()" title="Used Unit"><i class="ri-recycle-line"></i><span>Used Unit</span></a></li>
+      <li class="menu-item"><a onclick="Router.export()" title="Export"><i class="ri-ship-line"></i><span>Export</span></a></li>
+      <li class="menu-item"><a onclick="Router.report()" title="Report"><i class="ri-file-chart-line"></i><span>Report</span></a></li>
+      <li id="menuAdmin" class="menu-item"><a onclick="Router.admin()" title="Administration"><i class="ri-settings-3-line"></i><span>Administration</span></a></li>
     </ul>
-
   </nav>
 
+  <div class="sidebar-footer">
+    <span>RPN Management System</span><small>v6.0</small>
+  </div>
 </aside>
 
 <script>
-
-const Sidebar = (()=>{
-
-"use strict";
-
-function load(){
-
-    const user = Auth.getUser();
-
-    if(!user){
-
-        return;
-
-    }
-
-    sidebarUserName.innerHTML =
-
-        user.FULLNAME;
-
-    sidebarUserRole.innerHTML =
-
-        user.ROLE;
-
-    sidebarUserPhoto.src =
-
-        user.PHOTO;
-
+const Sidebar=(()=>{
+  "use strict";
+  function load(){
+    const user=Auth.getUser(); if(!user)return;
+    const name=document.getElementById("sidebarUserName");
+    const role=document.getElementById("sidebarUserRole");
+    const photo=document.getElementById("sidebarUserPhoto");
+    if(name)name.textContent=user.FULLNAME||"";
+    if(role)role.textContent=user.ROLE||"";
+    if(photo)photo.src=user.PHOTO||"";
     permission();
-
-}
-
-function permission(){
-
-    const user = Auth.getUser();
-
-    if(!user){
-
-        return;
-
+  }
+  function permission(){
+    const user=Auth.getUser(); if(!user)return;
+    const admin=document.getElementById("menuAdmin");
+    if(admin)admin.style.display=user.ROLE==="ADMIN"?"":"none";
+  }
+  function badge(id,value){
+    const el=document.getElementById(id); if(!el)return;
+    el.textContent=value??""; el.style.display=Number(value)>0?"inline-flex":"none";
+  }
+  function toggle(force){
+    const body=document.body;
+    const mobile=window.matchMedia("(max-width: 767px)").matches;
+    if(mobile){
+      body.classList.toggle("sidebar-mobile-open",force===undefined?undefined:!!force);
+    }else{
+      body.classList.toggle("sidebar-collapse",force===undefined?undefined:!!force);
     }
-
-    const role = user.ROLE;
-
-    menuAdmin.style.display =
-
-        role==="ADMIN"
-
-        ? ""
-
-        : "none";
-
-}
-
-function badge(
-
-    id,
-
-    value
-
-){
-
-    const el =
-
-      document.getElementById(id);
-
-    if(!el){
-
-        return;
-
-    }
-
-    el.innerHTML = value;
-
-    el.style.display =
-
-        value>0
-
-        ? "inline-flex"
-
-        : "none";
-
-}
-
-function toggle(){
-
-    document
-
-      .body
-
-      .classList
-
-      .toggle(
-
-        "sidebar-collapse"
-
-      );
-
-}
-
-return{
-
-    load,
-
-    permission,
-
-    badge,
-
-    toggle
-
-};
-
+  }
+  function closeMobile(){document.body.classList.remove("sidebar-mobile-open");}
+  return{load,permission,badge,toggle,closeMobile};
 })();
-
 </script>
