@@ -1,51 +1,39 @@
 <!--=========================================================
 RPN MANAGEMENT SYSTEM
 10_Router.html
-Enterprise Edition v5.0
+Enterprise Edition v5.1
+DYNAMIC PAGE NAVIGATION FIX
 ==========================================================-->
 <script>
 const Router=(()=>{
 "use strict";
 const pages={LOGIN:"03_Login",DASHBOARD:"13_Dashboard",MASTER:"14_Master",RENTAL:"15_Rental",WORKSHOP:"16_Workshop",INVENTORY:"17_Inventory",USED:"18_Used",EXPORT:"19_Export",REPORT:"20_Report",ADMIN:"21_Admin",PROFILE:"22_Profile",SETTING:"23_Setting"};
 let currentPage="";
-function restoreShell(){
-  const container=document.getElementById("page-container");
-  const dash=document.getElementById("view-dashboard");
-  if(container&&dash&&!container.contains(dash)) container.innerHTML="";
-  if(dash) dash.style.display="none";
-}
+
 function load(page){
-  if(currentPage===page)return;
+  const container=document.getElementById("page-container");
+  if(!container){Toast.error("Page container tidak ditemukan.");return;}
   Loader.show("Loading "+page);
   google.script.run.withSuccessHandler(function(html){
-    const container=document.getElementById("page-container");
-    if(!container){Loader.hide();Toast.error("Page container tidak ditemukan.");return;}
     container.innerHTML=html;
     currentPage=page;
     if(page===pages.DASHBOARD){
-      const dash=document.getElementById("view-dashboard");
-      if(dash){dash.style.display="block";}
-      if(window.Dashboard&&typeof window.Dashboard.init==="function")window.Dashboard.init();
+      const dash=document.getElementById("view-dashboard")||container.querySelector(".dashboard-page");
+      if(dash)dash.style.display="block";
+      if(window.Dashboard&&typeof window.Dashboard.load==="function"){
+        window.Dashboard.load().catch(function(err){Toast.error(err.message||String(err));});
+      }
     }
-    if(window.Sidebar&&typeof Sidebar.setActive==="function")Sidebar.setActive(page.toLowerCase().replace("13_","dashboard"));
+    if(window.Sidebar&&typeof Sidebar.setActive==="function"){
+      const active=page===pages.DASHBOARD?"dashboard":page.toLowerCase().replace(/^13_/i,"");
+      Sidebar.setActive(active);
+    }
     Loader.hide();
   }).withFailureHandler(function(err){Loader.hide();Toast.error(err.message||String(err));}).renderPage(page);
 }
+
 function login(){load(pages.LOGIN)}
-function dashboard(){
-  const container=document.getElementById("page-container");
-  const dash=document.getElementById("view-dashboard");
-  if(dash){
-    if(container&&!container.contains(dash)) container.innerHTML="";
-    container&&container.appendChild(dash);
-    dash.style.display="block";
-    currentPage=pages.DASHBOARD;
-    if(window.Sidebar&&typeof Sidebar.setActive==="function")Sidebar.setActive("dashboard");
-    if(window.Dashboard&&typeof window.Dashboard.init==="function")window.Dashboard.init();
-    return;
-  }
-  load(pages.DASHBOARD);
-}
+function dashboard(){load(pages.DASHBOARD)}
 function master(){load(pages.MASTER)}
 function asset(){load(pages.MASTER)}
 function customer(){load(pages.MASTER)}
