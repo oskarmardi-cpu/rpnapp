@@ -1,249 +1,72 @@
-<!--=========================================================
-RPN MANAGEMENT SYSTEM
-02_AppShell.html
-Enterprise Edition v5.0
-==========================================================-->
-
-<div id="rpn-app">
-
-
-  <!--=======================================================
-    LOGIN VIEW
-    WAJIB ADA DI DOM
-  ========================================================-->
-
-  <section
-    id="login-container"
-    style="display:none;">
-
-    <?!= HtmlService
-      .createTemplateFromFile("10_Login")
-      .evaluate()
-      .getContent(); ?>
-
-  </section>
-
-
-  <!--=======================================================
-    APPLICATION SHELL
-  ========================================================-->
-
-  <div
-    id="application-container"
-    style="display:none;">
-
-
-    <!--=====================================================
-      HEADER
-    =====================================================-->
-
-    <header id="app-header">
-
-      <?!= HtmlService
-        .createTemplateFromFile("04_Header")
-        .evaluate()
-        .getContent(); ?>
-
-    </header>
-
-
-    <!--=====================================================
-      APPLICATION LAYOUT
-    =====================================================-->
-
-    <div class="app-layout">
-
-
-      <!--===================================================
-        SIDEBAR
-      ====================================================-->
-
-      <aside id="app-sidebar">
-
-        <?!= HtmlService
-          .createTemplateFromFile("05_Sidebar")
-          .evaluate()
-          .getContent(); ?>
-
-      </aside>
-
-
-      <!--===================================================
-        MAIN
-      ====================================================-->
-
-      <main id="app-main">
-
-        <div id="page-container">
-
-
-          <!--===============================================
-            DASHBOARD
-          ================================================-->
-
-          <section
-            id="view-dashboard"
-            class="app-page"
-            style="display:none;">
-
-            <?!= HtmlService
-              .createTemplateFromFile("20_Dashboard")
-              .evaluate()
-              .getContent(); ?>
-
-          </section>
-
-
-        </div>
-
-      </main>
-
-
-    </div>
-
-
-    <!--=====================================================
-      FOOTER
-    =====================================================-->
-
-    <footer id="app-footer">
-
-      <?!= HtmlService
-        .createTemplateFromFile("06_Footer")
-        .evaluate()
-        .getContent(); ?>
-
-    </footer>
-
-
-  </div>
-
-
-</div>
-
-
-<!--=========================================================
- GLOBAL LOADER
-==========================================================-->
-
-<?!= HtmlService
-  .createTemplateFromFile("07_Loader")
-  .evaluate()
-  .getContent(); ?>
-
-
-<!--=========================================================
- GLOBAL TOAST
-==========================================================-->
-
-<?!= HtmlService
-  .createTemplateFromFile("08_Toast")
-  .evaluate()
-  .getContent(); ?>
-
-
-<!--=========================================================
- GLOBAL MODAL
-==========================================================-->
-
-<?!= HtmlService
-  .createTemplateFromFile("09_Modal")
-  .evaluate()
-  .getContent(); ?>
-
-
-<!--=========================================================
- SHELL STATE CONTROLLER
-==========================================================-->
+/*=========================================================
+ RPN MANAGEMENT SYSTEM
+ 46_App.html
+ APPLICATION CONTROLLER
+ Enterprise Edition v5.0
+=========================================================*/
 
 <script>
 
-(function(){
+const App = (() => {
 
     "use strict";
 
+    let initialized = false;
 
-    /*=======================================================
-      SHOW LOGIN
-    =======================================================*/
+    function el(id){ return document.getElementById(id); }
 
-    window.showLoginShell = function(){
+    function login(){
+        const loginView = el("login-container");
+        const application = el("application-container");
+        const dashboard = el("view-dashboard");
+        if(loginView) loginView.style.display = "block";
+        if(application) application.style.display = "none";
+        if(dashboard) dashboard.style.display = "none";
+        document.body.classList.remove("rpn-authenticated");
+    }
 
-        const login =
-            document.getElementById(
-                "login-container"
-            );
+    function app(){
+        const loginView = el("login-container");
+        const application = el("application-container");
+        const header = el("app-header");
+        const sidebar = el("app-sidebar");
+        const footer = el("app-footer");
+        if(loginView) loginView.style.display = "none";
+        if(application) application.style.display = "block";
+        if(header) header.style.display = "block";
+        if(sidebar) sidebar.style.display = "block";
+        if(footer) footer.style.display = "block";
+        document.body.classList.add("rpn-authenticated");
+        showDashboard();
+    }
 
-
-        const application =
-            document.getElementById(
-                "application-container"
-            );
-
-
-        if(login){
-
-            login.style.display =
-                "block";
-
+    function showDashboard(){
+        const dashboard = el("view-dashboard");
+        if(!dashboard){
+            console.error("APP: view-dashboard tidak ditemukan.");
+            return;
         }
-
-
-        if(application){
-
-            application.style.display =
-                "none";
-
+        dashboard.style.display = "block";
+        try{
+            if(typeof Sidebar !== "undefined" && typeof Sidebar.load === "function") Sidebar.load();
+            if(typeof Dashboard !== "undefined" && typeof Dashboard.loadDashboard === "function") Dashboard.loadDashboard();
+        }catch(error){
+            console.error("APP DASHBOARD ERROR:", error);
+            if(typeof showModal === "function") showModal("Dashboard", error.message || String(error));
         }
+    }
 
-    };
+    function init(){
+        if(initialized) return;
+        initialized = true;
+        login();
+        console.log("RPN APP INITIALIZED");
+    }
 
-
-    /*=======================================================
-      SHOW APPLICATION
-    =======================================================*/
-
-    window.showApplicationShell = function(){
-
-        const login =
-            document.getElementById(
-                "login-container"
-            );
-
-
-        const application =
-            document.getElementById(
-                "application-container"
-            );
-
-
-        if(login){
-
-            login.style.display =
-                "none";
-
-        }
-
-
-        if(application){
-
-            application.style.display =
-                "block";
-
-        }
-
-    };
-
-
-    /*=======================================================
-      INITIAL STATE
-      SECURITY FIRST:
-      LOGIN ONLY
-    =======================================================*/
-
-    showLoginShell();
-
+    return { init, login, app, showDashboard };
 
 })();
+
+document.addEventListener("DOMContentLoaded", function(){ App.init(); });
 
 </script>
