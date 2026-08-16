@@ -3,353 +3,64 @@ RPN MANAGEMENT SYSTEM
 10_Router.html
 Enterprise Edition v5.0
 ==========================================================-->
-
 <script>
-
-const Router = (()=>{
-
+const Router=(()=>{
 "use strict";
-
-const pages = {
-
-    LOGIN        : "03_Login",
-
-    DASHBOARD    : "13_Dashboard",
-
-    MASTER       : "14_Master",
-
-    RENTAL       : "15_Rental",
-
-    WORKSHOP     : "16_Workshop",
-
-    INVENTORY    : "17_Inventory",
-
-    USED         : "18_Used",
-
-    EXPORT       : "19_Export",
-
-    REPORT       : "20_Report",
-
-    ADMIN        : "21_Admin",
-
-    PROFILE      : "22_Profile",
-
-    SETTING      : "23_Setting"
-
-};
-
-let currentPage = "";
-
-/*=======================================================
-LOAD PAGE
-=======================================================*/
-
+const pages={LOGIN:"03_Login",DASHBOARD:"13_Dashboard",MASTER:"14_Master",RENTAL:"15_Rental",WORKSHOP:"16_Workshop",INVENTORY:"17_Inventory",USED:"18_Used",EXPORT:"19_Export",REPORT:"20_Report",ADMIN:"21_Admin",PROFILE:"22_Profile",SETTING:"23_Setting"};
+let currentPage="";
+function restoreShell(){
+  const container=document.getElementById("page-container");
+  const dash=document.getElementById("view-dashboard");
+  if(container&&dash&&!container.contains(dash)) container.innerHTML="";
+  if(dash) dash.style.display="none";
+}
 function load(page){
-
-    if(currentPage===page){
-
-        return;
-
+  if(currentPage===page)return;
+  Loader.show("Loading "+page);
+  google.script.run.withSuccessHandler(function(html){
+    const container=document.getElementById("page-container");
+    if(!container){Loader.hide();Toast.error("Page container tidak ditemukan.");return;}
+    container.innerHTML=html;
+    currentPage=page;
+    if(page===pages.DASHBOARD){
+      const dash=document.getElementById("view-dashboard");
+      if(dash){dash.style.display="block";}
+      if(window.Dashboard&&typeof window.Dashboard.init==="function")window.Dashboard.init();
     }
-
-    Loader.show(
-
-        "Loading " + page
-
-    );
-
-    google.script.run
-
-    .withSuccessHandler(function(html){
-
-        pageContainer.innerHTML =
-
-            html;
-
-        currentPage = page;
-
-        Loader.hide();
-
-    })
-
-    .withFailureHandler(function(err){
-
-        Loader.hide();
-
-        Toast.error(
-
-            err.message
-
-        );
-
-    })
-
-    .renderPage(page);
-
+    if(window.Sidebar&&typeof Sidebar.setActive==="function")Sidebar.setActive(page.toLowerCase().replace("13_","dashboard"));
+    Loader.hide();
+  }).withFailureHandler(function(err){Loader.hide();Toast.error(err.message||String(err));}).renderPage(page);
 }
-
-/*=======================================================
-LOGIN
-=======================================================*/
-
-function login(){
-
-    load(
-
-        pages.LOGIN
-
-    );
-
-}
-
-/*=======================================================
-DASHBOARD
-=======================================================*/
-
+function login(){load(pages.LOGIN)}
 function dashboard(){
-
-    load(
-
-        pages.DASHBOARD
-
-    );
-
+  const container=document.getElementById("page-container");
+  const dash=document.getElementById("view-dashboard");
+  if(dash){
+    if(container&&!container.contains(dash)) container.innerHTML="";
+    container&&container.appendChild(dash);
+    dash.style.display="block";
+    currentPage=pages.DASHBOARD;
+    if(window.Sidebar&&typeof Sidebar.setActive==="function")Sidebar.setActive("dashboard");
+    if(window.Dashboard&&typeof window.Dashboard.init==="function")window.Dashboard.init();
+    return;
+  }
+  load(pages.DASHBOARD);
 }
-
-/*=======================================================
-MASTER
-=======================================================*/
-
-function master(){
-
-    load(
-
-        pages.MASTER
-
-    );
-
-}
-
-function asset(){
-
-    load(
-
-        pages.MASTER
-
-    );
-
-}
-
-function customer(){
-
-    load(
-
-        pages.MASTER
-
-    );
-
-}
-
-function vendor(){
-
-    load(
-
-        pages.MASTER
-
-    );
-
-}
-
-function employee(){
-
-    load(
-
-        pages.MASTER
-
-    );
-
-}
-
-/*=======================================================
-RENTAL
-=======================================================*/
-
-function rental(){
-
-    load(
-
-        pages.RENTAL
-
-    );
-
-}
-
-/*=======================================================
-WORKSHOP
-=======================================================*/
-
-function workshop(){
-
-    load(
-
-        pages.WORKSHOP
-
-    );
-
-}
-
-/*=======================================================
-INVENTORY
-=======================================================*/
-
-function inventory(){
-
-    load(
-
-        pages.INVENTORY
-
-    );
-
-}
-
-/*=======================================================
-USED
-=======================================================*/
-
-function used(){
-
-    load(
-
-        pages.USED
-
-    );
-
-}
-
-/*=======================================================
-EXPORT
-=======================================================*/
-
-function export(){
-
-    load(
-
-        pages.EXPORT
-
-    );
-
-}
-
-/*=======================================================
-REPORT
-=======================================================*/
-
-function report(){
-
-    load(
-
-        pages.REPORT
-
-    );
-
-}
-
-/*=======================================================
-ADMIN
-=======================================================*/
-
-function admin(){
-
-    load(
-
-        pages.ADMIN
-
-    );
-
-}
-
-/*=======================================================
-PROFILE
-=======================================================*/
-
-function profile(){
-
-    load(
-
-        pages.PROFILE
-
-    );
-
-}
-
-/*=======================================================
-SETTING
-=======================================================*/
-
-function setting(){
-
-    load(
-
-        pages.SETTING
-
-    );
-
-}
-
-/*=======================================================
-CURRENT PAGE
-=======================================================*/
-
-function current(){
-
-    return currentPage;
-
-}
-
-/*=======================================================
-PUBLIC
-=======================================================*/
-
-return{
-
-    load,
-
-    login,
-
-    dashboard,
-
-    master,
-
-    asset,
-
-    customer,
-
-    vendor,
-
-    employee,
-
-    rental,
-
-    workshop,
-
-    inventory,
-
-    used,
-
-    export,
-
-    report,
-
-    admin,
-
-    profile,
-
-    setting,
-
-    current
-
-};
-
+function master(){load(pages.MASTER)}
+function asset(){load(pages.MASTER)}
+function customer(){load(pages.MASTER)}
+function vendor(){load(pages.MASTER)}
+function employee(){load(pages.MASTER)}
+function rental(){load(pages.RENTAL)}
+function workshop(){load(pages.WORKSHOP)}
+function inventory(){load(pages.INVENTORY)}
+function used(){load(pages.USED)}
+function exportPage(){load(pages.EXPORT)}
+function report(){load(pages.REPORT)}
+function admin(){load(pages.ADMIN)}
+function profile(){load(pages.PROFILE)}
+function setting(){load(pages.SETTING)}
+function current(){return currentPage}
+return{load,login,dashboard,master,asset,customer,vendor,employee,rental,workshop,inventory,used,export:exportPage,report,admin,profile,setting,current};
 })();
-
 </script>
