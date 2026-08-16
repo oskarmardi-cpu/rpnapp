@@ -3,41 +3,16 @@ RPN MANAGEMENT SYSTEM
 05_Sidebar.html
 Enterprise Edition v6.0 — Responsive Navigation
 ==========================================================-->
-
 <aside id="sidebar" class="sidebar">
-
-  <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Toggle sidebar" onclick="Sidebar.toggle()">
-    <i class="ri-menu-fold-line"></i>
-  </button>
-
+  <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Toggle sidebar" onclick="Sidebar.toggle()"><i class="ri-menu-fold-line"></i></button>
   <div class="sidebar-user">
     <img id="sidebarUserPhoto" class="sidebar-avatar" src="" alt="User">
-    <div class="sidebar-user-info">
-      <div id="sidebarUserName" class="sidebar-user-name"></div>
-      <div id="sidebarUserRole" class="sidebar-user-role"></div>
-    </div>
+    <div class="sidebar-user-info"><div id="sidebarUserName" class="sidebar-user-name"></div><div id="sidebarUserRole" class="sidebar-user-role"></div></div>
   </div>
-
   <nav id="sidebarMenu">
     <ul>
-      <li class="menu-item" data-page="dashboard">
-        <a onclick="Router.dashboard()" title="Dashboard">
-          <i class="ri-dashboard-3-line"></i><span>Dashboard</span>
-        </a>
-      </li>
-
-      <li class="menu-group">
-        <div class="menu-title">
-          <i class="ri-database-2-line"></i><span>Master</span><i class="ri-arrow-down-s-line menu-chevron"></i>
-        </div>
-        <ul>
-          <li onclick="Router.asset()">Asset</li>
-          <li onclick="Router.customer()">Customer</li>
-          <li onclick="Router.vendor()">Vendor</li>
-          <li onclick="Router.employee()">Employee</li>
-        </ul>
-      </li>
-
+      <li class="menu-item" data-page="dashboard"><a onclick="Router.dashboard()" title="Dashboard"><i class="ri-dashboard-3-line"></i><span>Dashboard</span></a></li>
+      <li class="menu-group"><div class="menu-title"><i class="ri-database-2-line"></i><span>Master</span><i class="ri-arrow-down-s-line menu-chevron"></i></div><ul><li onclick="Router.asset()">Asset</li><li onclick="Router.customer()">Customer</li><li onclick="Router.vendor()">Vendor</li><li onclick="Router.employee()">Employee</li></ul></li>
       <li class="menu-item"><a onclick="Router.rental()" title="Rental"><i class="ri-truck-line"></i><span>Rental</span></a></li>
       <li class="menu-item"><a onclick="Router.workshop()" title="Workshop"><i class="ri-tools-line"></i><span>Workshop</span><span id="badgeWorkshop" class="badge"></span></a></li>
       <li class="menu-item"><a onclick="Router.inventory()" title="Inventory"><i class="ri-box-3-line"></i><span>Inventory</span></a></li>
@@ -47,44 +22,18 @@ Enterprise Edition v6.0 — Responsive Navigation
       <li id="menuAdmin" class="menu-item"><a onclick="Router.admin()" title="Administration"><i class="ri-settings-3-line"></i><span>Administration</span></a></li>
     </ul>
   </nav>
-
-  <div class="sidebar-footer">
-    <span>RPN Management System</span><small>v6.0</small>
-  </div>
+  <div class="sidebar-footer"><span>RPN Management System</span><small>v6.0</small></div>
 </aside>
-
 <script>
 const Sidebar=(()=>{
   "use strict";
-  function load(){
-    const user=Auth.getUser(); if(!user)return;
-    const name=document.getElementById("sidebarUserName");
-    const role=document.getElementById("sidebarUserRole");
-    const photo=document.getElementById("sidebarUserPhoto");
-    if(name)name.textContent=user.FULLNAME||"";
-    if(role)role.textContent=user.ROLE||"";
-    if(photo)photo.src=user.PHOTO||"";
-    permission();
-  }
-  function permission(){
-    const user=Auth.getUser(); if(!user)return;
-    const admin=document.getElementById("menuAdmin");
-    if(admin)admin.style.display=user.ROLE==="ADMIN"?"":"none";
-  }
-  function badge(id,value){
-    const el=document.getElementById(id); if(!el)return;
-    el.textContent=value??""; el.style.display=Number(value)>0?"inline-flex":"none";
-  }
-  function toggle(force){
-    const body=document.body;
-    const mobile=window.matchMedia("(max-width: 767px)").matches;
-    if(mobile){
-      body.classList.toggle("sidebar-mobile-open",force===undefined?undefined:!!force);
-    }else{
-      body.classList.toggle("sidebar-collapse",force===undefined?undefined:!!force);
-    }
-  }
+  function load(){const user=Auth.getUser();if(!user)return;const name=document.getElementById("sidebarUserName"),role=document.getElementById("sidebarUserRole"),photo=document.getElementById("sidebarUserPhoto");if(name)name.textContent=user.FULLNAME||"";if(role)role.textContent=user.ROLE||"";if(photo)photo.src=user.PHOTO||"";permission();}
+  function permission(){const user=Auth.getUser();if(!user)return;const admin=document.getElementById("menuAdmin");if(admin)admin.style.display=user.ROLE==="ADMIN"?"":"none";}
+  function badge(id,value){const el=document.getElementById(id);if(!el)return;el.textContent=value??"";el.style.display=Number(value)>0?"inline-flex":"none";}
+  function toggle(force){const body=document.body,mobile=window.matchMedia("(max-width: 767px)").matches;if(mobile){body.classList.toggle("sidebar-mobile-open",force===undefined?undefined:!!force);}else{body.classList.toggle("sidebar-collapse",force===undefined?undefined:!!force);}}
   function closeMobile(){document.body.classList.remove("sidebar-mobile-open");}
+  document.addEventListener("click",function(e){if(!window.matchMedia("(max-width: 767px)").matches)return;const sidebar=document.getElementById("app-sidebar"),button=document.getElementById("sidebarToggle");if(document.body.classList.contains("sidebar-mobile-open")&&sidebar&&!sidebar.contains(e.target)&&button&&!button.contains(e.target))closeMobile();});
+  window.addEventListener("resize",function(){if(window.innerWidth>767)closeMobile();});
   return{load,permission,badge,toggle,closeMobile};
 })();
 </script>
