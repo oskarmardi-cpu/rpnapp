@@ -119,14 +119,68 @@ const DashboardService = (() => {
       if(h.period<0||h.in<0||h.out<0||h.balance<0)continue;
       const rows=[];
       for(let i=r+1;i<values.length;i++){
-        const source=values[i]||[],period=text_(source[h.period]);
-        if(!period){if(rows.length)break;continue;}
+        const source=values[i]||[],period=source[h.period];
+        if(!text_(period)){if(rows.length)break;continue;}
         if(upper_(period)==="TOTAL")continue;
-        rows.push({period:dateLabel_(source[h.period]),in:number_(source[h.in]),out:number_(source[h.out]),balance:number_(source[h.balance])});
+        if(!isMonthLabel_(period)){
+          if(rows.length)break;
+          continue;
+        }
+        rows.push({period:dateLabel_(period),in:number_(source[h.in]),out:number_(source[h.out]),balance:number_(source[h.balance])});
       }
-      if(rows.length)return rows.slice(-12);
+      if(rows.length>=3)return rows.slice(-12);
     }
     return[];
+  }
+
+  /* ROOT-FIX: SUMMARY memiliki blok bernama "Movement of Rental Units Used".
+     Parser lama mencari header secara global sehingga dapat melewatkan blok
+     tersebut atau memilih tabel lain. Di sini kita mengunci pencarian pada
+     blok Movement dan membaca header + 12 baris bulan secara lokal. */
+  function parseNamedMovementBlock_(values){
+    let titleRow=-1;
+    for(let r=0;r<values.length;r++){
+      const row=values[r]||[];
+      const joined=row.map(text_).join(" ");
+      const key=compact_(joined);
+      if(key.indexOf("MOVEMENT OF RENTAL UNITS USED")>=0){titleRow=r;break;}
+    }
+    if(titleRow<0)return[];
+
+    let headerRow=-1,header=null;
+    for(let r=titleRow+1;r<=Math.min(titleRow+6,values.length-1);r++){
+      const h=movementHeader_(values[r]||[]);
+      if(h.in>=0&&h.out>=0&&h.balance>=0){
+        headerRow=r;
+        header=h;
+        break;
+      }
+    }
+    if(headerRow<0)return[];
+
+    const rows=[];
+    for(let r=headerRow+1;r<values.length;r++){
+      const row=values[r]||[];
+      const period=row[header.period>=0?header.period:0];
+      if(!text_(period)){
+        if(rows.length)break;
+        continue;
+      }
+      const p=upper_(period);
+      if(p==="TOTAL"||p==="TOTAL UNIT USED + UNIT RETURN")break;
+      if(!isMonthLabel_(period)){
+        if(rows.length)break;
+        continue;
+      }
+      rows.push({
+        period:dateLabel_(period),
+        in:number_(row[header.in]),
+        out:number_(row[header.out]),
+        balance:number_(row[header.balance])
+      });
+      if(rows.length===12)break;
+    }
+    return rows;
   }
 
   function findMonthColumns_(row){
@@ -162,10 +216,25 @@ const DashboardService = (() => {
   function getSummaryMovement_(){
     const ss=SpreadsheetApp.openById(SUMMARY_SPREADSHEET_ID),ws=ss.getSheetByName(SUMMARY_SHEET_NAME);
     if(!ws)throw new Error("Sheet SUMMARY tidak ditemukan pada spreadsheet dashboard.");
-    const values=ws.getDataRange().getValues(),direct=parseDirectMovement_(values),movement=direct.length?direct:parseMatrixMovement_(values);
-    if(!movement.length)throw new Error("Struktur Movement pada SUMMARY tidak ditemukan.");
-    const totalIn=movement.reduce(function(sum,item){return sum+number_(item.in);},0),totalOut=movement.reduce(function(sum,item){return sum+number_(item.out);},0),currentBalance=movement[movement.length-1].balance;
-    return{rows:movement,ytd:{totalIn:totalIn,totalOut:totalOut,currentBalance:currentBalance,periodLabel:movement[0].period+" s/d "+movement[movement.length-1].period},sourceSpreadsheetId:SUMMARY_SPREADSHEET_ID,sourceSheet:SUMMARY_SHEET_NAME};
+
+    /* getDisplayValues() dipakai agar nilai formula/format pada SUMMARY tetap
+       terbaca persis seperti yang tampil di Sheet. */
+    const values=ws.getDataRange().getDisplayValues();
+    const named=parseNamedMovementBlock_(values);
+    const direct=named.length?named:parseDirectMovement_(values);
+    const movement=direct.length?direct:parseMatrixMovement_(values);
+    if(!movement.length)throw new Error("Blok Movement of Rental Units Used pada SUMMARY tidak ditemukan atau tidak memiliki data bulan.");
+
+    const totalIn=movement.reduce(function(sum,item){return sum+number_(item.in);},0);
+    const totalOut=movement.reduce(function(sum,item){return sum+number_(item.out);},0);
+    const currentBalance=movement[movement.length-1].balance;
+    return{
+      rows:movement,
+      ytd:{totalIn:totalIn,totalOut:totalOut,currentBalance:currentBalance,periodLabel:movement[0].period+" s/d "+movement[movement.length-1].period},
+      sourceSpreadsheetId:SUMMARY_SPREADSHEET_ID,
+      sourceSheet:SUMMARY_SHEET_NAME,
+      parser:"named-movement-block"
+    };
   }
 
   function getSummaryChartImage_(){
@@ -212,7 +281,7 @@ const DashboardService = (() => {
   function getLoanPart_(){return select_(CONFIG.SHEET.LOAN_PART).filter(function(item){const status=upper_(item.STATUS);return status==="REQUESTED"||status==="APPROVED"||status==="LOANED";}).length;}
   function getMonthly_(movement){const result=[0,0,0,0,0,0,0,0,0,0,0,0];movement.forEach(function(item){if(!item.MOVEMENT_DATE)return;const date=new Date(item.MOVEMENT_DATE);if(!isNaN(date.getTime()))result[date.getMonth()]++;});return result;}
   function getActivity_(){const rows=select_(CONFIG.SHEET.EVENT_LEDGER);rows.sort(function(a,b){return new Date(b.CREATED_AT||b.EVENT_DATE||0)-new Date(a.CREATED_AT||a.EVENT_DATE||0);});return rows.slice(0,5).map(function(item){return{title:item.EVENT_TYPE||"Activity",description:item.DOCUMENT_NO||item.REFERENCE_NO||"",time:item.EVENT_DATE||item.CREATED_AT||""};});}
-  function buildChart_(kpi,monthly,movement){return{status:{labels:["RFU","NON RFU","Loan"],datasets:[{data:[kpi.rfu,kpi.nonRfu,kpi.loanPart]}]},monthly:{labels:movement.rows.map(function(item){return item.period;}),datasets:[{label:"IN (Unit Masuk)",data:movement.rows.map(function(item){return item.in;})},{label:"OUT (Unit Keluar)",data:movement.rows.map(function(item){return item.out;})},{label:"BALANCE (Saldo Akhir)",data:movement.rows.map(function(item){return item.balance;}),type:"line"}]}};}
+  function buildChart_(kpi,monthly,movement){return{status:{labels:["RFU","NON RFU","Loan"],datasets:[{data:[kpi.rfu,kpi.nonRfu,kpi.loanPart]}]},monthly:{labels:movement.rows.map(function(item){return item.period;}),datasets:[{label:"IN (Unit Masuk)",data:movement.rows.map(function(item){return item.in;})},{label:"OUT (Unit Keluar)",data:movement.rows.map(function(item){return item.out;})},{label:"BALANCE (Saldo Akhir)",data:movement.rows.map(function(item){return item.balance;},type:"line"}]}};}
 
   function getDashboard(){
     try{
