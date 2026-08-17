@@ -2,8 +2,8 @@
 const Dashboard = (function () {
   "use strict";
 
-  var chartUnitStatus = null;
   var chartMonthly = null;
+  var chartUnitStatus = null;
 
   function init() {
     bindEvent();
@@ -19,30 +19,31 @@ const Dashboard = (function () {
   }
 
   function setText(id, value) {
-    var element = document.getElementById(id);
-    if (element) {
-      element.textContent = String(value === null || value === undefined ? "—" : value);
-    }
+    var el = document.getElementById(id);
+    if (el) el.textContent = String(value == null ? "—" : value);
   }
 
-  function resetDynamicSummary() {
-    setText("summaryTotal", "—");
-    setText("summaryRFU", "—");
-    setText("summaryNon", "—");
-    setText("summaryContract", "—");
+  function fmt(value) {
+    return Number(value || 0).toLocaleString("id-ID");
   }
 
   function loadDashboard() {
-    resetDynamicSummary();
-    showLoader("Dashboard", "Memuat data dashboard...");
+    console.log("DASHBOARD: load start");
 
     try {
-      var user = Auth.getUser();
+      if (typeof Loader !== "undefined" && Loader.show) {
+        Loader.show("Memuat data dashboard...");
+      }
 
+      var user = typeof Auth !== "undefined" && Auth.getUser ? Auth.getUser() : null;
       if (!user) {
-        hideLoader();
-        App.login();
+        if (typeof Loader !== "undefined" && Loader.hide) Loader.hide();
+        console.warn("DASHBOARD: user session tidak tersedia");
         return;
+      }
+
+      if (!google || !google.script || !google.script.run) {
+        throw new Error("Google Apps Script runtime tidak tersedia.");
       }
 
       google.script.run
@@ -51,67 +52,43 @@ const Dashboard = (function () {
         .dashboardGet();
 
     } catch (error) {
-      hideLoader();
-      console.error("Dashboard error:", error);
-      if (typeof showModal === "function") {
-        showModal("Dashboard", error.message || String(error));
-      }
+      console.error("DASHBOARD LOAD ERROR:", error);
+      if (typeof Loader !== "undefined" && Loader.hide) Loader.hide();
+      if (typeof showModal === "function") showModal("Dashboard", error.message || String(error));
     }
   }
 
   function onDashboardLoaded(response) {
-    hideLoader();
+    console.log("DASHBOARD RESPONSE:", response);
+    if (typeof Loader !== "undefined" && Loader.hide) Loader.hide();
 
-    if (!response || !response.success) {
-      resetDynamicSummary();
-      if (typeof showModal === "function") {
-        showModal("Dashboard", response && response.message ? response.message : "Data dashboard tidak tersedia.");
-      }
+    if (!response || response.success !== true) {
+      console.error("DASHBOARD RESPONSE INVALID:", response);
       return;
     }
 
-    if (!response.data) {
-      resetDynamicSummary();
-      if (typeof showModal === "function") {
-        showModal("Dashboard", "Response dashboard tidak valid.");
-      }
-      return;
-    }
-
-    var data = response.data;
+    var data = response.data || {};
     renderUser(data.user);
-    renderKPI(data.kpi);
-    renderSummary(data.kpi);
-    renderMovement(data.movement);
-    renderMovementChart(data.movement);
+    renderKPI(data.kpi || {});
+    renderSummary(data.kpi || {});
+    renderMovement(data.movement || {});
+    renderMovementChart(data.movement || {});
 
     var chart = data.chart || {};
     renderStatusFallback(chart.status);
   }
 
   function onDashboardError(error) {
-    resetDynamicSummary();
-    hideLoader();
-    console.error(error);
-
-    if (typeof showModal === "function") {
-      showModal("System Error", error && error.message ? error.message : String(error));
-    }
+    if (typeof Loader !== "undefined" && Loader.hide) Loader.hide();
+    console.error("DASHBOARD SERVER ERROR:", error);
   }
 
   function renderUser(user) {
-    var element = document.getElementById("welcomeName");
-    if (element) {
-      element.textContent = "Welcome, " + (user && user.name ? user.name : "-");
-    }
-  }
-
-  function fmt(value) {
-    return Number(value || 0).toLocaleString("id-ID");
+    var el = document.getElementById("welcomeName");
+    if (el) el.textContent = "Welcome, " + (user && user.name ? user.name : "Administrator RPN");
   }
 
   function renderKPI(kpi) {
-    kpi = kpi || {};
     setText("kpiTotalUnit", fmt(kpi.totalUnit) + " Unit");
     setText("kpiRFU", fmt(kpi.rfu) + " Unit");
     setText("kpiNonRFU", fmt(kpi.nonRfu) + " Unit");
@@ -119,7 +96,6 @@ const Dashboard = (function () {
   }
 
   function renderSummary(kpi) {
-    kpi = kpi || {};
     setText("summaryTotal", fmt(kpi.totalUnit));
     setText("summaryRFU", fmt(kpi.rfu));
     setText("summaryNon", fmt(kpi.nonRfu));
@@ -127,52 +103,38 @@ const Dashboard = (function () {
   }
 
   function normalizeMovement(movement) {
-    if (!movement) {
-      return [];
-    }
-
+    if (!movement) return [];
     if (Array.isArray(movement.rows)) {
       return movement.rows.map(function (row) {
         return {
-          period: row && row.period !== undefined ? row.period : "",
+          period: row && row.period != null ? row.period : "",
           in: Number(row && row.in) || 0,
           out: Number(row && row.out) || 0,
           balance: Number(row && row.balance) || 0
         };
-      }).filter(function (row) {
-        return row.period !== "";
-      });
+      }).filter(function (row) { return row.period !== ""; });
     }
-
     if (Array.isArray(movement.labels)) {
-      var input = Array.isArray(movement.in) ? movement.in : [];
-      var output = Array.isArray(movement.out) ? movement.out : [];
-      var balances = Array.isArray(movement.balance) ? movement.balance : [];
-
-      return movement.labels.map(function (label, index) {
+      return movement.labels.map(function (label, i) {
         return {
           period: label,
-          in: Number(input[index]) || 0,
-          out: Number(output[index]) || 0,
-          balance: Number(balances[index]) || 0
+          in: Number((movement.in || [])[i]) || 0,
+          out: Number((movement.out || [])[i]) || 0,
+          balance: Number((movement.balance || [])[i]) || 0
         };
       });
     }
-
     return [];
   }
 
   function renderMovement(movement) {
     var rows = normalizeMovement(movement);
+    console.log("DASHBOARD MOVEMENT ROWS:", rows);
+    if (!rows.length) return;
+
     var panels = document.querySelectorAll(".movement-panel");
-    var tablePanel = panels.length > 0 ? panels[0] : null;
+    var tablePanel = panels.length ? panels[0] : null;
     var summaryPanel = panels.length > 2 ? panels[2] : null;
-
-    if (!rows.length) {
-      console.warn("Movement SUMMARY kosong/gagal.");
-      return;
-    }
-
     var table = tablePanel ? tablePanel.querySelector("table.movement-table") : null;
 
     if (table) {
@@ -181,9 +143,7 @@ const Dashboard = (function () {
         tbody = document.createElement("tbody");
         table.appendChild(tbody);
       }
-
       tbody.innerHTML = "";
-
       rows.forEach(function (row) {
         var tr = document.createElement("tr");
         tr.innerHTML = "<td>" + escapeHtml(row.period) + "</td>" +
@@ -195,205 +155,70 @@ const Dashboard = (function () {
     }
 
     if (summaryPanel) {
-      var ytd = movement && movement.ytd ? movement.ytd : movement || {};
+      var ytd = movement.ytd || {};
       var values = summaryPanel.querySelectorAll(".movement-kpi strong");
-
-      if (values[0]) {
-        values[0].textContent = fmt(ytd.totalIn);
-      }
-      if (values[1]) {
-        values[1].textContent = fmt(ytd.totalOut);
-      }
-      if (values[2]) {
-        values[2].textContent = fmt(ytd.currentBalance);
-      }
-
-      var paragraphs = summaryPanel.querySelectorAll("p");
-      if (paragraphs.length && ytd.periodLabel) {
-        paragraphs[paragraphs.length - 1].textContent = "Periode: " + ytd.periodLabel;
-      }
+      if (values[0]) values[0].textContent = fmt(ytd.totalIn);
+      if (values[1]) values[1].textContent = fmt(ytd.totalOut);
+      if (values[2]) values[2].textContent = fmt(ytd.currentBalance);
+      var p = summaryPanel.querySelectorAll("p");
+      if (p.length && ytd.periodLabel) p[p.length - 1].textContent = "Periode: " + ytd.periodLabel;
     }
   }
 
   function renderMovementChart(movement) {
     var canvas = document.getElementById("chartMonthly");
     var rows = normalizeMovement(movement);
-
-    if (!canvas || !rows.length || typeof Chart !== "function") {
-      return;
-    }
+    if (!canvas || !rows.length || typeof Chart !== "function") return;
 
     if (chartMonthly) {
-      try {
-        chartMonthly.destroy();
-      } catch (ignore) {}
-      chartMonthly = null;
+      try { chartMonthly.destroy(); } catch (e) {}
     }
-
-    var labels = rows.map(function (row) { return row.period; });
-    var inData = rows.map(function (row) { return row.in; });
-    var outData = rows.map(function (row) { return row.out; });
-    var balanceData = rows.map(function (row) { return row.balance; });
 
     chartMonthly = new Chart(canvas.getContext("2d"), {
       type: "bar",
       data: {
-        labels: labels,
+        labels: rows.map(function (r) { return r.period; }),
         datasets: [
-          {
-            type: "bar",
-            label: "IN (Unit Masuk)",
-            data: inData,
-            backgroundColor: "#3b9fe8",
-            borderRadius: 3,
-            borderSkipped: false
-          },
-          {
-            type: "bar",
-            label: "OUT (Unit Keluar)",
-            data: outData,
-            backgroundColor: "#203b6f",
-            borderRadius: 3,
-            borderSkipped: false
-          },
-          {
-            type: "line",
-            label: "BALANCE (Saldo Akhir)",
-            data: balanceData,
-            borderColor: "#e33d3d",
-            backgroundColor: "#e33d3d",
-            pointBackgroundColor: "#e33d3d",
-            pointRadius: 4,
-            borderWidth: 2.5,
-            tension: 0.2
-          }
+          { type: "bar", label: "IN (Unit Masuk)", data: rows.map(function (r) { return r.in; }), backgroundColor: "#3b9fe8", borderRadius: 3 },
+          { type: "bar", label: "OUT (Unit Keluar)", data: rows.map(function (r) { return r.out; }), backgroundColor: "#203b6f", borderRadius: 3 },
+          { type: "line", label: "BALANCE (Saldo Akhir)", data: rows.map(function (r) { return r.balance; }), borderColor: "#e33d3d", backgroundColor: "#e33d3d", pointBackgroundColor: "#e33d3d", pointRadius: 4, borderWidth: 2.5, tension: 0.2 }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        interaction: {
-          mode: "index",
-          intersect: false
-        },
-        plugins: {
-          legend: {
-            position: "top"
-          }
-        },
-        scales: {
-          x: {
-            grid: { display: false }
-          },
-          y: {
-            beginAtZero: true
-          }
-        }
+        interaction: { mode: "index", intersect: false },
+        plugins: { legend: { position: "top" } },
+        scales: { x: { grid: { display: false } }, y: { beginAtZero: true } }
       }
     });
   }
 
   function escapeHtml(value) {
-    return String(value === null || value === undefined ? "" : value).replace(/[&<>\"']/g, function (character) {
-      var map = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        "\"": "&quot;",
-        "'": "&#39;"
-      };
-      return map[character];
+    return String(value == null ? "" : value).replace(/[&<>\"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c];
     });
-  }
-
-  function clearCanvas(canvas) {
-    if (!canvas) {
-      return null;
-    }
-
-    var rect = canvas.getBoundingClientRect();
-    var width = Math.max(320, Math.floor(rect.width || canvas.clientWidth || 640));
-    var height = Math.max(260, Math.floor(rect.height || canvas.clientHeight || 300));
-    var dpr = window.devicePixelRatio || 1;
-
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    canvas.style.width = width + "px";
-    canvas.style.height = height + "px";
-
-    var ctx = canvas.getContext("2d");
-    if (!ctx) {
-      return null;
-    }
-
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, width, height);
-    canvas.__logicalWidth = width;
-    canvas.__logicalHeight = height;
-
-    return ctx;
   }
 
   function renderStatusFallback(data) {
     var canvas = document.getElementById("chartUnitStatus");
-
-    if (!canvas || !data || !Array.isArray(data.datasets) || !data.datasets[0]) {
-      return;
-    }
-
-    if (chartUnitStatus) {
-      try {
-        chartUnitStatus.destroy();
-      } catch (ignore) {}
-      chartUnitStatus = null;
-    }
-
-    var ctx = clearCanvas(canvas);
-    if (!ctx) {
-      return;
-    }
+    if (!canvas || !data || !Array.isArray(data.datasets) || !data.datasets[0]) return;
 
     var values = data.datasets[0].data.map(Number);
-    var total = values.reduce(function (sum, value) {
-      return sum + value;
-    }, 0);
+    var total = values.reduce(function (sum, value) { return sum + value; }, 0);
+    if (!total) return;
 
-    var width = canvas.__logicalWidth || 640;
-    var height = canvas.__logicalHeight || 260;
-
-    if (!total) {
-      ctx.font = "14px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillStyle = "#7b8798";
-      ctx.fillText("Tidak ada data", width / 2, height / 2);
-      return;
+    if (chartUnitStatus) {
+      try { chartUnitStatus.destroy(); } catch (e) {}
     }
 
-    var cx = width / 2;
-    var cy = height / 2;
-    var radius = Math.min(cx, cy) * 0.68;
-    var inner = radius * 0.52;
-    var start = -Math.PI / 2;
-    var colors = ["#3b9fe8", "#f45b78", "#ff9f43"];
-
-    colors.forEach(function (color, index) {
-      var value = values[index] || 0;
-      var end = start + Math.PI * 2 * value / total;
-
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.arc(cx, cy, radius, start, end);
-      ctx.closePath();
-      ctx.fillStyle = color;
-      ctx.fill();
-      start = end;
-    });
-
-    ctx.globalCompositeOperation = "destination-out";
-    ctx.beginPath();
-    ctx.arc(cx, cy, inner, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalCompositeOperation = "source-over";
+    if (typeof Chart === "function") {
+      chartUnitStatus = new Chart(canvas.getContext("2d"), {
+        type: "doughnut",
+        data: data,
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }
+      });
+    }
   }
 
   return {
