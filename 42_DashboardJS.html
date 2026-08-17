@@ -2,7 +2,7 @@
 const Dashboard=(()=>{
 "use strict";
 let chartUnitStatus=null,chartMonthly=null;
-function init(){bindEvent()}
+function init(){bindEvent();loadDashboard()}
 function bindEvent(){const b=document.getElementById("btnRefreshDashboard");if(b&&!b.dataset.dashboardBound){b.dataset.dashboardBound="1";b.addEventListener("click",loadDashboard)}}
 function loadDashboard(){showLoader("Dashboard","Memuat data dashboard...");try{const user=Auth.getUser();if(!user){hideLoader();App.login();return}google.script.run.withSuccessHandler(onDashboardLoaded).withFailureHandler(onDashboardError).dashboardGet()}catch(err){hideLoader();console.error("Dashboard error:",err);if(typeof showModal==="function")showModal("Dashboard",err.message||String(err))}}
 function onDashboardLoaded(response){hideLoader();if(!response||!response.success){if(typeof showModal==="function")showModal("Dashboard",response?.message||"Data dashboard tidak tersedia.");return}if(!response.data){if(typeof showModal==="function")showModal("Dashboard","Response dashboard tidak valid.");return}renderUser(response.data.user);renderKPI(response.data.kpi);renderSummary(response.data.kpi);renderMovement(response.data.movement);renderCharts(response.data.chart)}
