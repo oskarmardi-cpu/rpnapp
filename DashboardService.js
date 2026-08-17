@@ -110,12 +110,7 @@ const DashboardService = (() => {
   function movementHeader_(row){
     const normalized=row.map(function(v){return compact_(v);});
     function find(names){const wanted=names.map(compact_);for(let i=0;i<normalized.length;i++)if(wanted.indexOf(normalized[i])>=0)return i;return-1;}
-    return{
-      period:find(["PERIODE","PERIOD","BULAN","MONTH"]),
-      in:find(["IN","IN UNIT","UNIT IN","MASUK","IN UNIT MASUK","IN UNIT MASUKAN"]),
-      out:find(["OUT","OUT UNIT","UNIT OUT","KELUAR","OUT UNIT KELUAR"]),
-      balance:find(["BALANCE","SALDO","CURRENT BALANCE","SALDO AKHIR","BALANCE SALDO AKHIR"])
-    };
+    return{period:find(["PERIODE","PERIOD","BULAN","MONTH"]),in:find(["IN","IN UNIT","UNIT IN","MASUK","IN UNIT MASUK","IN UNIT MASUKAN"]),out:find(["OUT","OUT UNIT","UNIT OUT","KELUAR","OUT UNIT KELUAR"]),balance:find(["BALANCE","SALDO","CURRENT BALANCE","SALDO AKHIR","BALANCE SALDO AKHIR"])};
   }
 
   function parseDirectMovement_(values){
@@ -136,34 +131,20 @@ const DashboardService = (() => {
 
   function findMonthColumns_(row){
     const result=[];
-    for(let c=0;c<row.length;c++){
-      if(isMonthLabel_(row[c]))result.push({label:dateLabel_(row[c]),idx:c});
-    }
+    for(let c=0;c<row.length;c++)if(isMonthLabel_(row[c]))result.push({label:dateLabel_(row[c]),idx:c});
     return result.filter(function(item){return item.label&&upper_(item.label)!=="TOTAL";});
   }
 
   function findMovementRow_(values,kind,startRow,monthCols){
     let best=-1,bestScore=-1;
     for(let r=startRow;r<values.length;r++){
-      const row=values[r]||[];
-      const label=compact_(row[0]);
+      const row=values[r]||[],label=compact_(row[0]);
       if(!label)continue;
       let score=0;
-      if(kind==="in"){
-        if(label.indexOf("PENARIKAN UNIT USED")>=0)score+=10;
-        if(label.indexOf("UNIT MASUK")>=0||label.indexOf("MASUK")>=0)score+=6;
-        if(/^IN(?: |$)/.test(label))score+=5;
-      }else if(kind==="out"){
-        if(label.indexOf("PENGIRIMAN UNIT USED")>=0)score+=10;
-        if(label.indexOf("UNIT KELUAR")>=0||label.indexOf("KELUAR")>=0)score+=6;
-        if(/^OUT(?: |$)/.test(label))score+=5;
-      }else{
-        if(label.indexOf("STOCK UNIT USED AKHIR")>=0)score+=12;
-        if(label.indexOf("SALDO AKHIR")>=0)score+=10;
-        if(label.indexOf("BALANCE")>=0||label.indexOf("SALDO")>=0)score+=6;
-      }
-      const populated=monthCols.reduce(function(n,p){return n+(text_(row[p.idx])!==""?1:0);},0);
-      score+=populated;
+      if(kind==="in"){if(label.indexOf("PENARIKAN UNIT USED")>=0)score+=10;if(label.indexOf("UNIT MASUK")>=0||label.indexOf("MASUK")>=0)score+=6;if(/^IN(?: |$)/.test(label))score+=5;}
+      else if(kind==="out"){if(label.indexOf("PENGIRIMAN UNIT USED")>=0)score+=10;if(label.indexOf("UNIT KELUAR")>=0||label.indexOf("KELUAR")>=0)score+=6;if(/^OUT(?: |$)/.test(label))score+=5;}
+      else{if(label.indexOf("STOCK UNIT USED AKHIR")>=0)score+=12;if(label.indexOf("SALDO AKHIR")>=0)score+=10;if(label.indexOf("BALANCE")>=0||label.indexOf("SALDO")>=0)score+=6;}
+      score+=monthCols.reduce(function(n,p){return n+(text_(row[p.idx])!==""?1:0);},0);
       if(score>bestScore){bestScore=score;best=r;}
     }
     return best;
@@ -171,32 +152,36 @@ const DashboardService = (() => {
 
   function parseMatrixMovement_(values){
     let headerRow=-1,periodCols=[];
-    for(let r=0;r<values.length;r++){
-      const cols=findMonthColumns_(values[r]||[]);
-      if(cols.length>=3){headerRow=r;periodCols=cols;break;}
-    }
+    for(let r=0;r<values.length;r++){const cols=findMonthColumns_(values[r]||[]);if(cols.length>=3){headerRow=r;periodCols=cols;break;}}
     if(headerRow<0||periodCols.length<3)return[];
-    const inRow=findMovementRow_(values,"in",headerRow+1,periodCols);
-    const outRow=findMovementRow_(values,"out",headerRow+1,periodCols);
-    const balanceRow=findMovementRow_(values,"balance",headerRow+1,periodCols);
+    const inRow=findMovementRow_(values,"in",headerRow+1,periodCols),outRow=findMovementRow_(values,"out",headerRow+1,periodCols),balanceRow=findMovementRow_(values,"balance",headerRow+1,periodCols);
     if(inRow<0||outRow<0||balanceRow<0)return[];
-    return periodCols.slice(-12).map(function(p){
-      return{period:p.label,in:Math.abs(number_(values[inRow][p.idx])),out:Math.abs(number_(values[outRow][p.idx])),balance:number_(values[balanceRow][p.idx])};
-    });
+    return periodCols.slice(-12).map(function(p){return{period:p.label,in:Math.abs(number_(values[inRow][p.idx])),out:Math.abs(number_(values[outRow][p.idx])),balance:number_(values[balanceRow][p.idx])};});
   }
 
   function getSummaryMovement_(){
-    const ss=SpreadsheetApp.openById(SUMMARY_SPREADSHEET_ID);
-    const ws=ss.getSheetByName(SUMMARY_SHEET_NAME);
+    const ss=SpreadsheetApp.openById(SUMMARY_SPREADSHEET_ID),ws=ss.getSheetByName(SUMMARY_SHEET_NAME);
     if(!ws)throw new Error("Sheet SUMMARY tidak ditemukan pada spreadsheet dashboard.");
-    const values=ws.getDataRange().getValues();
-    const direct=parseDirectMovement_(values);
-    const movement=direct.length?direct:parseMatrixMovement_(values);
+    const values=ws.getDataRange().getValues(),direct=parseDirectMovement_(values),movement=direct.length?direct:parseMatrixMovement_(values);
     if(!movement.length)throw new Error("Struktur Movement pada SUMMARY tidak ditemukan.");
-    const totalIn=movement.reduce(function(sum,item){return sum+number_(item.in);},0);
-    const totalOut=movement.reduce(function(sum,item){return sum+number_(item.out);},0);
-    const currentBalance=movement[movement.length-1].balance;
+    const totalIn=movement.reduce(function(sum,item){return sum+number_(item.in);},0),totalOut=movement.reduce(function(sum,item){return sum+number_(item.out);},0),currentBalance=movement[movement.length-1].balance;
     return{rows:movement,ytd:{totalIn:totalIn,totalOut:totalOut,currentBalance:currentBalance,periodLabel:movement[0].period+" s/d "+movement[movement.length-1].period},sourceSpreadsheetId:SUMMARY_SPREADSHEET_ID,sourceSheet:SUMMARY_SHEET_NAME};
+  }
+
+  function getSummaryChartImage_(){
+    const ss=SpreadsheetApp.openById(SUMMARY_SPREADSHEET_ID),ws=ss.getSheetByName(SUMMARY_SHEET_NAME);
+    if(!ws)throw new Error("Sheet SUMMARY tidak ditemukan pada spreadsheet dashboard.");
+    const charts=ws.getCharts();
+    if(!charts||!charts.length)return{available:false,message:"Tidak ada chart pada sheet SUMMARY."};
+    let selected=charts[0];
+    for(let i=0;i<charts.length;i++){
+      try{
+        const title=text_(charts[i].getOptions().get("title"));
+        if(/MOVEMENT|RENTAL|UNIT USED|BALANCE|IN|OUT/i.test(title)){selected=charts[i];break;}
+      }catch(err){}
+    }
+    const blob=selected.getAs("image/png");
+    return{available:true,mimeType:"image/png",chartId:selected.getChartId(),imageBase64:Utilities.base64Encode(blob.getBytes()),sourceSpreadsheetId:SUMMARY_SPREADSHEET_ID,sourceSheet:SUMMARY_SHEET_NAME};
   }
 
   function getMovement_(){return select_(CONFIG.SHEET.ASSET_MOVEMENT);}
@@ -216,20 +201,21 @@ const DashboardService = (() => {
       const loanPart=getLoanPart_();
       let summaryMovement=null;
       try{summaryMovement=getSummaryMovement_();}
-      catch(summaryErr){
-        Logger.error("DashboardService.summaryMovement",summaryErr);
-        summaryMovement={rows:[],ytd:{totalIn:0,totalOut:0,currentBalance:null,periodLabel:""},sourceSpreadsheetId:SUMMARY_SPREADSHEET_ID,sourceSheet:SUMMARY_SHEET_NAME,error:summaryErr.message||String(summaryErr)};
-      }
+      catch(summaryErr){Logger.error("DashboardService.summaryMovement",summaryErr);summaryMovement={rows:[],ytd:{totalIn:0,totalOut:0,currentBalance:null,periodLabel:""},sourceSpreadsheetId:SUMMARY_SPREADSHEET_ID,sourceSheet:SUMMARY_SHEET_NAME,error:summaryErr.message||String(summaryErr)};}
+      let summaryChart=null;
+      try{summaryChart=getSummaryChartImage_();}
+      catch(chartErr){Logger.error("DashboardService.summaryChart",chartErr);summaryChart={available:false,message:chartErr.message||String(chartErr)};}
       const dashboard={
         user:{id:user.USER_ID||"",username:user.USERNAME||"",name:user.FULLNAME||"Administrator",role:user.ROLE||"",branch:user.BRANCH||""},
         kpi:{totalUnit:populationKpi.totalUnit,unitDitarik:getUnitDitarik_(movement),unitDikirim:getUnitDikirim_(movement),rfu:populationKpi.rfu,nonRfu:populationKpi.nonRfu,loanPart:loanPart},
         population:populationKpi,
         movement:summaryMovement,
         chart:{status:{labels:["RFU","NON RFU","Loan"],datasets:[{data:[populationKpi.rfu,populationKpi.nonRfu,loanPart]}]},monthly:summaryMovement.rows.length?buildChart_(populationKpi,getMonthly_(movement),summaryMovement).monthly:{labels:[],datasets:[]}},
+        summaryChart:summaryChart,
         activity:getActivity_(),
         report:[]
       };
-      Logger.info("DashboardService","Dashboard loaded; population KPI isolated from SUMMARY parser",{population:populationKpi,summary:summaryMovement});
+      Logger.info("DashboardService","Dashboard loaded; population KPI isolated from SUMMARY parser",{population:populationKpi,summary:summaryMovement,summaryChart:summaryChart});
       return Response.success(dashboard,"Dashboard berhasil dimuat dari data populasi regional.");
     }catch(err){Logger.error("DashboardService",err);return Response.error(err);}
   }
