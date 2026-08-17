@@ -170,6 +170,29 @@ const Dashboard = (function () {
     var canvas = document.getElementById("chartMonthly");
     var rows = normalizeMovement(movement);
 
+    /*
+     * ROOT FIX:
+     * Dashboard HTML lama tidak selalu menyediakan <canvas id="chartMonthly">.
+     * Panel Trend Movement tetap ada dan data SUMMARY sudah benar, jadi buat
+     * canvas hanya di panel Trend (panel ke-2) tanpa menyentuh tabel/KPI.
+     */
+    if (!canvas) {
+      var panels = document.querySelectorAll(".movement-panel");
+      var chartPanel = panels.length > 1 ? panels[1] : null;
+
+      if (chartPanel) {
+        canvas = document.createElement("canvas");
+        canvas.id = "chartMonthly";
+        canvas.setAttribute("aria-label", "Trend Movement 12 Bulan Terakhir");
+        canvas.style.display = "block";
+        canvas.style.width = "100%";
+        canvas.style.height = "320px";
+        canvas.style.minHeight = "320px";
+        canvas.style.marginTop = "8px";
+        chartPanel.appendChild(canvas);
+      }
+    }
+
     if (!canvas || !rows.length) {
       console.warn("DASHBOARD CHART: canvas atau data movement tidak tersedia");
       return;
@@ -181,8 +204,9 @@ const Dashboard = (function () {
 
     function draw() {
       var rect = canvas.getBoundingClientRect();
-      var cssWidth = Math.max(320, Math.floor(rect.width || canvas.parentElement.clientWidth || 700));
-      var cssHeight = Math.max(220, Math.floor(rect.height || 245));
+      var parentWidth = canvas.parentElement ? canvas.parentElement.clientWidth : 700;
+      var cssWidth = Math.max(320, Math.floor(rect.width || parentWidth || 700));
+      var cssHeight = Math.max(220, Math.floor(rect.height || 320));
       var dpr = window.devicePixelRatio || 1;
 
       canvas.width = Math.floor(cssWidth * dpr);
@@ -200,7 +224,7 @@ const Dashboard = (function () {
 
       var left = 42;
       var right = 42;
-      var top = 18;
+      var top = 24;
       var bottom = 34;
       var plotW = cssWidth - left - right;
       var plotH = cssHeight - top - bottom;
@@ -211,9 +235,6 @@ const Dashboard = (function () {
       if (movementMax < 50) movementMax = 50;
       if (balanceMax < 200) balanceMax = 200;
 
-      function x(i) {
-        return left + (rows.length === 1 ? plotW / 2 : (plotW * i / (rows.length - 1)));
-      }
       function yMovement(v) {
         return top + plotH - (v / movementMax) * plotH;
       }
@@ -294,7 +315,7 @@ const Dashboard = (function () {
 
       ctx.textAlign = "left";
       ctx.font = "9px Arial, sans-serif";
-      var legendY = 8;
+      var legendY = 10;
       ctx.fillStyle = "#3b82d0";
       ctx.fillRect(left, legendY - 4, 14, 7);
       ctx.fillStyle = "#203b6f";
