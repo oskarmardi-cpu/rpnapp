@@ -69,11 +69,18 @@ const Dashboard = (function () {
     }
 
     var data = response.data || {};
+
+    // DIAGNOSTIC FIX: pastikan bentuk data Movement yang benar-benar diterima browser.
+    var rawMovement = data.movement;
+    console.log("DASHBOARD MOVEMENT RAW:", rawMovement);
+    console.log("DASHBOARD MOVEMENT ROWS RAW:", rawMovement && rawMovement.rows);
+    console.log("DASHBOARD CHART MONTHLY RAW:", data.chart && data.chart.monthly);
+
     renderUser(data.user);
     renderKPI(data.kpi || {});
     renderSummary(data.kpi || {});
-    renderMovement(data.movement || {});
-    renderMovementChart(data.movement || {});
+    renderMovement(rawMovement || {});
+    renderMovementChart(rawMovement || {}, data.chart || {});
 
     var chart = data.chart || {};
     renderStatusFallback(chart.status);
@@ -166,9 +173,25 @@ const Dashboard = (function () {
     }
   }
 
-  function renderMovementChart(movement) {
+  function renderMovementChart(movement, dashboardChart) {
     var canvas = document.getElementById("chartMonthly");
     var rows = normalizeMovement(movement);
+
+    // DIAGNOSTIC FIX: log the exact payload used by the chart.
+    console.log("DASHBOARD CHART INPUT:", movement);
+    console.log("DASHBOARD CHART NORMALIZED ROWS:", rows);
+
+    // Fallback hanya untuk memastikan sumber chart.monthly dapat dibaca jika
+    // backend mengirim chart tetapi movement.rows tidak ikut ter-serialisasi.
+    if (!rows.length && dashboardChart && dashboardChart.monthly) {
+      rows = normalizeMovement({
+        labels: dashboardChart.monthly.labels || [],
+        in: dashboardChart.monthly.datasets && dashboardChart.monthly.datasets[0] ? dashboardChart.monthly.datasets[0].data : [],
+        out: dashboardChart.monthly.datasets && dashboardChart.monthly.datasets[1] ? dashboardChart.monthly.datasets[1].data : [],
+        balance: dashboardChart.monthly.datasets && dashboardChart.monthly.datasets[2] ? dashboardChart.monthly.datasets[2].data : []
+      });
+      console.log("DASHBOARD CHART FALLBACK MONTHLY ROWS:", rows);
+    }
 
     /*
      * ROOT FIX:
@@ -194,7 +217,12 @@ const Dashboard = (function () {
     }
 
     if (!canvas || !rows.length) {
-      console.warn("DASHBOARD CHART: canvas atau data movement tidak tersedia");
+      console.warn("DASHBOARD CHART: canvas atau data movement tidak tersedia", {
+        canvasFound: !!canvas,
+        movementRows: rows.length,
+        movement: movement,
+        dashboardChartMonthly: dashboardChart && dashboardChart.monthly ? dashboardChart.monthly : null
+      });
       return;
     }
 
