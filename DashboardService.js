@@ -173,15 +173,37 @@ const DashboardService = (() => {
     if(!ws)throw new Error("Sheet SUMMARY tidak ditemukan pada spreadsheet dashboard.");
     const charts=ws.getCharts();
     if(!charts||!charts.length)return{available:false,message:"Tidak ada chart pada sheet SUMMARY."};
-    let selected=charts[0];
-    for(let i=0;i<charts.length;i++){
+
+    let selected=null,bestScore=-1;
+    charts.forEach(function(chart){
       try{
-        const title=text_(charts[i].getOptions().get("title"));
-        if(/MOVEMENT|RENTAL|UNIT USED|BALANCE|IN|OUT/i.test(title)){selected=charts[i];break;}
-      }catch(err){}
-    }
-    const blob=selected.getAs("image/png");
-    return{available:true,mimeType:"image/png",chartId:selected.getChartId(),imageBase64:Utilities.base64Encode(blob.getBytes()),sourceSpreadsheetId:SUMMARY_SPREADSHEET_ID,sourceSheet:SUMMARY_SHEET_NAME};
+        const title=upper_(chart.getOptions().get("title"));
+        const type=String(chart.getChartType()||"").toUpperCase();
+        const ranges=chart.getRanges()||[];
+        const rangeText=ranges.map(function(range){return upper_(range.getA1Notation());}).join(" ");
+        const container=chart.getContainerInfo();
+        const anchorRow=container?Number(container.getAnchorRow()||0):0;
+        const anchorCol=container?Number(container.getAnchorColumn()||0):0;
+        let score=0;
+        if(anchorRow>=10)score+=20;
+        if(anchorCol>=0)score+=Math.min(anchorCol,10);
+        if(type.indexOf("COMBO")>=0)score+=40;
+        if(type.indexOf("COLUMN")>=0||type.indexOf("BAR")>=0)score+=15;
+        if(type.indexOf("LINE")>=0)score+=15;
+        if(type.indexOf("PIE")>=0)score-=60;
+        if(/MOVEMENT|RENTAL/.test(title))score+=50;
+        if(/BALANCE|IN|OUT/.test(title))score+=20;
+        if(/BATTERY|CHARGER/.test(title))score-=40;
+        if(/IN|OUT|BALANCE|MOVEMENT|RENTAL/.test(rangeText))score+=25;
+        if(/BATTERY|CHARGER/.test(rangeText))score-=30;
+        if(ranges.length>=2)score+=5;
+        if(score>bestScore){bestScore=score;selected={chart:chart,anchorRow:anchorRow,anchorCol:anchorCol,type:type,title:title,score:score};}
+      }catch(err){Logger.error("DashboardService.chartCandidate",err);}
+    });
+
+    if(!selected||!selected.chart)return{available:false,message:"Chart Movement pada sheet SUMMARY tidak ditemukan."};
+    const blob=selected.chart.getAs("image/png");
+    return{available:true,mimeType:"image/png",chartId:selected.chart.getChartId(),imageBase64:Utilities.base64Encode(blob.getBytes()),sourceSpreadsheetId:SUMMARY_SPREADSHEET_ID,sourceSheet:SUMMARY_SHEET_NAME,selection:{type:selected.type,title:selected.title,anchorRow:selected.anchorRow,anchorCol:selected.anchorCol,score:selected.score}};
   }
 
   function getMovement_(){return select_(CONFIG.SHEET.ASSET_MOVEMENT);}
