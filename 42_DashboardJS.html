@@ -35,17 +35,51 @@ function renderMovement(movement){
       const ps=summaryPanel.querySelectorAll("p");
       if(ps.length&&movement?.ytd?.periodLabel)ps[ps.length-1].textContent="Periode: "+movement.ytd.periodLabel
     }
-  }else{
-    console.warn("Movement SUMMARY kosong/gagal. Tampilan tabel tidak dikosongkan.");
-  }
+  }else console.warn("Movement SUMMARY kosong/gagal. Tampilan tabel tidak dikosongkan.");
 }
-function ensureMovementCanvas(panel){if(!panel)return null;let canvas=document.getElementById("chartMonthly");if(canvas)return canvas;canvas=panel.querySelector("canvas");if(canvas){canvas.id="chartMonthly";return canvas}const wrap=panel.querySelector(".dashboard-chart-wrap");if(!wrap)return null;canvas=document.createElement("canvas");canvas.id="chartMonthly";canvas.setAttribute("aria-label","Trend Movement 12 Bulan Terakhir");wrap.appendChild(canvas);return canvas}
+function ensureMovementCanvas(panel){
+  if(!panel)return null;
+  let canvas=document.getElementById("chartMonthly");
+  if(canvas)return canvas;
+  canvas=panel.querySelector("canvas");
+  if(canvas){canvas.id="chartMonthly";canvas.style.display="block";canvas.style.width="100%";canvas.style.height="300px";return canvas}
+  let host=panel.querySelector(".dashboard-chart-wrap,.chart-container,.chart-wrapper,.trend-chart");
+  if(!host)host=panel;
+  host.style.position="relative";
+  host.style.minHeight="300px";
+  canvas=document.createElement("canvas");
+  canvas.id="chartMonthly";
+  canvas.setAttribute("aria-label","Trend Movement 12 Bulan Terakhir");
+  canvas.style.display="block";
+  canvas.style.width="100%";
+  canvas.style.height="300px";
+  canvas.style.minHeight="300px";
+  host.appendChild(canvas);
+  return canvas
+}
 function escapeHtml(v){return String(v??"").replace(/[&<>\"']/g,function(c){return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c]})}
 function buildMovementChartData(movement){const rows=normalizeMovement(movement);if(!rows.length)return null;return{labels:rows.map(function(r){return r.period}),datasets:[{label:"IN (Unit Masuk)",data:rows.map(function(r){return r.in})},{label:"OUT (Unit Keluar)",data:rows.map(function(r){return r.out})},{label:"BALANCE (Saldo Akhir)",data:rows.map(function(r){return r.balance}),type:"line"}]}}
 function renderCharts(chart,movement){chart=chart||{};const monthly=chart.monthly&&Array.isArray(chart.monthly.labels)&&chart.monthly.labels.length?chart.monthly:buildMovementChartData(movement);if(chart.status)renderStatusFallback(chart.status);if(monthly)renderMonthlyFallback(monthly);if(typeof Chart!=="function")return;if(chart.status)createStatusChart(chart.status);if(monthly)createMonthlyChart(monthly)}
-function clearCanvas(canvas){if(!canvas)return null;const rect=canvas.getBoundingClientRect(),width=Math.max(320,Math.floor(rect.width||canvas.clientWidth||640)),height=Math.max(180,Math.floor(rect.height||canvas.clientHeight||205)),dpr=window.devicePixelRatio||1;if(canvas.width!==width*dpr||canvas.height!==height*dpr){canvas.width=width*dpr;canvas.height=height*dpr}canvas.style.width=width+"px";canvas.style.height=height+"px";const ctx=canvas.getContext("2d");if(!ctx)return null;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);canvas.__logicalWidth=width;canvas.__logicalHeight=height;return ctx}
-function renderStatusFallback(data){const canvas=document.getElementById("chartUnitStatus");if(!canvas||!data||!Array.isArray(data.datasets)||!data.datasets[0])return;const ctx=clearCanvas(canvas);if(!ctx)return;const values=data.datasets[0].data.map(Number),total=values.reduce((a,b)=>a+b,0),w=canvas.__logicalWidth||640,h=canvas.__logicalHeight||205;if(!total){ctx.font="14px sans-serif";ctx.textAlign="center";ctx.fillStyle="#7b8798";ctx.fillText("Tidak ada data",w/2,h/2);return}const cx=w/2,cy=h/2,r=Math.min(cx,cy)*.68,inner=r*.52;let start=-Math.PI/2;["#3b9fe8","#f45b78","#ff9f43"].forEach(function(color,i){const v=values[i]||0,end=start+Math.PI*2*v/total;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,start,end);ctx.closePath();ctx.fillStyle=color;ctx.fill();start=end});ctx.globalCompositeOperation="destination-out";ctx.beginPath();ctx.arc(cx,cy,inner,0,Math.PI*2);ctx.fill();ctx.globalCompositeOperation="source-over"}
-function renderMonthlyFallback(data){const canvas=ensureMovementCanvas(document.querySelectorAll(".movement-panel")[1]);if(!canvas||!data||!Array.isArray(data.labels)||!data.labels.length)return;const ctx=clearCanvas(canvas);if(!ctx)return;const labels=data.labels,datasets=data.datasets||[],w=canvas.__logicalWidth||800,h=canvas.__logicalHeight||205,p={l:42,r:18,t:20,b:34},pw=w-p.l-p.r,ph=h-p.t-p.b,all=[];datasets.forEach(ds=>(ds.data||[]).forEach(v=>all.push(Number(v)||0)));const max=Math.max(1,...all);ctx.strokeStyle="#e5eaf1";for(let i=0;i<=4;i++){const y=p.t+ph-ph*i/4;ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(w-p.r,y);ctx.stroke()}const bars=datasets.filter(ds=>ds.type!=="line"),line=datasets.find(ds=>ds.type==="line"),gw=pw/labels.length,bw=Math.max(5,Math.min(18,gw/(bars.length+2)));bars.forEach(function(ds,di){ctx.fillStyle=di===0?"#2f82ee":"#203b6f";(ds.data||[]).forEach(function(v,i){const val=Number(v)||0,x=p.l+i*gw+gw/2+(di-(bars.length-1)/2)*bw-bw/2,y=p.t+ph-val/max*ph;ctx.fillRect(x,y,bw,val/max*ph)})});if(line){ctx.strokeStyle="#ef4444";ctx.lineWidth=2;ctx.beginPath();(line.data||[]).forEach(function(v,i){const val=Number(v)||0,x=p.l+i*gw+gw/2,y=p.t+ph-val/max*ph;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()}ctx.fillStyle="#7b8798";ctx.font="8px sans-serif";ctx.textAlign="center";labels.forEach(function(label,i){ctx.fillText(String(label),p.l+i*gw+gw/2,h-10)})}
+function clearCanvas(canvas){if(!canvas)return null;const rect=canvas.getBoundingClientRect(),width=Math.max(320,Math.floor(rect.width||canvas.clientWidth||640)),height=Math.max(260,Math.floor(rect.height||canvas.clientHeight||300)),dpr=window.devicePixelRatio||1;canvas.width=width*dpr;canvas.height=height*dpr;canvas.style.width=width+"px";canvas.style.height=height+"px";const ctx=canvas.getContext("2d");if(!ctx)return null;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);canvas.__logicalWidth=width;canvas.__logicalHeight=height;return ctx}
+function renderStatusFallback(data){const canvas=document.getElementById("chartUnitStatus");if(!canvas||!data||!Array.isArray(data.datasets)||!data.datasets[0])return;const ctx=clearCanvas(canvas);if(!ctx)return;const values=data.datasets[0].data.map(Number),total=values.reduce((a,b)=>a+b,0),w=canvas.__logicalWidth||640,h=canvas.__logicalHeight||260;if(!total){ctx.font="14px sans-serif";ctx.textAlign="center";ctx.fillStyle="#7b8798";ctx.fillText("Tidak ada data",w/2,h/2);return}const cx=w/2,cy=h/2,r=Math.min(cx,cy)*.68,inner=r*.52;let start=-Math.PI/2;["#3b9fe8","#f45b78","#ff9f43"].forEach(function(color,i){const v=values[i]||0,end=start+Math.PI*2*v/total;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,start,end);ctx.closePath();ctx.fillStyle=color;ctx.fill();start=end});ctx.globalCompositeOperation="destination-out";ctx.beginPath();ctx.arc(cx,cy,inner,0,Math.PI*2);ctx.fill();ctx.globalCompositeOperation="source-over"}
+function renderMonthlyFallback(data){
+  const panel=document.querySelectorAll(".movement-panel")[1];
+  const canvas=ensureMovementCanvas(panel);
+  if(!canvas||!data||!Array.isArray(data.labels)||!data.labels.length)return;
+  const ctx=clearCanvas(canvas);if(!ctx)return;
+  const labels=data.labels,datasets=data.datasets||[],w=canvas.__logicalWidth||900,h=canvas.__logicalHeight||300;
+  const p={l:48,r:24,t:34,b:46},pw=w-p.l-p.r,ph=h-p.t-p.b;
+  const all=[];datasets.forEach(function(ds){(ds.data||[]).forEach(function(v){all.push(Number(v)||0)})});
+  const max=Math.max(1,...all);const min=0;const yScale=function(v){return p.t+ph-(Number(v)-min)/(max-min||1)*ph};
+  ctx.font="10px sans-serif";ctx.textAlign="right";ctx.fillStyle="#718096";ctx.strokeStyle="#e5eaf1";ctx.lineWidth=1;
+  for(let i=0;i<=5;i++){const value=max*i/5,y=yScale(value);ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(w-p.r,y);ctx.stroke();ctx.fillText(String(Math.round(value)),p.l-8,y+3)}
+  const bars=datasets.filter(function(ds){return ds.type!=="line"});
+  const line=datasets.find(function(ds){return ds.type==="line"});
+  const gw=pw/labels.length;const bw=Math.max(7,Math.min(22,gw/(bars.length+2)));
+  bars.forEach(function(ds,di){ctx.fillStyle=di===0?"#2f82ee":"#173b72";(ds.data||[]).forEach(function(v,i){const val=Number(v)||0,x=p.l+i*gw+gw/2+(di-(bars.length-1)/2)*bw-bw/2,y=yScale(val);ctx.fillRect(x,y,bw,Math.max(1,p.t+ph-y));if(val>0){ctx.fillStyle="#173b72";ctx.font="bold 9px sans-serif";ctx.textAlign="center";ctx.fillText(String(val),x+bw/2,y-5);ctx.fillStyle=di===0?"#2f82ee":"#173b72"}})});
+  if(line){ctx.strokeStyle="#ef4444";ctx.lineWidth=3;ctx.beginPath();(line.data||[]).forEach(function(v,i){const val=Number(v)||0,x=p.l+i*gw+gw/2,y=yScale(val);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke();ctx.fillStyle="#ef4444";(line.data||[]).forEach(function(v,i){const val=Number(v)||0,x=p.l+i*gw+gw/2,y=yScale(val);ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();ctx.font="bold 9px sans-serif";ctx.textAlign="center";ctx.fillText(String(val),x,y-8)})}
+  ctx.fillStyle="#718096";ctx.font="9px sans-serif";ctx.textAlign="center";labels.forEach(function(label,i){ctx.fillText(String(label),p.l+i*gw+gw/2,h-16)});
+}
 function createStatusChart(data){const canvas=document.getElementById("chartUnitStatus");if(!data||!canvas||typeof Chart!=="function")return;if(chartUnitStatus)chartUnitStatus.destroy();chartUnitStatus=new Chart(canvas,{type:"doughnut",data:data,options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{position:"bottom"}}}})}
 function createMonthlyChart(data){const canvas=ensureMovementCanvas(document.querySelectorAll(".movement-panel")[1]);if(!data||!canvas||typeof Chart!=="function")return;if(chartMonthly)chartMonthly.destroy();chartMonthly=new Chart(canvas,{type:"bar",data:data,options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},plugins:{legend:{position:"top"}},scales:{y:{beginAtZero:true},x:{ticks:{maxRotation:45,minRotation:0}}}}})}
 return{init,loadDashboard};
