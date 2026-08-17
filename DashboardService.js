@@ -16,7 +16,6 @@ const DashboardService = (() => {
   function select_(sheetName){try{return Database.select(Database.MASTER,sheetName)||[];}catch(err){Logger.error("DashboardService.select",{sheet:sheetName,error:err});return[];}}
   function findColumn_(headers,names){const wanted=names.map(upper_);for(let i=0;i<headers.length;i++)if(wanted.indexOf(upper_(headers[i]))>=0)return i;return-1;}
 
-  /* ROOT-FIX: header unit boleh berada pada posisi/format berbeda antar regional. */
   function findHeaderRow_(values){
     let best=-1,bestScore=-1;
     for(let r=0;r<values.length;r++){
@@ -48,74 +47,40 @@ const DashboardService = (() => {
     const ss=SpreadsheetApp.openById(POPULATION_SPREADSHEET_ID);
     let totalUnit=0,rfu=0,nonRfu=0,unclassified=0;
     const source=[];
-
     POPULATION_SHEETS.forEach(function(sheetName){
       const ws=ss.getSheetByName(sheetName);
       if(!ws)throw new Error("Sheet populasi tidak ditemukan: "+sheetName);
-
       const values=ws.getDataRange().getValues();
       const headerRow=findHeaderRow_(values);
-      if(headerRow<0){
-        source.push({sheet:sheetName,units:0,rfu:0,nonRfu:0,unclassified:0,headerRow:-1});
-        return;
-      }
-
+      if(headerRow<0){source.push({sheet:sheetName,units:0,rfu:0,nonRfu:0,unclassified:0,headerRow:-1});return;}
       const headers=values[headerRow]||[];
       const noCol=findColumn_(headers,["NO","NO.","NOMOR"]);
       const modelCol=findColumn_(headers,["MODEL","UNIT TYPE","TYPE UNIT","TYPE"]);
       const snCol=findColumn_(headers,["SN","SERIAL NUMBER","SERIAL NO","SN UNIT"]);
       const epicorCol=findColumn_(headers,["STATUS EPICOR"]);
-
       if(snCol<0)throw new Error("Kolom SN tidak ditemukan pada sheet: "+sheetName);
-
       let sheetUnits=0,sheetRfu=0,sheetNonRfu=0,sheetUnclassified=0,started=false;
-
       for(let r=headerRow+1;r<values.length;r++){
         const row=values[r]||[];
         const first=noCol>=0?upper_(row[noCol]):upper_(row[0]);
         const rowSn=snCol>=0?text_(row[snCol]):"";
-
-        /* Header tabel populasi berikutnya = stop. */
         if(first==="NO"&&findColumn_(row,["SN","SERIAL NUMBER","SERIAL NO","SN UNIT"])>=0)break;
-
-        /* Jangan berhenti hanya karena satu baris kosong sebelum data berikutnya. */
         if(!rowSn){
-          if(started){
-            const nextNonEmpty=(values[r+1]||[]).some(function(v){return text_(v)!=="";});
-            if(!nextNonEmpty)break;
-          }
+          if(started){const nextNonEmpty=(values[r+1]||[]).some(function(v){return text_(v)!=="";});if(!nextNonEmpty)break;}
           continue;
         }
-
         if(!isUnitRow_(row,noCol,modelCol,snCol))continue;
-
         started=true;
         sheetUnits++;
-
-        /* STATUS EPICOR optional per regional table: unit tetap dihitung walaupun kolom/status belum tersedia. */
         const status=epicorCol>=0?upper_(row[epicorCol]):"";
         if(status==="RFU")sheetRfu++;
         else if(status==="NON RFU"||status==="NON-RFU"||status==="NONRFU")sheetNonRfu++;
         else sheetUnclassified++;
       }
-
-      totalUnit+=sheetUnits;
-      rfu+=sheetRfu;
-      nonRfu+=sheetNonRfu;
-      unclassified+=sheetUnclassified;
+      totalUnit+=sheetUnits;rfu+=sheetRfu;nonRfu+=sheetNonRfu;unclassified+=sheetUnclassified;
       source.push({sheet:sheetName,units:sheetUnits,rfu:sheetRfu,nonRfu:sheetNonRfu,unclassified:sheetUnclassified,headerRow:headerRow,statusEpicorColumn:epicorCol>=0});
     });
-
-    return {
-      totalUnit:totalUnit,
-      rfu:rfu,
-      nonRfu:nonRfu,
-      unclassified:unclassified,
-      source:source,
-      sourceSpreadsheetId:POPULATION_SPREADSHEET_ID,
-      sourceSheets:POPULATION_SHEETS,
-      validation:{classified:rfu+nonRfu,difference:totalUnit-(rfu+nonRfu),balanced:totalUnit===(rfu+nonRfu)}
-    };
+    return {totalUnit:totalUnit,rfu:rfu,nonRfu:nonRfu,unclassified:unclassified,source:source,sourceSpreadsheetId:POPULATION_SPREADSHEET_ID,sourceSheets:POPULATION_SHEETS,validation:{classified:rfu+nonRfu,difference:totalUnit-(rfu+nonRfu),balanced:totalUnit===(rfu+nonRfu)}};
   }
 
   function number_(value){if(typeof value==="number")return isFinite(value)?value:0;const raw=text_(value);if(!raw||raw==="-")return 0;const normalized=raw.replace(/\s/g,"").replace(/\.(?=\d{3}(?:\D|$))/g,"").replace(/,/g,".");const parsed=Number(normalized.replace(/[^0-9+\-.]/g,""));return isFinite(parsed)?parsed:0;}
@@ -130,6 +95,37 @@ const DashboardService = (() => {
   function getMonthly_(movement){const result=[0,0,0,0,0,0,0,0,0,0,0,0];movement.forEach(function(item){if(!item.MOVEMENT_DATE)return;const date=new Date(item.MOVEMENT_DATE);if(!isNaN(date.getTime()))result[date.getMonth()]++;});return result;}
   function getActivity_(){const rows=select_(CONFIG.SHEET.EVENT_LEDGER);rows.sort(function(a,b){return new Date(b.CREATED_AT||b.EVENT_DATE||0)-new Date(a.CREATED_AT||a.EVENT_DATE||0);});return rows.slice(0,5).map(function(item){return{title:item.EVENT_TYPE||"Activity",description:item.DOCUMENT_NO||item.REFERENCE_NO||"",time:item.EVENT_DATE||item.CREATED_AT||""};});}
   function buildChart_(kpi,monthly,movement){return{status:{labels:["RFU","NON RFU","Loan"],datasets:[{data:[kpi.rfu,kpi.nonRfu,kpi.loanPart]}]},monthly:{labels:movement.rows.map(function(item){return item.period;}),datasets:[{label:"IN (Unit Masuk)",data:movement.rows.map(function(item){return item.in;})},{label:"OUT (Unit Keluar)",data:movement.rows.map(function(item){return item.out;})},{label:"BALANCE (Saldo Akhir)",data:movement.rows.map(function(item){return item.balance;}),type:"line"}]}};}
-  function getDashboard(){try{Auth.check();const user=Auth.getUser()||{},populationKpi=getPopulationKPI_(),movement=getMovement_(),loanPart=getLoanPart_(),summaryMovement=getSummaryMovement_();const dashboard={user:{id:user.USER_ID||"",username:user.USERNAME||"",name:user.FULLNAME||"Administrator",role:user.ROLE||"",branch:user.BRANCH||""},kpi:{totalUnit:populationKpi.totalUnit,unitDitarik:getUnitDitarik_(movement),unitDikirim:getUnitDikirim_(movement),rfu:populationKpi.rfu,nonRfu:populationKpi.nonRfu,loanPart:loanPart},population:populationKpi,movement:summaryMovement,chart:buildChart_(populationKpi,getMonthly_(movement),summaryMovement),activity:getActivity_(),report:[]};Logger.info("DashboardService","Dashboard loaded; rental movement source = SUMMARY",summaryMovement);return Response.success(dashboard,"Dashboard berhasil dimuat dari data SUMMARY.");}catch(err){Logger.error("DashboardService",err);return Response.error(err);}}
+
+  function getDashboard(){
+    try{
+      Auth.check();
+      const user=Auth.getUser()||{};
+      const populationKpi=getPopulationKPI_();
+      const movement=getMovement_();
+      const loanPart=getLoanPart_();
+      let summaryMovement=null;
+      try{
+        summaryMovement=getSummaryMovement_();
+      }catch(summaryErr){
+        Logger.error("DashboardService.summaryMovement",summaryErr);
+        summaryMovement={rows:[],ytd:{totalIn:0,totalOut:0,currentBalance:populationKpi.totalUnit,periodLabel:""},sourceSpreadsheetId:SUMMARY_SPREADSHEET_ID,sourceSheet:SUMMARY_SHEET_NAME,error:summaryErr.message||String(summaryErr)};
+      }
+      const chartMovement=summaryMovement.rows.length?summaryMovement:{rows:[],ytd:summaryMovement.ytd};
+      const dashboard={
+        user:{id:user.USER_ID||"",username:user.USERNAME||"",name:user.FULLNAME||"Administrator",role:user.ROLE||"",branch:user.BRANCH||""},
+        kpi:{totalUnit:populationKpi.totalUnit,unitDitarik:getUnitDitarik_(movement),unitDikirim:getUnitDikirim_(movement),rfu:populationKpi.rfu,nonRfu:populationKpi.nonRfu,loanPart:loanPart},
+        population:populationKpi,
+        movement:summaryMovement,
+        chart:chartMovement.rows.length?buildChart_(populationKpi,getMonthly_(movement),chartMovement):{status:{labels:["RFU","NON RFU","Loan"],datasets:[{data:[populationKpi.rfu,populationKpi.nonRfu,loanPart]}]},monthly:{labels:[],datasets:[]}},
+        activity:getActivity_(),
+        report:[]
+      };
+      Logger.info("DashboardService","Dashboard loaded; population KPI isolated from SUMMARY parser",{population:populationKpi,summary:summaryMovement});
+      return Response.success(dashboard,"Dashboard berhasil dimuat dari data populasi regional.");
+    }catch(err){
+      Logger.error("DashboardService",err);
+      return Response.error(err);
+    }
+  }
   return{getDashboard};
 })();
