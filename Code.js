@@ -10,7 +10,7 @@ function renderPopulationLemahAbang(){Auth.check();return HtmlService.createTemp
 function getPopulationLemahAbang(){try{return PopulationLemahAbangService.read();}catch(err){Logger.error("Code.getPopulationLemahAbang",err);return Response.error(err);}}
 function editPopulationLemahAbang(rowNumber,columnIndex,value){try{return PopulationLemahAbangService.editCell(rowNumber,columnIndex,value);}catch(err){Logger.error("Code.editPopulationLemahAbang",err);return Response.error(err);}}
 function getPopulationLemahAbangEditUrl(){Auth.check();return PopulationLemahAbangService.getEditUrl();}
-function renderPopulationRegional(branch){Auth.check();return HtmlService.createTemplate("27_PopulasiRegional").evaluate().getContent();}
+function renderPopulationRegional(branch){Auth.check();return HtmlService.createTemplateFromFile("27_PopulasiRegional").evaluate().getContent();}
 function getPopulationRegional(branch){try{return PopulationRegionalService.read(branch);}catch(err){Logger.error("Code.getPopulationRegional",err);return Response.error(err);}}
 function editPopulationRegional(branch,rowNumber,columnIndex,value){try{return PopulationRegionalService.edit(branch,rowNumber,columnIndex,value);}catch(err){Logger.error("Code.editPopulationRegional",err);return Response.error(err);}}
 function getPopulationRegionalEditUrl(branch){Auth.check();return "https://docs.google.com/spreadsheets/d/1m9NIKo6eCYLAy_WJ_9FZlxjw2kGqcz8ey2wnm7P8CDo/edit";}
