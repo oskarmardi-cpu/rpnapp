@@ -16,11 +16,8 @@ function fmt(v){return Number(v||0).toLocaleString("id-ID")}
 function normalizeMovement(movement){if(!movement||!Array.isArray(movement.rows))return[];return movement.rows.map(function(row){return{period:row?.period??"",in:Number(row?.in)||0,out:Number(row?.out)||0,balance:Number(row?.balance)||0}}).filter(function(row){return row.period!==""})}
 function renderMovement(movement){
   const rows=normalizeMovement(movement);
-  if(!rows.length)return;
   const panels=document.querySelectorAll(".movement-panel");
-  const tablePanel=panels[0];
-  const trendPanel=panels[1];
-  const summaryPanel=panels[2];
+  const tablePanel=panels[0],trendPanel=panels[1],summaryPanel=panels[2];
   const table=tablePanel?tablePanel.querySelector("table.movement-table"):null;
   if(table){
     let tbody=table.querySelector("tbody");
@@ -28,7 +25,7 @@ function renderMovement(movement){
     tbody.innerHTML="";
     rows.forEach(function(row){const tr=document.createElement("tr");tr.innerHTML="<td>"+escapeHtml(row.period)+"</td><td>"+fmt(row.in)+"</td><td>"+fmt(row.out)+"</td><td>"+fmt(row.balance)+"</td>";tbody.appendChild(tr)})
   }
-  if(trendPanel){const canvas=trendPanel.querySelector("canvas#chartMonthly,canvas");if(canvas&&canvas.id!=="chartMonthly")canvas.id="chartMonthly"}
+  ensureMovementCanvas(trendPanel);
   if(summaryPanel){
     const values=summaryPanel.querySelectorAll(".movement-kpi strong");
     if(values[0])values[0].textContent=fmt(movement?.ytd?.totalIn);
@@ -37,6 +34,23 @@ function renderMovement(movement){
     const ps=summaryPanel.querySelectorAll("p");
     if(ps.length)ps[ps.length-1].textContent="Periode: "+(movement?.ytd?.periodLabel||"")
   }
+}
+function ensureMovementCanvas(panel){
+  if(!panel)return null;
+  let canvas=document.getElementById("chartMonthly");
+  if(canvas)return canvas;
+  canvas=panel.querySelector("canvas");
+  if(canvas){canvas.id="chartMonthly";return canvas}
+  const wrap=panel.querySelector(".dashboard-chart-wrap");
+  const target=wrap||panel;
+  canvas=document.createElement("canvas");
+  canvas.id="chartMonthly";
+  canvas.setAttribute("aria-label","Trend Movement 12 Bulan Terakhir");
+  canvas.style.display="block";
+  canvas.style.width="100%";
+  canvas.style.height="205px";
+  target.appendChild(canvas);
+  return canvas
 }
 function escapeHtml(v){return String(v??"").replace(/[&<>\"']/g,function(c){return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c]})}
 function buildMovementChartData(movement){const rows=normalizeMovement(movement);if(!rows.length)return null;return{labels:rows.map(function(r){return r.period}),datasets:[{label:"IN (Unit Masuk)",data:rows.map(function(r){return r.in})},{label:"OUT (Unit Keluar)",data:rows.map(function(r){return r.out})},{label:"BALANCE (Saldo Akhir)",data:rows.map(function(r){return r.balance}),type:"line"}]}}
@@ -49,11 +63,11 @@ function renderCharts(chart,movement){
   if(chart.status)createStatusChart(chart.status);
   if(monthly)createMonthlyChart(monthly)
 }
-function clearCanvas(canvas){if(!canvas)return null;const rect=canvas.getBoundingClientRect();const width=Math.max(320,Math.floor(rect.width||canvas.clientWidth||640));const height=Math.max(180,Math.floor(rect.height||canvas.clientHeight||205));if(canvas.width!==width*window.devicePixelRatio||canvas.height!==height*window.devicePixelRatio){canvas.width=width*window.devicePixelRatio;canvas.height=height*window.devicePixelRatio;canvas.style.width=width+"px";canvas.style.height=height+"px"}const ctx=canvas.getContext("2d");if(!ctx)return null;ctx.setTransform(window.devicePixelRatio,0,0,window.devicePixelRatio,0,0);ctx.clearRect(0,0,width,height);canvas.__logicalWidth=width;canvas.__logicalHeight=height;return ctx}
+function clearCanvas(canvas){if(!canvas)return null;const rect=canvas.getBoundingClientRect();const width=Math.max(320,Math.floor(rect.width||canvas.clientWidth||640));const height=Math.max(180,Math.floor(rect.height||canvas.clientHeight||205));const dpr=window.devicePixelRatio||1;if(canvas.width!==width*dpr||canvas.height!==height*dpr){canvas.width=width*dpr;canvas.height=height*dpr;canvas.style.width=width+"px";canvas.style.height=height+"px"}const ctx=canvas.getContext("2d");if(!ctx)return null;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);canvas.__logicalWidth=width;canvas.__logicalHeight=height;return ctx}
 function renderStatusFallback(data){const canvas=document.getElementById("chartUnitStatus");if(!canvas||!data||!Array.isArray(data.datasets)||!data.datasets[0])return;const ctx=clearCanvas(canvas);if(!ctx)return;const values=data.datasets[0].data.map(Number),total=values.reduce((a,b)=>a+b,0),w=canvas.__logicalWidth||canvas.clientWidth||640,h=canvas.__logicalHeight||canvas.clientHeight||205;if(!total){ctx.font="14px sans-serif";ctx.textAlign="center";ctx.fillStyle="#7b8798";ctx.fillText("Tidak ada data",w/2,h/2);return}const cx=w/2,cy=h/2,r=Math.min(cx,cy)*.68,inner=r*.52;let start=-Math.PI/2;const colors=["#3b9fe8","#f45b78","#ff9f43"];values.forEach(function(v,i){const end=start+(Math.PI*2*v/total);ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,start,end);ctx.closePath();ctx.fillStyle=colors[i%colors.length];ctx.fill();start=end});ctx.globalCompositeOperation="destination-out";ctx.beginPath();ctx.arc(cx,cy,inner,0,Math.PI*2);ctx.fill();ctx.globalCompositeOperation="source-over";ctx.fillStyle="#17233c";ctx.font="bold 22px sans-serif";ctx.textAlign="center";ctx.fillText(total,cx,cy+7)}
-function renderMonthlyFallback(data){const canvas=document.getElementById("chartMonthly");if(!canvas||!data||!Array.isArray(data.labels)||!data.labels.length)return;const ctx=clearCanvas(canvas);if(!ctx)return;const labels=data.labels,datasets=data.datasets||[],w=canvas.__logicalWidth||canvas.clientWidth||800,h=canvas.__logicalHeight||canvas.clientHeight||205,pad={l:42,r:18,t:20,b:34},plotW=w-pad.l-pad.r,plotH=h-pad.t-pad.b;const all=[];datasets.forEach(function(ds){(ds.data||[]).forEach(function(v){all.push(Number(v)||0)})});const max=Math.max(1,...all);ctx.strokeStyle="#e5eaf1";ctx.lineWidth=1;for(let i=0;i<=4;i++){const y=pad.t+plotH-(plotH*i/4);ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();ctx.fillStyle="#7b8798";ctx.font="9px sans-serif";ctx.textAlign="right";ctx.fillText(Math.round(max*i/4),pad.l-6,y+3)}const barSets=datasets.filter(ds=>ds.type!=="line");const lineSet=datasets.find(ds=>ds.type==="line");const groupW=plotW/labels.length;const barW=Math.max(5,Math.min(18,groupW/(barSets.length+2)));barSets.forEach(function(ds,di){ctx.fillStyle=di===0?"#2f82ee":"#203b6f";(ds.data||[]).forEach(function(v,i){const value=Number(v)||0,x=pad.l+i*groupW+groupW/2+(di-(barSets.length-1)/2)*barW-barW/2,y=pad.t+plotH-(value/max)*plotH;ctx.fillRect(x,y,barW,(value/max)*plotH)})});if(lineSet){ctx.strokeStyle="#ef4444";ctx.lineWidth=2;ctx.beginPath();(lineSet.data||[]).forEach(function(v,i){const value=Number(v)||0,x=pad.l+i*groupW+groupW/2,y=pad.t+plotH-(value/max)*plotH;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});ctx.stroke();ctx.fillStyle="#ef4444";(lineSet.data||[]).forEach(function(v,i){const value=Number(v)||0,x=pad.l+i*groupW+groupW/2,y=pad.t+plotH-(value/max)*plotH;ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill()})}ctx.fillStyle="#7b8798";ctx.font="8px sans-serif";ctx.textAlign="center";labels.forEach(function(label,i){const x=pad.l+i*groupW+groupW/2;ctx.fillText(String(label),x,h-10)})}
+function renderMonthlyFallback(data){const canvas=ensureMovementCanvas(document.querySelectorAll(".movement-panel")[1]);if(!canvas||!data||!Array.isArray(data.labels)||!data.labels.length)return;const ctx=clearCanvas(canvas);if(!ctx)return;const labels=data.labels,datasets=data.datasets||[],w=canvas.__logicalWidth||canvas.clientWidth||800,h=canvas.__logicalHeight||canvas.clientHeight||205,pad={l:42,r:18,t:20,b:34},plotW=w-pad.l-pad.r,plotH=h-pad.t-pad.b;const all=[];datasets.forEach(function(ds){(ds.data||[]).forEach(function(v){all.push(Number(v)||0)})});const max=Math.max(1,...all);ctx.strokeStyle="#e5eaf1";ctx.lineWidth=1;for(let i=0;i<=4;i++){const y=pad.t+plotH-(plotH*i/4);ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();ctx.fillStyle="#7b8798";ctx.font="9px sans-serif";ctx.textAlign="right";ctx.fillText(Math.round(max*i/4),pad.l-6,y+3)}const barSets=datasets.filter(ds=>ds.type!=="line");const lineSet=datasets.find(ds=>ds.type==="line");const groupW=plotW/labels.length;const barW=Math.max(5,Math.min(18,groupW/(barSets.length+2)));barSets.forEach(function(ds,di){ctx.fillStyle=di===0?"#2f82ee":"#203b6f";(ds.data||[]).forEach(function(v,i){const value=Number(v)||0,x=pad.l+i*groupW+groupW/2+(di-(barSets.length-1)/2)*barW-barW/2,y=pad.t+plotH-(value/max)*plotH;ctx.fillRect(x,y,barW,(value/max)*plotH)})});if(lineSet){ctx.strokeStyle="#ef4444";ctx.lineWidth=2;ctx.beginPath();(lineSet.data||[]).forEach(function(v,i){const value=Number(v)||0,x=pad.l+i*groupW+groupW/2,y=pad.t+plotH-(value/max)*plotH;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});ctx.stroke();ctx.fillStyle="#ef4444";(lineSet.data||[]).forEach(function(v,i){const value=Number(v)||0,x=pad.l+i*groupW+groupW/2,y=pad.t+plotH-(value/max)*plotH;ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill()})}ctx.fillStyle="#7b8798";ctx.font="8px sans-serif";ctx.textAlign="center";labels.forEach(function(label,i){const x=pad.l+i*groupW+groupW/2;ctx.fillText(String(label),x,h-10)})}
 function createStatusChart(data){const canvas=document.getElementById("chartUnitStatus");if(!data||!canvas||typeof Chart!=="function")return;if(chartUnitStatus)chartUnitStatus.destroy();chartUnitStatus=new Chart(canvas,{type:"doughnut",data:data,options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{position:"bottom"}}}})}
-function createMonthlyChart(data){const canvas=document.getElementById("chartMonthly");if(!data||!canvas||typeof Chart!=="function")return;if(chartMonthly)chartMonthly.destroy();chartMonthly=new Chart(canvas,{type:"bar",data:data,options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},plugins:{legend:{position:"top"}},scales:{y:{beginAtZero:true},x:{ticks:{maxRotation:45,minRotation:0}}}}})}
+function createMonthlyChart(data){const canvas=ensureMovementCanvas(document.querySelectorAll(".movement-panel")[1]);if(!data||!canvas||typeof Chart!=="function")return;if(chartMonthly)chartMonthly.destroy();chartMonthly=new Chart(canvas,{type:"bar",data:data,options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},plugins:{legend:{position:"top"}},scales:{y:{beginAtZero:true},x:{ticks:{maxRotation:45,minRotation:0}}}}})}
 return{init,loadDashboard};
 })();
 document.addEventListener("DOMContentLoaded",function(){Dashboard.init()});
