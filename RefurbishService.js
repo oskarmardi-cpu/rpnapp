@@ -1,12 +1,7 @@
 /*=========================================================
  RPN MANAGEMENT SYSTEM
  RefurbishService.js
- FIX #1 — SAVE UPDATE JOB REFURBISH
-
- Scope FIX #1:
- - Persist form data to T_REFURBISH.
- - Do NOT yet route to Pengiriman/Populasi.
- - Do NOT mutate POPULASI UNIT USED.
+ FIX #2 — SAVE PENGIRIMAN -> POPULATION SYNC
 =========================================================*/
 const RefurbishService = (() => {
   "use strict";
@@ -25,6 +20,26 @@ const RefurbishService = (() => {
     return String(v == null ? "" : v).trim();
   }
 
+  function normalizeShippingPayload_(data) {
+    const d = Object.assign({}, data || {});
+
+    /* UI currently uses these names for the shipping component fields. */
+    if (!text_(d.BATTERY_SPARE_SN)) {
+      d.BATTERY_SPARE_SN = text_(d.BATTERY_SPARE_1) || text_(d.BATTERY_SPARE_2);
+    }
+    if (!text_(d.TROLLEY_SN)) {
+      d.TROLLEY_SN = text_(d.TROLLY);
+    }
+    if (!text_(d.BATTERY_SN)) {
+      d.BATTERY_SN = text_(d.BATTERY_IN);
+    }
+    if (!text_(d.SN_UNIT)) {
+      d.SN_UNIT = text_(d.SERIAL_NUMBER);
+    }
+
+    return d;
+  }
+
   function validate_(data) {
     if (!data || typeof data !== "object") {
       throw new Error("Data Update Job Refurbish tidak valid.");
@@ -33,13 +48,8 @@ const RefurbishService = (() => {
     const category = text_(data.CATEGORY).toUpperCase();
     const branch = text_(data.BRANCH);
 
-    if (!branch) {
-      throw new Error("Cabang wajib diisi.");
-    }
-
-    if (!category) {
-      throw new Error("Kategori wajib dipilih.");
-    }
+    if (!branch) throw new Error("Cabang wajib diisi.");
+    if (!category) throw new Error("Kategori wajib dipilih.");
 
     if (category === "PERBAIKAN UNIT") {
       if (!text_(data.DATE) || !text_(data.UNIT_TYPE) || !text_(data.SERIAL_NUMBER)) {
@@ -48,7 +58,7 @@ const RefurbishService = (() => {
     }
 
     if (category === "PENARIKAN UNIT" || category === "PENGIRIMAN UNIT") {
-      if (!text_(data.SN_UNIT)) {
+      if (!text_(data.SN_UNIT) && !text_(data.SERIAL_NUMBER)) {
         throw new Error("SN Unit wajib diisi untuk transaksi " + category + ".");
       }
     }
@@ -80,7 +90,7 @@ const RefurbishService = (() => {
 
   function save(data) {
     Auth.check();
-    data = data || {};
+    data = normalizeShippingPayload_(data || {});
     validate_(data);
 
     return SpreadsheetService.transaction(function () {
@@ -89,6 +99,8 @@ const RefurbishService = (() => {
       const refId = createRefId_();
       const user = Auth.getUser() || {};
       const createdBy = text_(user.USERNAME) || text_(user.FULLNAME) || "SYSTEM";
+      const category = text_(data.CATEGORY);
+      const branch = text_(data.BRANCH);
       const payload = JSON.stringify(data);
       const row = ws.getLastRow() + 1;
 
@@ -96,10 +108,37 @@ const RefurbishService = (() => {
         refId,
         now,
         createdBy,
-        text_(data.CATEGORY),
-        text_(data.BRANCH),
+        category,
+        branch,
         payload
       ]]);
+
+      SpreadsheetApp.flush();
+
+      let populationSync = {
+        UPDATED: false,
+        REASON: "NOT_SHIPPING"
+      };
+
+      /* FIX #2: only PENGIRIMAN UNIT triggers population synchronization. */
+      if (category.toUpperCase() === "PENGIRIMAN UNIT") {
+        if (typeof PopulationLemahAbangService === "undefined") {
+          throw new Error("PopulationLemahAbangService tidak tersedia.");
+        }
+
+        console.log("REFURBISH FIX #2: population sync start", {
+          branch: branch,
+          snUnit: data.SN_UNIT,
+          battery: data.BATTERY_SN,
+          batterySpare: data.BATTERY_SPARE_SN,
+          charger: data.CHARGER_SN,
+          trolley: data.TROLLEY_SN
+        });
+
+        populationSync = PopulationLemahAbangService.updateFromRefurbish(data);
+
+        console.log("REFURBISH FIX #2: population sync response", populationSync);
+      }
 
       SpreadsheetApp.flush();
 
@@ -109,12 +148,9 @@ const RefurbishService = (() => {
         SHEET: SHEET_NAME,
         ROW_NUMBER: row,
         CREATED_BY: createdBy,
-        CATEGORY: text_(data.CATEGORY),
-        BRANCH: text_(data.BRANCH),
-        POPULATION_SYNC: {
-          UPDATED: false,
-          REASON: "FIX_1_SAVE_ONLY"
-        }
+        CATEGORY: category,
+        BRANCH: branch,
+        POPULATION_SYNC: populationSync
       }, "Update Job Refurbish berhasil disimpan ke Spreadsheet.");
     });
   }
