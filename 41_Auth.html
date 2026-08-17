@@ -15,6 +15,59 @@ const Auth = (() => {
 
 
     /*=======================================================
+      RESTORE SESSION
+      Must run immediately so Dashboard.init() on DOMContentLoaded
+      can see the authenticated user before window.load.
+    =======================================================*/
+
+    function restoreSession(){
+
+        try{
+
+            const storedUser =
+                sessionStorage.getItem("RPN_USER");
+
+            if(!storedUser){
+                return false;
+            }
+
+            const user =
+                JSON.parse(storedUser);
+
+            if(
+                !user ||
+                !user.USERNAME
+            ){
+                sessionStorage.removeItem("RPN_USER");
+                sessionStorage.removeItem("RPN_USERNAME");
+                return false;
+            }
+
+            currentUser = user;
+
+            return true;
+
+        }
+        catch(error){
+
+            console.warn(
+                "AUTH: session restore gagal",
+                error
+            );
+
+            currentUser = null;
+
+            sessionStorage.removeItem("RPN_USER");
+            sessionStorage.removeItem("RPN_USERNAME");
+
+            return false;
+
+        }
+
+    }
+
+
+    /*=======================================================
       LOGIN
     =======================================================*/
 
@@ -69,11 +122,6 @@ const Auth = (() => {
         );
 
 
-        /*===================================================
-          API LOGIN
-          API.login menggunakan CALLBACK
-        ===================================================*/
-
         API.login(
 
             username,
@@ -90,10 +138,6 @@ const Auth = (() => {
 
                 try{
 
-                    /*---------------------------------------
-                      RESPONSE CHECK
-                    ---------------------------------------*/
-
                     if(!response){
 
                         throw new Error(
@@ -102,29 +146,16 @@ const Auth = (() => {
 
                     }
 
-
-                    /*---------------------------------------
-                      SERVER ERROR
-                    ---------------------------------------*/
-
                     if(
                         response.success !== true
                     ){
 
                         throw new Error(
-
                             response.message ||
-
                             "Username atau password salah."
-
                         );
 
                     }
-
-
-                    /*---------------------------------------
-                      GET USER
-                    ---------------------------------------*/
 
                     const data =
                         response.data || {};
@@ -146,59 +177,30 @@ const Auth = (() => {
 
                     }
 
-
-                    /*---------------------------------------
-                      SAVE USER
-                    ---------------------------------------*/
-
                     currentUser = user;
 
-
                     sessionStorage.setItem(
-
                         "RPN_USERNAME",
-
-                        String(
-                            user.USERNAME || ""
-                        )
-
+                        String(user.USERNAME || "")
                     );
-
 
                     sessionStorage.setItem(
-
                         "RPN_USER",
-
                         JSON.stringify(user)
-
                     );
-
-
-                    /*---------------------------------------
-                      CLEAR PASSWORD
-                    ---------------------------------------*/
 
                     if(passwordInput){
-
                         passwordInput.value = "";
-
                     }
-
-
-                    /*---------------------------------------
-                      LOGIN SUCCESS
-                    ---------------------------------------*/
 
                     console.log(
                         "LOGIN SUCCESS:",
                         user
                     );
 
-
                     App.app();
 
                 }
-
                 catch(error){
 
                     console.error(
@@ -206,20 +208,13 @@ const Auth = (() => {
                         error
                     );
 
-
                     showError(
-
-                        error &&
-                        error.message
-
+                        error && error.message
                             ? error.message
-
                             : "Login gagal."
-
                     );
 
                 }
-
                 finally{
 
                     setLoading(false);
@@ -228,7 +223,6 @@ const Auth = (() => {
 
             },
 
-
             function(error){
 
                 console.error(
@@ -236,19 +230,12 @@ const Auth = (() => {
                     error
                 );
 
-
                 setLoading(false);
 
-
                 showError(
-
-                    error &&
-                    error.message
-
+                    error && error.message
                         ? error.message
-
                         : "Server tidak memberikan response."
-
                 );
 
             }
@@ -266,7 +253,6 @@ const Auth = (() => {
 
         setLoading(false);
 
-
         API.logout(
 
             function(response){
@@ -281,7 +267,6 @@ const Auth = (() => {
                 App.login();
 
             },
-
 
             function(error){
 
@@ -309,11 +294,9 @@ const Auth = (() => {
 
         currentUser = null;
 
-
         sessionStorage.removeItem(
             "RPN_USERNAME"
         );
-
 
         sessionStorage.removeItem(
             "RPN_USER"
@@ -357,33 +340,23 @@ const Auth = (() => {
                 "btnLogin"
             );
 
-
         if(!button){
-
             return;
-
         }
 
-
         button.disabled = loading;
-
 
         if(loading){
 
             button.innerHTML =
-
                 '<i class="fa-solid fa-spinner fa-spin"></i>' +
-
                 '<span>Memverifikasi...</span>';
 
         }
-
         else{
 
             button.innerHTML =
-
                 '<i class="fa-solid fa-right-to-bracket"></i>' +
-
                 '<span>Login</span>';
 
         }
@@ -412,7 +385,6 @@ const Auth = (() => {
 
         }
 
-
         if(
             typeof Toast !== "undefined" &&
             typeof Toast.error === "function"
@@ -423,7 +395,6 @@ const Auth = (() => {
             return;
 
         }
-
 
         alert(message);
 
@@ -436,11 +407,13 @@ const Auth = (() => {
 
     function init(){
 
+        /* Restore BEFORE binding/loading dashboard. */
+        restoreSession();
+
         const form =
             document.getElementById(
                 "loginForm"
             );
-
 
         if(form){
 
@@ -450,47 +423,32 @@ const Auth = (() => {
 
                 form.dataset.authBound = "true";
 
-
                 form.addEventListener(
-
                     "submit",
-
                     function(event){
-
                         event.preventDefault();
-
                         login();
-
                     }
-
                 );
 
             }
 
         }
 
-
-        /*===================================================
-          PASSWORD EYE
-        ===================================================*/
-
         const toggle =
             document.getElementById(
                 "btnTogglePassword"
             );
-
 
         const password =
             document.getElementById(
                 "loginPassword"
             );
 
-
         const eye =
             document.getElementById(
                 "passwordEye"
             );
-
 
         if(
             toggle &&
@@ -504,11 +462,8 @@ const Auth = (() => {
 
                 toggle.dataset.bound = "true";
 
-
                 toggle.addEventListener(
-
                     "click",
-
                     function(){
 
                         if(
@@ -517,14 +472,11 @@ const Auth = (() => {
 
                             password.type = "text";
 
-
                             eye.className =
                                 "fa-solid fa-eye-slash";
 
-
                             toggle.title =
                                 "Sembunyikan password";
-
 
                             toggle.setAttribute(
                                 "aria-label",
@@ -532,20 +484,16 @@ const Auth = (() => {
                             );
 
                         }
-
                         else{
 
                             password.type =
                                 "password";
 
-
                             eye.className =
                                 "fa-solid fa-eye";
 
-
                             toggle.title =
                                 "Tampilkan password";
-
 
                             toggle.setAttribute(
                                 "aria-label",
@@ -555,7 +503,6 @@ const Auth = (() => {
                         }
 
                     }
-
                 );
 
             }
@@ -592,16 +539,11 @@ const Auth = (() => {
  START AUTH
 ==========================================================*/
 
-window.addEventListener(
-
-    "load",
-
-    function(){
-
-        Auth.init();
-
-    }
-
-);
+/*
+ * Restore immediately, because DashboardJS initializes on
+ * DOMContentLoaded while this handler previously waited for
+ * window.load. This removes the startup race condition.
+ */
+Auth.init();
 
 </script>
