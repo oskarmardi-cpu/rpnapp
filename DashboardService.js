@@ -15,30 +15,107 @@ const DashboardService = (() => {
   function upper_(value){return text_(value).toUpperCase().replace(/\s+/g," ");}
   function select_(sheetName){try{return Database.select(Database.MASTER,sheetName)||[];}catch(err){Logger.error("DashboardService.select",{sheet:sheetName,error:err});return[];}}
   function findColumn_(headers,names){const wanted=names.map(upper_);for(let i=0;i<headers.length;i++)if(wanted.indexOf(upper_(headers[i]))>=0)return i;return-1;}
-  function findHeaderRow_(values){for(let r=0;r<values.length;r++){const row=values[r]||[];if(upper_(row[0])==="NO"&&findColumn_(row,["SN","SERIAL NUMBER","SERIAL NO","SN UNIT"])>=0)return r;}return-1;}
-  function isUnitRow_(row,noCol,modelCol,snCol){const sn=text_(row[snCol]);if(!sn)return false;const no=text_(row[noCol]);if(!/^\d+$/.test(no))return false;const model=upper_(modelCol>=0?row[modelCol]:"");if(model.indexOf("CHARGER/BATTERY")>=0||model==="CHARGER"||model==="BATTERY")return false;return true;}
 
-  /* LOCKED KPI BASELINE: first unit table only; stop at next No+SN header; exclude battery/charger/spare; direct RFU/NON RFU status; never derive NON RFU mathematically. */
+  /* ROOT-FIX: header unit boleh berada pada posisi/format berbeda antar regional. */
+  function findHeaderRow_(values){
+    let best=-1,bestScore=-1;
+    for(let r=0;r<values.length;r++){
+      const row=values[r]||[];
+      const snCol=findColumn_(row,["SN","SERIAL NUMBER","SERIAL NO","SN UNIT"]);
+      const noCol=findColumn_(row,["NO","NO.","NOMOR"]);
+      const modelCol=findColumn_(row,["MODEL","UNIT TYPE","TYPE UNIT","TYPE"]);
+      if(snCol<0)continue;
+      let score=2;
+      if(noCol>=0)score+=3;
+      if(modelCol>=0)score+=2;
+      if(findColumn_(row,["STATUS EPICOR"])>=0)score+=2;
+      if(score>bestScore){bestScore=score;best=r;}
+    }
+    return best;
+  }
+
+  function isUnitRow_(row,noCol,modelCol,snCol){
+    const sn=text_(row[snCol]);
+    if(!sn)return false;
+    const no=noCol>=0?text_(row[noCol]):"";
+    if(noCol>=0 && !/^\d+$/.test(no))return false;
+    const model=upper_(modelCol>=0?row[modelCol]:"");
+    if(model.indexOf("CHARGER/BATTERY")>=0||model==="CHARGER"||model==="BATTERY"||model.indexOf("BATTERY/CHARGER")>=0)return false;
+    return true;
+  }
+
   function getPopulationKPI_(){
-    const ss=SpreadsheetApp.openById(POPULATION_SPREADSHEET_ID);let totalUnit=0,rfu=0,nonRfu=0,unclassified=0;const source=[];
+    const ss=SpreadsheetApp.openById(POPULATION_SPREADSHEET_ID);
+    let totalUnit=0,rfu=0,nonRfu=0,unclassified=0;
+    const source=[];
+
     POPULATION_SHEETS.forEach(function(sheetName){
-      const ws=ss.getSheetByName(sheetName);if(!ws)throw new Error("Sheet populasi tidak ditemukan: "+sheetName);
-      const values=ws.getDataRange().getValues(),headerRow=findHeaderRow_(values);
-      if(headerRow<0){source.push({sheet:sheetName,units:0,rfu:0,nonRfu:0,unclassified:0});return;}
-      const headers=values[headerRow]||[],noCol=findColumn_(headers,["NO"]),modelCol=findColumn_(headers,["MODEL","UNIT TYPE","TYPE UNIT","TYPE"]),snCol=findColumn_(headers,["SN","SERIAL NUMBER","SERIAL NO","SN UNIT"]),epicorCol=findColumn_(headers,["STATUS EPICOR"]);
-      if(snCol<0)throw new Error("Kolom SN tidak ditemukan pada sheet: "+sheetName);if(epicorCol<0)throw new Error("Kolom STATUS EPICOR tidak ditemukan pada sheet: "+sheetName);
-      let sheetUnits=0,sheetRfu=0,sheetNonRfu=0,sheetUnclassified=0,started=false;
-      for(let r=headerRow+1;r<values.length;r++){
-        const row=values[r]||[],first=upper_(row[noCol]);
-        if(first==="NO"&&findColumn_(row,["SN","SERIAL NUMBER","SERIAL NO","SN UNIT"])>=0)break;
-        if(!text_(row[noCol])&&!text_(row[snCol])){if(started)break;continue;}
-        if(!isUnitRow_(row,noCol,modelCol,snCol))continue;
-        started=true;sheetUnits++;const status=upper_(row[epicorCol]);
-        if(status==="RFU")sheetRfu++;else if(status==="NON RFU"||status==="NON-RFU"||status==="NONRFU")sheetNonRfu++;else sheetUnclassified++;
+      const ws=ss.getSheetByName(sheetName);
+      if(!ws)throw new Error("Sheet populasi tidak ditemukan: "+sheetName);
+
+      const values=ws.getDataRange().getValues();
+      const headerRow=findHeaderRow_(values);
+      if(headerRow<0){
+        source.push({sheet:sheetName,units:0,rfu:0,nonRfu:0,unclassified:0,headerRow:-1});
+        return;
       }
-      totalUnit+=sheetUnits;rfu+=sheetRfu;nonRfu+=sheetNonRfu;unclassified+=sheetUnclassified;source.push({sheet:sheetName,units:sheetUnits,rfu:sheetRfu,nonRfu:sheetNonRfu,unclassified:sheetUnclassified});
+
+      const headers=values[headerRow]||[];
+      const noCol=findColumn_(headers,["NO","NO.","NOMOR"]);
+      const modelCol=findColumn_(headers,["MODEL","UNIT TYPE","TYPE UNIT","TYPE"]);
+      const snCol=findColumn_(headers,["SN","SERIAL NUMBER","SERIAL NO","SN UNIT"]);
+      const epicorCol=findColumn_(headers,["STATUS EPICOR"]);
+
+      if(snCol<0)throw new Error("Kolom SN tidak ditemukan pada sheet: "+sheetName);
+
+      let sheetUnits=0,sheetRfu=0,sheetNonRfu=0,sheetUnclassified=0,started=false;
+
+      for(let r=headerRow+1;r<values.length;r++){
+        const row=values[r]||[];
+        const first=noCol>=0?upper_(row[noCol]):upper_(row[0]);
+        const rowSn=snCol>=0?text_(row[snCol]):"";
+
+        /* Header tabel populasi berikutnya = stop. */
+        if(first==="NO"&&findColumn_(row,["SN","SERIAL NUMBER","SERIAL NO","SN UNIT"])>=0)break;
+
+        /* Jangan berhenti hanya karena satu baris kosong sebelum data berikutnya. */
+        if(!rowSn){
+          if(started){
+            const nextNonEmpty=(values[r+1]||[]).some(function(v){return text_(v)!=="";});
+            if(!nextNonEmpty)break;
+          }
+          continue;
+        }
+
+        if(!isUnitRow_(row,noCol,modelCol,snCol))continue;
+
+        started=true;
+        sheetUnits++;
+
+        /* STATUS EPICOR optional per regional table: unit tetap dihitung walaupun kolom/status belum tersedia. */
+        const status=epicorCol>=0?upper_(row[epicorCol]):"";
+        if(status==="RFU")sheetRfu++;
+        else if(status==="NON RFU"||status==="NON-RFU"||status==="NONRFU")sheetNonRfu++;
+        else sheetUnclassified++;
+      }
+
+      totalUnit+=sheetUnits;
+      rfu+=sheetRfu;
+      nonRfu+=sheetNonRfu;
+      unclassified+=sheetUnclassified;
+      source.push({sheet:sheetName,units:sheetUnits,rfu:sheetRfu,nonRfu:sheetNonRfu,unclassified:sheetUnclassified,headerRow:headerRow,statusEpicorColumn:epicorCol>=0});
     });
-    return {totalUnit:totalUnit,rfu:rfu,nonRfu:nonRfu,unclassified:unclassified,source:source,sourceSpreadsheetId:POPULATION_SPREADSHEET_ID,sourceSheets:POPULATION_SHEETS,validation:{classified:rfu+nonRfu,difference:totalUnit-(rfu+nonRfu),balanced:totalUnit===(rfu+nonRfu)}};
+
+    return {
+      totalUnit:totalUnit,
+      rfu:rfu,
+      nonRfu:nonRfu,
+      unclassified:unclassified,
+      source:source,
+      sourceSpreadsheetId:POPULATION_SPREADSHEET_ID,
+      sourceSheets:POPULATION_SHEETS,
+      validation:{classified:rfu+nonRfu,difference:totalUnit-(rfu+nonRfu),balanced:totalUnit===(rfu+nonRfu)}
+    };
   }
 
   function number_(value){if(typeof value==="number")return isFinite(value)?value:0;const raw=text_(value);if(!raw||raw==="-")return 0;const normalized=raw.replace(/\s/g,"").replace(/\.(?=\d{3}(?:\D|$))/g,"").replace(/,/g,".");const parsed=Number(normalized.replace(/[^0-9+\-.]/g,""));return isFinite(parsed)?parsed:0;}
